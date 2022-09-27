@@ -10,11 +10,20 @@ Integer GetBestRaceTime(CSmPlayer Player) {
     return Player.Score.BestRaceTimes[Player.Score.BestRaceTimes.count - 1];
 }
 
+declare Integer[Text] LastSpawnTime;
+
 // send a complete list of players every now and then.
 Void SendActivePlayers() {
     declare Text activePlayerNames = "";
     declare Text bestTimes = "";
     foreach (Player in Players) {
+        declare Text Name = Player.User.Name;
+        if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::Spawned) {
+            LastSpawnTime[Name] = GameTime;
+        }
+        // skip players that have not been spawned for >60s
+        if (!LastSpawnTime.existskey(Name) || LastSpawnTime[Name] + 60000 < GameTime)
+            continue;
         if (activePlayerNames == "") {
             activePlayerNames = Player.User.Name;
             bestTimes = ""^GetBestRaceTime(Player);
@@ -30,7 +39,11 @@ Void SendActivePlayers() {
 declare Integer[Text] LastCPCounts;
 
 Void SendPlayerLatestCP(CSmPlayer Player) {
-    declare Name = Player.User.Name;
+    declare Text Name = Player.User.Name;
+    // skip players who haven't been spawned for 3s, long enough to get an updated 0 time
+    if (!LastSpawnTime.existskey(Name) || LastSpawnTime[Name] + 3000 < GameTime)
+        return;
+    if (Player.SpawnStatus != CSmPlayer::ESpawnStatus::Spawned) return;
     declare CPCount = Player.RaceWaypointTimes.count;
     // update condition: the key doesn't exist, or cp counts changed = > not (key exists AND cp counts same)
     if (!(LastCPCounts.existskey(Name) && CPCount == LastCPCounts[Name])) {
@@ -48,6 +61,11 @@ Void SendPlayerLatestCP(CSmPlayer Player) {
 // to start with we want to send all data.
 Void InitialSend() {
     foreach (Player in Players) {
+        if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::Spawned) {
+            LastSpawnTime[Player.User.Name] = GameTime;
+        } else {
+            continue; // only send spawned players initially
+        }
         declare Name = Player.User.Name;
         declare CPCount = Player.RaceWaypointTimes.count;
         LastCPCounts[Name] = CPCount;

@@ -9,6 +9,13 @@ enum Cmp {Lt = -1, Eq = 0, Gt = 1}
 void Main() {
     MLHook::RequireVersionApi('0.1.5');
     startnew(InitCoro);
+#if DEV
+    startnew(CheckVis);
+#endif
+}
+
+void Update(float dt) {
+    DrawPlayers();
 }
 
 void InitCoro() {
@@ -44,7 +51,7 @@ void DrawMainInterior() {
     if (theHook is null) return;
     if (theHook.latestPlayerStats is null) return;
     if (theHook.sortedPlayers.Length == 0) return;
-    // we assume `theHook` is non-null & other such conditions have been checked.
+    UI::Text("" + theHook.sortedPlayers.Length + " Players");
     // SizingFixedFit / fixedsame / strechsame / strechprop
     if (UI::BeginTable("player times", 4, UI::TableFlags::SizingStretchProp)) {
         // UI::TableSetupColumn("Time", UI::TableColumnFlags::WidthFixed, 50);
@@ -113,14 +120,14 @@ Cmp cmpRace(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
     return Cmp::Gt;
 }
 
-Cmp cmpTimeAttack(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
-    // start isn't synchronized
-    // idea 1: sort by fastest progress
-    // - a player should be above everyone given their pace at that CP
-    // - not based on % progression
-    // todo: probably need a different data structure
-    return Cmp::Eq;
-}
+// Cmp cmpTimeAttack(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
+//     // start isn't synchronized
+//     // idea 1: sort by fastest progress
+//     // - a player should be above everyone given their pace at that CP
+//     // - not based on % progression
+//     // todo: probably need a different data structure
+//     return Cmp::Eq;
+// }
 
 Cmp cmpInt(int a, int b) {
     if (a < b) return Cmp::Lt;
@@ -229,3 +236,87 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
         return map.EdChallengeId;
     }
 }
+
+
+#if DEV
+void CheckVis() {
+    // while (true) {
+    //     yield();
+    //     auto cpg = cast<CSmArenaClient>(GetApp().CurrentPlayground);
+    //     while (cpg is null) {
+    //         sleep(100);
+    //         @cpg = cast<CSmArenaClient>(GetApp().CurrentPlayground);
+    //     }
+    //     while (cpg !is null) {
+    //         auto nPlayers = cpg.Players.Length;
+    //         auto scene = cpg.GameScene;
+    //         if (scene is null) continue;
+    //         auto zone = scene.HackScene.Sector.Zone;
+    //         print('zone.DynamicLightArrays.Length: ' + zone.DynamicLightArrays.Length);
+    //         auto pimp = zone.PImp;
+    //         // pimp.LightDir_Lights[0] // some kind of global lighting
+    //         // auto lights = pimp.LightDynamic_Frustum_Lights; -- openplanet complains, can't do `lbuffer`s
+    //         print('pimp.LightDynamic_Frustum_Lights.Length: ' + pimp.LightDynamic_Frustum_Lights.Length);
+    //         SLightDynaFrustum@[] justGoodLights;
+    //         for (uint i = 0; i < pimp.LightDynamic_Frustum_Lights.Length; i++) {
+    //             auto light = pimp.LightDynamic_Frustum_Lights[i];
+    //             if (light.gxLight.IsOrtho) {
+    //                 // mb good, Technique=GenShadowMask; iSG=3
+    //                 // alt is 2dBallLight; iSG=0
+    //                 justGoodLights.InsertLast(light);
+    //             }
+    //         }
+    //         print('justGoodLights.Length: ' + justGoodLights.Length + ' == ' + nPlayers + ' nPlayers?');
+    //         for (uint i = 0; i < justGoodLights.Length; i++) {
+    //             auto light = justGoodLights[i];
+    //             auto loc = light.Location;
+    //             auto pos = vec3(loc.tx, loc.ty, loc.tz);
+    //             print(pos.ToString());
+    //         }
+    //         sleep(1000);
+    //     }
+    // }
+}
+
+
+void DrawPlayers() {
+    auto cpg = cast<CSmArenaClient>(GetApp().CurrentPlayground);
+    if (cpg is null) return;
+    auto nPlayers = cpg.Players.Length;
+    auto scene = cpg.GameScene;
+    if (scene is null) return;
+    auto zone = scene.HackScene.Sector.Zone;
+    print('zone.DynamicLightArrays.Length: ' + zone.DynamicLightArrays.Length);
+    auto pimp = zone.PImp;
+    // pimp.LightDir_Lights[0] // some kind of global lighting
+    // auto lights = pimp.LightDynamic_Frustum_Lights; -- openplanet complains, can't do `lbuffer`s
+    print('pimp.LightDynamic_Frustum_Lights.Length: ' + pimp.LightDynamic_Frustum_Lights.Length);
+    SLightDynaFrustum@[] justGoodLights;
+    for (uint i = 0; i < pimp.LightDynamic_Frustum_Lights.Length; i++) {
+        auto light = pimp.LightDynamic_Frustum_Lights[i];
+        if (light.gxLight.IsOrtho) {
+            // mb good, Technique=GenShadowMask; iSG=3
+            // alt is 2dBallLight; iSG=0
+            justGoodLights.InsertLast(light);
+        }
+    }
+    print('justGoodLights.Length: ' + justGoodLights.Length + ' == ' + nPlayers + ' nPlayers?');
+    for (uint i = 0; i < justGoodLights.Length; i++) {
+        auto light = justGoodLights[i];
+        auto loc = light.Location;
+        auto pos = vec3(loc.tx, loc.ty, loc.tz);
+        print(pos.ToString());
+        if (Camera::IsBehind(pos)) continue;
+        auto uv = Camera::ToScreenSpace(pos);
+        DrawPlayerIndicatorAt(uv);
+    }
+}
+
+void DrawPlayerIndicatorAt(vec2 uv) {
+    nvg::BeginPath();
+    nvg::RoundedRect(uv - vec2(20, 20)/2, vec2(20, 20), 4);
+    nvg::FillColor(vec4(.99, .2, .92, .5));
+    nvg::Fill();
+}
+
+#endif
