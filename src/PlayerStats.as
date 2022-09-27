@@ -1,3 +1,4 @@
+#if DEV
 shared class PlayerStats {
   /* Properties // Mixin: Default Properties */
   private string _Name;
@@ -170,3 +171,4 @@ shared class PlayerStats {
       ;
   }
 }
+#endif

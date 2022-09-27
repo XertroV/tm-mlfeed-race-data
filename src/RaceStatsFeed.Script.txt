@@ -1,58 +1,95 @@
-<script><!--
+declare Text G_PreviousMapUid;
 
-#Struct PlayerStats {
-    Text Name;
-    // Integer TimeNow;
-    CSmPlayer::ESpawnStatus SpawnStatus;
-    Integer[] CurrentLapTimes;
-    Integer[] CurrentRaceTimes;
-    Integer CurrentLapTime;
-    Integer CurrentRaceTime;
-}
-
-PlayerStats StatsFromPlayer(CSmPlayer Player) {
-    declare Integer[] _Times = [];
-    foreach (t in Player.CurrentLapWaypointTimes) {
-        _Times.add(t);
-    }
-    declare PlayerStats ret  = PlayerStats {
-        Name = Player.User.Name,
-        // TimeNow = Now,
-        SpawnStatus = Player.SpawnStatus,
-        CurrentLapTime = Player.CurrentLapTime,
-        CurrentRaceTime = Player.CurrentRaceTime
-    };
-    foreach (t in Player.CurrentLapWaypointTimes) {
-        ret.CurrentLapTimes.add(t);
-    }
-    foreach (t in Player.RaceWaypointTimes) {
-        ret.CurrentRaceTimes.add(t);
-    }
-    return ret;
-}
-
+// logging function, should be "MLHook_LogMe_" + PageUID
 Void MLHookLog(Text msg) {
     SendCustomEvent("MLHook_LogMe_RaceStats", [msg]);
 }
 
-Void MLHookOut(PlayerStats[] pss) {
-    SendCustomEvent("MLHook_Event_RaceStats", [pss.tojson()]);
+Integer GetBestRaceTime(CSmPlayer Player) {
+    if (Player.Score.BestRaceTimes.count == 0) return -1;
+    return Player.Score.BestRaceTimes[Player.Score.BestRaceTimes.count - 1];
+}
+
+// send a complete list of players every now and then.
+Void SendActivePlayers() {
+    declare Text activePlayerNames = "";
+    declare Text bestTimes = "";
+    foreach (Player in Players) {
+        if (activePlayerNames == "") {
+            activePlayerNames = Player.User.Name;
+            bestTimes = ""^GetBestRaceTime(Player);
+        } else {
+            activePlayerNames = activePlayerNames^","^Player.User.Name;
+            bestTimes = bestTimes^","^GetBestRaceTime(Player);
+        }
+    }
+    SendCustomEvent("MLHook_Event_RaceStats_ActivePlayers", [activePlayerNames, bestTimes]);
+}
+
+// we only want to send info when a player's CP count changes.
+declare Integer[Text] LastCPCounts;
+
+Void SendPlayerLatestCP(CSmPlayer Player) {
+    declare Name = Player.User.Name;
+    declare CPCount = Player.RaceWaypointTimes.count;
+    // update condition: the key doesn't exist, or cp counts changed = > not (key exists AND cp counts same)
+    if (!(LastCPCounts.existskey(Name) && CPCount == LastCPCounts[Name])) {
+        LastCPCounts[Name] = CPCount;
+        declare LatestCPTime = "";
+        if (CPCount > 0) {
+            LatestCPTime = ""^Player.RaceWaypointTimes[CPCount - 1];
+        }
+        // events should be prefixed with "MLHook_Event_" + PageUID.
+        // Suffixes can be applied if multiple types of events are sent.
+        SendCustomEvent("MLHook_Event_RaceStats", [Player.User.Name, ""^CPCount, LatestCPTime]);
+    }
+}
+
+// to start with we want to send all data.
+Void InitialSend() {
+    foreach (Player in Players) {
+        declare Name = Player.User.Name;
+        declare CPCount = Player.RaceWaypointTimes.count;
+        LastCPCounts[Name] = CPCount;
+        declare LatestCPTime = "";
+        if (CPCount > 0) {
+            LatestCPTime = ""^Player.RaceWaypointTimes[CPCount - 1];
+        }
+        SendCustomEvent("MLHook_Event_RaceStats", [Name, ""^CPCount, LatestCPTime]);
+    }
+    MLHookLog("Completed: InitialSend");
 }
 
 Void CheckPlayers() {
-    // MLHookLog("Players.count: "^Players.count);
-    declare PlayerStats[] pss;
     foreach (Player in Players) {
-        pss.add(StatsFromPlayer(Player));
+        SendPlayerLatestCP(Player);
     }
-    MLHookOut(pss);
+}
+
+Void CheckMapChange() {
+    if (Map != Null && Map.MapInfo.MapUid != G_PreviousMapUid) {
+        G_PreviousMapUid = Map.MapInfo.MapUid;
+        LastCPCounts = [];
+    }
 }
 
 main() {
+    declare Integer LoopCounter = 0;
+    MLHookLog("Starting RaceStatsFeed");
+    while (Players.count == 0) {
+        yield;
+    }
+    MLHookLog("RaceStatsFeed got init players");
+    yield;
+    InitialSend();
+    MLHookLog("RaceStatsFeed did init send");
     while (True) {
         yield;
         CheckPlayers();
+        LoopCounter += 1;
+        if (LoopCounter % 60 == 0) {
+            SendActivePlayers();
+            CheckMapChange();
+        }
     }
 }
-
---></script>

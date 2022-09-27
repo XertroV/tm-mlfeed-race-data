@@ -1,0 +1,51 @@
+// this script sends everything each frame json encoded
+// so performance is mb not great
+
+#Struct PlayerStats {
+    Text Name;
+    CSmPlayer::ESpawnStatus SpawnStatus;
+    Integer[] CurrentLapTimes;
+    Integer[] CurrentRaceTimes;
+    Integer CurrentLapTime;
+    Integer CurrentRaceTime;
+}
+
+PlayerStats StatsFromPlayer(CSmPlayer Player) {
+    declare PlayerStats ret  = PlayerStats {
+        Name = Player.User.Name,
+        SpawnStatus = Player.SpawnStatus,
+        CurrentLapTime = Player.CurrentLapTime,
+        CurrentRaceTime = Player.CurrentRaceTime
+    };
+    foreach (t in Player.CurrentLapWaypointTimes) {
+        ret.CurrentLapTimes.add(t);
+    }
+    foreach (t in Player.RaceWaypointTimes) {
+        ret.CurrentRaceTimes.add(t);
+    }
+    return ret;
+}
+
+Void MLHookLog(Text msg) {
+    SendCustomEvent("MLHook_LogMe_RaceStats", [msg]);
+}
+
+Void MLHookOut(PlayerStats pss) {
+    SendCustomEvent("MLHook_Event_RaceStats_Stream", pss.tojson());
+}
+
+Void CheckPlayers() {
+    // MLHookLog("Players.count: "^Players.count);
+    declare PlayerStats[] pss;
+    foreach (Player in Players) {
+        pss.add(StatsFromPlayer(Player));
+    }
+    MLHookOut(pss);
+}
+
+main() {
+    while (True) {
+        yield;
+        CheckPlayers();
+    }
+}
