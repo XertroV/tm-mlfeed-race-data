@@ -15,7 +15,7 @@ todo show green when players fin
 
  */
 void Main() {
-    MLHook::RequireVersionApi('0.1.5');
+    MLHook::RequireVersionApi('0.2.0');
     startnew(InitCoro);
 #if DEV
     // startnew(CheckVis);
@@ -24,18 +24,13 @@ void Main() {
 
 void Update(float dt) {
 #if DEV
-    DrawPlayers();
+    // DrawPlayers();
 #endif
-}
-
-// todo: move to MLHook
-string ToMLScript(const string &in src) {
-    return "\n<script><!--\n\n" + src + "\n\n--></script>\n";
 }
 
 void InitCoro() {
     IO::FileSource refreshCode("RaceStatsFeed.Script.txt");
-    string manialinkScript = ToMLScript(refreshCode.ReadToEnd());
+    string manialinkScript = refreshCode.ReadToEnd();
     yield();
     auto hook = HookRaceStatsEvents();
     @theHook = hook;
@@ -45,8 +40,11 @@ void InitCoro() {
     yield();
     MLHook::InjectManialinkToPlayground("RaceStatsFeed", manialinkScript, true);
     //---------
+    auto cotdHook = MLHook::DebugLogAllHook("MLHook_Event_CotdKoFeed");
+    MLHook::RegisterMLHook(cotdHook, "CotdKoFeed_PlayerStatus");
+    MLHook::RegisterMLHook(cotdHook, "CotdKoFeed_MatchKeyPair");
     IO::FileSource cotdML("CotdKoFeed.Script.txt");
-    MLHook::InjectManialinkToPlayground("CotdKoFeed", ToMLScript(cotdML.ReadToEnd()), true);
+    MLHook::InjectManialinkToPlayground("CotdKoFeed", cotdML.ReadToEnd(), true);
     startnew(CotdKoFeedMainCoro);
 }
 

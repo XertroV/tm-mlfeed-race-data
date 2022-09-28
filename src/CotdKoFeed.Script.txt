@@ -1,5 +1,21 @@
 // CotdKoFeed.Script.txt
 
+// logging function, should be "MLHook_LogMe_" + PageUID
+Void MLHookLog(Text msg) {
+    SendCustomEvent("MLHook_LogMe_CotdKoFeed", [msg]);
+}
+
+Void MLHookUpdatePlayerStatus(Text UserId, Boolean IsAlive, Boolean IsDNF) {
+    declare Payload = [UserId, ""^IsAlive, ""^IsDNF];
+    SendCustomEvent("MLHook_Event_CotdKoFeed_PlayerStatus", Payload);
+    MLHookLog("PlayerStatus: " ^ Payload);
+}
+
+Void MLHookUpdateKP(Text Key, Text Value) {
+    SendCustomEvent("MLHook_Event_CotdKoFeed_MatchKeyPair", [Key, Value]);
+    MLHookLog("MatchKeyPair: " ^ [Key, Value]);
+}
+
 /**
 todo: do anything with these?
 declare netread Boolean Net_Knockout_KnockedOutPlayers_DisplayContent for Teams[0] = False;
@@ -7,14 +23,6 @@ declare netread Text[] Net_Knockout_KnockedOutPlayers_AccountIds for Teams[0];
 declare netread Integer[] Net_Knockout_KnockedOutPlayers_Ranks for Teams[0];
 declare netread Integer Net_Knockout_KnockedOutPlayers_EliminatedPlayerUpdate for Teams[0];
 */
-
-Void MLHookUpdatePlayerStatus(Text UserId, Boolean IsAlive, Boolean IsDNF) {
-    SendCustomEvent("MLHook_CotdKo_Feed", [UserId, ""^IsAlive, ""^IsDNF]);
-}
-
-Void MLHookUpdateKP(Text Key, Text Value) {
-    SendCustomEvent("MLHook_Event_CotdKoFeed_KeyPair", [Key, Value]);
-}
 
 declare Boolean[Text] ScoreLastAlive;
 declare Boolean[Text] ScoreLastDNF;
@@ -52,7 +60,7 @@ Void CheckRoundUpdates() {
     declare netread Integer Net_Knockout_KnockoutInfo_KOsNumber for Teams[0];
     declare netread Integer Net_Knockout_KnockoutInfo_KOsMilestone for Teams[0];
     declare netread Integer Net_Knockout_KnockoutInfo_RankingUpdate for Teams[0];
-    declare netread Integer Net_Knockout_KnockoutInfo_ServerNumber for Teams[0];
+    declare netread Integer Net_Knockout_KnockoutInfo_ServerNumber for Teams[0] = 1;
     if (Last_KOI_MapRoundNb != Net_Knockout_KnockoutInfo_MapRoundNb) {
         Last_KOI_MapRoundNb = Net_Knockout_KnockoutInfo_MapRoundNb;
         MLHookUpdateKP("MapRoundNb", ""^Net_Knockout_KnockoutInfo_MapRoundNb);
@@ -117,6 +125,7 @@ Void CheckGMChange() {
     foreach (Event in MLHook_Inbound_CotdKoFeed) {
         if (Event[0] == "SetGameMode") {
             CurrentGameMode = Event[1];
+            MLHookLog("Set new GameMode: "^CurrentGameMode);
         }
     }
     MLHook_Inbound_CotdKoFeed = [];
@@ -127,9 +136,9 @@ main() {
         yield;
         CheckMapChange();
         CheckGMChange();
+        CheckRoundUpdates();
         if (CurrentGameMode == "TM_KnockoutDaily_Online") {
             UpdatePlayerStatus();
-            CheckRoundUpdates();
         }
     }
 }
