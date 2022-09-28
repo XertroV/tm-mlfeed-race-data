@@ -6,16 +6,26 @@ UI::Font@ subheadingFont = UI::LoadFont("DroidSans.ttf", 18, -1, -1, true, true)
 
 enum Cmp {Lt = -1, Eq = 0, Gt = 1}
 
+string ThePlayersLogin;
+
+/*
+
+todo show green when players fin
+
+
+ */
 void Main() {
     MLHook::RequireVersionApi('0.1.5');
     startnew(InitCoro);
 #if DEV
-    startnew(CheckVis);
+    // startnew(CheckVis);
 #endif
 }
 
 void Update(float dt) {
+#if DEV
     DrawPlayers();
+#endif
 }
 
 void InitCoro() {
@@ -51,23 +61,23 @@ void DrawMainInterior() {
     if (theHook is null) return;
     if (theHook.latestPlayerStats is null) return;
     if (theHook.sortedPlayers.Length == 0) return;
-    UI::Text("" + theHook.sortedPlayers.Length + " Players");
+    UI::Text("" + theHook.sortedPlayers.Length + " Players / " + theHook.CpCount + " Checkpoints");
     // SizingFixedFit / fixedsame / strechsame / strechprop
     if (UI::BeginTable("player times", 4, UI::TableFlags::SizingStretchProp)) {
-        // UI::TableSetupColumn("Time", UI::TableColumnFlags::WidthFixed, 50);
-        // UI::TableSetupColumn("Type", UI::TableColumnFlags::WidthFixed, 200);
         UI::TableSetupColumn("Player");
         UI::TableSetupColumn("CP #");
         UI::TableSetupColumn("CP Lap Time");
         UI::TableSetupColumn("Best Time");
-        // UI::TableSetupColumn("Lap Time");
-        // UI::TableSetupColumn("Race Time");
         UI::TableHeadersRow();
 
-        // auto playerIds = theHook.latestPlayerStats.GetKeys();
-        // theHook.latestPlayerStats.GetValues();
         for (uint i = 0; i < theHook.sortedPlayers.Length; i++) {
+            uint colVars = 1;
             auto player = cast<PlayerCpInfo>(theHook.sortedPlayers[i]);
+            if (player.cpCount > theHook.CpCount) { // finished
+                UI::PushStyleColor(UI::Col::Text, vec4(.1, .9, .1, .85));
+            } else {
+                UI::PushStyleColor(UI::Col::ChildBg, vec4(.1, .1, .1, .0));
+            }
             UI::TableNextRow();
             UI::TableNextColumn();
             UI::Text(player.name);
@@ -84,16 +94,7 @@ void DrawMainInterior() {
             if (bt > 0) {
                 UI::Text(MsToSeconds(bt));
             }
-            // if (player.CurrentLapTimes.Length > 0)
-            //     UI::Text(Text::Format("%.3f", float(player.CurrentLapTimes[player.CurrentLapTimes.Length - 1]) / 1000.0));
-            // else
-            //     UI::Text('---');
-            // UI::TableNextColumn();
-            // if (player.CurrentLapTime < 100000)
-            //     UI::Text(Text::Format("%.3f", float(player.CurrentLapTime) / 1000.0));
-            // UI::TableNextColumn();
-            // if (player.CurrentRaceTime < 100000)
-            //     UI::Text(Text::Format("%.3f", float(player.CurrentRaceTime) / 1000.0));
+            UI::PopStyleColor(colVars);
         }
         UI::EndTable();
     }
@@ -163,6 +164,7 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
     dictionary latestPlayerStats;
     dictionary bestTimes;
     array<PlayerCpInfo@> sortedPlayers;
+    uint CpCount;
 
     void MainCoro() {
         while (true) {
@@ -228,13 +230,61 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
     void OnMapChange() {
         latestPlayerStats.DeleteAll();
         sortedPlayers.RemoveRange(0, sortedPlayers.Length);
+        CpCount = 0;
+        if (CurrentMap != "") {
+            startnew(CoroutineFunc(SetCheckpointCount));
+        }
+        trails.DeleteAll();
+        visLookup.DeleteAll();
     }
 
     string get_CurrentMap() const {
         auto map = GetApp().RootMap;
         if (map is null) return "";
-        return map.EdChallengeId;
+        // return map.EdChallengeId;
+        return map.MapInfo.MapUid;
     }
+
+    void SetCheckpointCount() {
+        while (cp is null) {
+            yield();
+        }
+        auto landmarks = cp.Arena.MapLandmarks;
+        uint cpCount = 0;
+        auto lcps = dictionary();
+        for (uint i = 0; i < landmarks.Length; i++) {
+            auto landmark = cast<CSmScriptMapLandmark>(landmarks[i]);
+            if (landmark is null) continue;
+            auto waypoint = landmark.Waypoint;
+            if (waypoint is null || waypoint.IsMultiLap || waypoint.IsFinish) continue;
+            if (landmark.Tag == "Checkpoint") {
+                cpCount++;
+                continue;
+            }
+            if (landmark.Tag == "LinkedCheckpoint") {
+                lcps.Set('' + landmark.Order, true);
+                continue;
+            }
+        }
+        this.CpCount = cpCount + lcps.GetSize();
+    }
+}
+
+
+// current playground
+CSmArenaClient@ get_cp() {
+    return cast<CSmArenaClient>(GetApp().CurrentPlayground);
+}
+
+string _localUserLogin;
+string get_LocalUserLogin() {
+    if (_localUserLogin.Length == 0) {
+        auto pcsa = GetApp().Network.PlaygroundClientScriptAPI;
+        if (pcsa !is null && pcsa.LocalUser !is null) {
+            _localUserLogin = pcsa.LocalUser.Login;
+        }
+    }
+    return _localUserLogin;
 }
 
 
@@ -279,7 +329,75 @@ void CheckVis() {
 }
 
 
+// auto nPlayers = cpg.Players.Length;
+
+// array<PlayerTrail@> trails;
+dictionary@ trails = dictionary();
+dictionary@ visLookup = dictionary();
+
 void DrawPlayers() {
+    auto cpg = cast<CSmArenaClient>(GetApp().CurrentPlayground);
+    if (cpg is null) return;
+    auto scene = cpg.GameScene;
+    auto players = cpg.Players;
+    for (uint i = 0; i < players.Length; i++) {
+        auto player = cast<CSmPlayer>(players[i]);
+        if (player is null || player.User.Login == LocalUserLogin) continue;
+        auto vis = cast<CSceneVehicleVis>(visLookup[player.User.Name]);
+        if (vis is null) {
+            @vis = VehicleState::GetVis(scene, player);
+            @visLookup[player.User.Name] = vis;
+        }
+        if (vis is null) continue; // something went wrong
+        // DrawIndicator(vis.AsyncState);
+        // trail
+        // print(player.User.Name);
+        auto trail = cast<PlayerTrail>(trails[player.User.Name]);
+        if (trail is null) {
+            @trail = PlayerTrail();
+            @trails[player.User.Name] = trail;
+        }
+        trail.AddPoint(vis.AsyncState.Position, vis.AsyncState.Dir, vis.AsyncState.Left);
+        trail.DrawPath();
+    }
+
+    // auto allVis = VehicleState::GetAllVis(scene);
+    // // if (allVis.Length != trails.Length) trails.Resize()
+    // for (uint i = 0; i < allVis.Length; i++) {
+    //     DrawIndicator(allVis[i].AsyncState);
+    //     // if (!trails.Exists())
+    //     // CPlugVehicleVisModel
+    //     print(allVis[i].Model.Id.Value);
+    // }
+}
+
+void DrawIndicator(CSceneVehicleVisState@ vis) {
+    if (Camera::IsBehind(vis.Position)) return;
+    auto uv = Camera::ToScreenSpace(vis.Position); // possible div by 0
+    auto gear = vis.CurGear;
+    vec4 col;
+    switch(gear) {
+        case 0: col = vec4(.1, .1, .5, .5); break;
+        case 1: col = vec4(.1, .4, .9, .5); break;
+        case 2: col = vec4(.1, .9, .4, .5); break;
+        case 3: col = vec4(.4, .9, .4, .5); break;
+        case 4: col = vec4(.9, .4, .1, .5); break;
+        case 5: col = vec4(.9, .1, .1, .5); break;
+        default: col = vec4(.9, .1, .6, .5); print('unknown gear: ' + gear);
+    }
+    DrawPlayerIndicatorAt(uv, col);
+}
+
+void DrawPlayerIndicatorAt(vec2 uv, vec4 col) {
+    nvg::BeginPath();
+    nvg::RoundedRect(uv - vec2(20, 20)/2, vec2(20, 20), 4);
+    nvg::FillColor(col);
+    nvg::Fill();
+    nvg::ClosePath();
+}
+
+
+void DrawPlayerLights() {
     auto cpg = cast<CSmArenaClient>(GetApp().CurrentPlayground);
     if (cpg is null) return;
     auto nPlayers = cpg.Players.Length;
