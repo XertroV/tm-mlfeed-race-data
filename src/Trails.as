@@ -1,7 +1,7 @@
 [Setting hidden]
 uint TrailPointsLength = 5000;
 [Setting hidden]
-uint TrailPointsToDraw = 30;
+uint TrailPointsToDraw = 10;
 
 vec4 RandVec4Color() {
     return vec4(
@@ -45,10 +45,10 @@ class PlayerTrail {
                     uint _ix = (pathIx - i + TrailPointsLength) % TrailPointsLength;
                     p = path[_ix] + (dirs[_ix] * dSign * 1.9) + (lefts[_ix] * lr * 0.9);
                     if (p.LengthSquared() == 0) continue;
-                    if (lp.LengthSquared() > 0 && (lp - p).LengthSquared() > 400) break;
+                    bool skipDraw = lp.LengthSquared() > 0 && (lp - p).LengthSquared() > 400;
                     try { // sometimes we get a div by 0 error in Camera.Impl:25
                         if (Camera::IsBehind(p)) break;
-                        if (i == 0)
+                        if (i == 0 || skipDraw)
                             nvg::MoveTo(Camera::ToScreenSpace(p));
                         else
                             nvg::LineTo(Camera::ToScreenSpace(p));

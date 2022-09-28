@@ -28,9 +28,14 @@ void Update(float dt) {
 #endif
 }
 
+// todo: move to MLHook
+string ToMLScript(const string &in src) {
+    return "\n<script><!--\n\n" + src + "\n\n--></script>\n";
+}
+
 void InitCoro() {
     IO::FileSource refreshCode("RaceStatsFeed.Script.txt");
-    string manialinkScript = "\n<script><!--\n\n" + refreshCode.ReadToEnd() + "\n\n--></script>\n";
+    string manialinkScript = ToMLScript(refreshCode.ReadToEnd());
     yield();
     auto hook = HookRaceStatsEvents();
     @theHook = hook;
@@ -39,6 +44,10 @@ void InitCoro() {
     MLHook::RegisterMLHook(hook, "RaceStats_ActivePlayers");
     yield();
     MLHook::InjectManialinkToPlayground("RaceStatsFeed", manialinkScript, true);
+    //---------
+    IO::FileSource cotdML("CotdKoFeed.Script.txt");
+    MLHook::InjectManialinkToPlayground("CotdKoFeed", ToMLScript(cotdML.ReadToEnd()), true);
+    startnew(CotdKoFeedMainCoro);
 }
 
 void RenderInterface() {
@@ -361,6 +370,7 @@ void DrawPlayers() {
         trail.DrawPath();
     }
 
+    // probs a bit faster, but also draws ghosts
     // auto allVis = VehicleState::GetAllVis(scene);
     // // if (allVis.Length != trails.Length) trails.Resize()
     // for (uint i = 0; i < allVis.Length; i++) {

@@ -1,0 +1,135 @@
+// CotdKoFeed.Script.txt
+
+/**
+todo: do anything with these?
+declare netread Boolean Net_Knockout_KnockedOutPlayers_DisplayContent for Teams[0] = False;
+declare netread Text[] Net_Knockout_KnockedOutPlayers_AccountIds for Teams[0];
+declare netread Integer[] Net_Knockout_KnockedOutPlayers_Ranks for Teams[0];
+declare netread Integer Net_Knockout_KnockedOutPlayers_EliminatedPlayerUpdate for Teams[0];
+*/
+
+Void MLHookUpdatePlayerStatus(Text UserId, Boolean IsAlive, Boolean IsDNF) {
+    SendCustomEvent("MLHook_CotdKo_Feed", [UserId, ""^IsAlive, ""^IsDNF]);
+}
+
+Void MLHookUpdateKP(Text Key, Text Value) {
+    SendCustomEvent("MLHook_Event_CotdKoFeed_KeyPair", [Key, Value]);
+}
+
+declare Boolean[Text] ScoreLastAlive;
+declare Boolean[Text] ScoreLastDNF;
+
+Void UpdatePlayerStatus() {
+    foreach (Score in Scores) {
+        declare netread Boolean Net_Knockout_PlayerIsAlive for Score;
+        declare netread Boolean Net_Knockout_DNF for Score;
+        declare Text UserId = Score.User.Name;
+        if (ScoreLastAlive[UserId] != Net_Knockout_PlayerIsAlive
+            || ScoreLastDNF[UserId] != Net_Knockout_DNF) {
+                MLHookUpdatePlayerStatus(UserId, Net_Knockout_PlayerIsAlive, Net_Knockout_DNF);
+                ScoreLastAlive[UserId] = Net_Knockout_PlayerIsAlive;
+                ScoreLastDNF[UserId] = Net_Knockout_DNF;
+            }
+    }
+}
+
+declare Integer Last_KOI_MapRoundNb;
+declare Integer Last_KOI_MapRoundTotal;
+declare Integer Last_KOI_RoundNb;
+declare Integer Last_KOI_RoundTotal;
+declare Integer Last_KOI_PlayersNb;
+declare Integer Last_KOI_KOsNumber;
+declare Integer Last_KOI_KOsMilestone;
+declare Integer Last_KOI_RankingUpdate;
+declare Integer Last_KOI_ServerNumber;
+
+Void CheckRoundUpdates() {
+    declare netread Integer Net_Knockout_KnockoutInfo_MapRoundNb for Teams[0];
+    declare netread Integer Net_Knockout_KnockoutInfo_MapRoundTotal for Teams[0];
+    declare netread Integer Net_Knockout_KnockoutInfo_RoundNb for Teams[0];
+    declare netread Integer Net_Knockout_KnockoutInfo_RoundTotal for Teams[0];
+    declare netread Integer Net_Knockout_KnockoutInfo_PlayersNb for Teams[0];
+    declare netread Integer Net_Knockout_KnockoutInfo_KOsNumber for Teams[0];
+    declare netread Integer Net_Knockout_KnockoutInfo_KOsMilestone for Teams[0];
+    declare netread Integer Net_Knockout_KnockoutInfo_RankingUpdate for Teams[0];
+    declare netread Integer Net_Knockout_KnockoutInfo_ServerNumber for Teams[0];
+    if (Last_KOI_MapRoundNb != Net_Knockout_KnockoutInfo_MapRoundNb) {
+        Last_KOI_MapRoundNb = Net_Knockout_KnockoutInfo_MapRoundNb;
+        MLHookUpdateKP("MapRoundNb", ""^Net_Knockout_KnockoutInfo_MapRoundNb);
+    }
+    if (Last_KOI_MapRoundTotal != Net_Knockout_KnockoutInfo_MapRoundTotal) {
+        Last_KOI_MapRoundTotal = Net_Knockout_KnockoutInfo_MapRoundTotal;
+        MLHookUpdateKP("MapRoundTotal", ""^Net_Knockout_KnockoutInfo_MapRoundTotal);
+    }
+    if (Last_KOI_RoundNb != Net_Knockout_KnockoutInfo_RoundNb) {
+        Last_KOI_RoundNb = Net_Knockout_KnockoutInfo_RoundNb;
+        MLHookUpdateKP("RoundNb", ""^Net_Knockout_KnockoutInfo_RoundNb);
+    }
+    if (Last_KOI_RoundTotal != Net_Knockout_KnockoutInfo_RoundTotal) {
+        Last_KOI_RoundTotal = Net_Knockout_KnockoutInfo_RoundTotal;
+        MLHookUpdateKP("RoundTotal", ""^Net_Knockout_KnockoutInfo_RoundTotal);
+    }
+    if (Last_KOI_PlayersNb != Net_Knockout_KnockoutInfo_PlayersNb) {
+        Last_KOI_PlayersNb = Net_Knockout_KnockoutInfo_PlayersNb;
+        MLHookUpdateKP("PlayersNb", ""^Net_Knockout_KnockoutInfo_PlayersNb);
+    }
+    if (Last_KOI_KOsNumber != Net_Knockout_KnockoutInfo_KOsNumber) {
+        Last_KOI_KOsNumber = Net_Knockout_KnockoutInfo_KOsNumber;
+        MLHookUpdateKP("KOsNumber", ""^Net_Knockout_KnockoutInfo_KOsNumber);
+    }
+    if (Last_KOI_KOsMilestone != Net_Knockout_KnockoutInfo_KOsMilestone) {
+        Last_KOI_KOsMilestone = Net_Knockout_KnockoutInfo_KOsMilestone;
+        MLHookUpdateKP("KOsMilestone", ""^Net_Knockout_KnockoutInfo_KOsMilestone);
+    }
+    if (Last_KOI_RankingUpdate != Net_Knockout_KnockoutInfo_RankingUpdate) {
+        Last_KOI_RankingUpdate = Net_Knockout_KnockoutInfo_RankingUpdate;
+        MLHookUpdateKP("RankingUpdate", ""^Net_Knockout_KnockoutInfo_RankingUpdate);
+    }
+    if (Last_KOI_ServerNumber != Net_Knockout_KnockoutInfo_ServerNumber) {
+        Last_KOI_ServerNumber = Net_Knockout_KnockoutInfo_ServerNumber;
+        MLHookUpdateKP("ServerNumber", ""^Net_Knockout_KnockoutInfo_ServerNumber);
+    }
+}
+
+declare Text G_PreviousMapUid;
+
+Void CheckMapChange() {
+    if (Map != Null && Map.MapInfo.MapUid != G_PreviousMapUid) {
+        G_PreviousMapUid = Map.MapInfo.MapUid;
+        Last_KOI_MapRoundNb = 0;
+        Last_KOI_MapRoundTotal = 0;
+        Last_KOI_RoundNb = 0;
+        Last_KOI_RoundTotal = 0;
+        Last_KOI_PlayersNb = 0;
+        Last_KOI_KOsNumber = 0;
+        Last_KOI_KOsMilestone = 0;
+        Last_KOI_RankingUpdate = 0;
+        Last_KOI_ServerNumber = 0;
+        ScoreLastAlive = [];
+        ScoreLastDNF = [];
+    }
+}
+
+declare Text CurrentGameMode;
+
+Void CheckGMChange() {
+    declare Text[][] MLHook_Inbound_CotdKoFeed for ClientUI;
+    foreach (Event in MLHook_Inbound_CotdKoFeed) {
+        if (Event[0] == "SetGameMode") {
+            CurrentGameMode = Event[1];
+        }
+    }
+    MLHook_Inbound_CotdKoFeed = [];
+}
+
+main() {
+    while (True) {
+        yield;
+        CheckMapChange();
+        CheckGMChange();
+        if (CurrentGameMode == "TM_KnockoutDaily_Online") {
+            UpdatePlayerStatus();
+            CheckRoundUpdates();
+        }
+    }
+}
