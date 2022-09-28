@@ -60,7 +60,7 @@ Void CheckRoundUpdates() {
     declare netread Integer Net_Knockout_KnockoutInfo_KOsNumber for Teams[0];
     declare netread Integer Net_Knockout_KnockoutInfo_KOsMilestone for Teams[0];
     declare netread Integer Net_Knockout_KnockoutInfo_RankingUpdate for Teams[0];
-    declare netread Integer Net_Knockout_KnockoutInfo_ServerNumber for Teams[0] = 1;
+    declare netread Integer Net_Knockout_KnockoutInfo_ServerNumber for Teams[0];
     if (Last_KOI_MapRoundNb != Net_Knockout_KnockoutInfo_MapRoundNb) {
         Last_KOI_MapRoundNb = Net_Knockout_KnockoutInfo_MapRoundNb;
         MLHookUpdateKP("MapRoundNb", ""^Net_Knockout_KnockoutInfo_MapRoundNb);
@@ -136,8 +136,8 @@ main() {
         yield;
         CheckMapChange();
         CheckGMChange();
-        CheckRoundUpdates();
         if (CurrentGameMode == "TM_KnockoutDaily_Online") {
+            CheckRoundUpdates();
             UpdatePlayerStatus();
         }
     }

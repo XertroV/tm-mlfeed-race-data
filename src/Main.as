@@ -29,14 +29,14 @@ void Update(float dt) {
 }
 
 void InitCoro() {
-    IO::FileSource refreshCode("RaceStatsFeed.Script.txt");
-    string manialinkScript = refreshCode.ReadToEnd();
-    yield();
     auto hook = HookRaceStatsEvents();
     @theHook = hook;
     startnew(CoroutineFunc(hook.MainCoro));
     MLHook::RegisterMLHook(hook, "RaceStats");
     MLHook::RegisterMLHook(hook, "RaceStats_ActivePlayers");
+    yield();
+    IO::FileSource refreshCode("RaceStatsFeed.Script.txt");
+    string manialinkScript = refreshCode.ReadToEnd();
     yield();
     MLHook::InjectManialinkToPlayground("RaceStatsFeed", manialinkScript, true);
     //---------
@@ -64,13 +64,36 @@ void RenderMenu() {
     }
 }
 
+enum SortMethod {
+    Race, TimeAttack
+}
+
+SortMethod[] AllSortMethods = {Race, TimeAttack};
+
+[Setting hidden]
+SortMethod g_sortMethod = SortMethod::TimeAttack;
+
 void DrawMainInterior() {
     if (theHook is null) return;
     if (theHook.latestPlayerStats is null) return;
     if (theHook.sortedPlayers.Length == 0) return;
+
     UI::Text("" + theHook.sortedPlayers.Length + " Players / " + theHook.CpCount + " Checkpoints");
+
+    if (UI::BeginCombo("Sort Method", tostring(g_sortMethod))) {
+        for (uint i = 0; i < AllSortMethods.Length; i++) {
+            auto item = AllSortMethods[i];
+            if (UI::Selectable(tostring(item), item == g_sortMethod)) {
+                g_sortMethod = item;
+                if (theHook !is null) theHook.UpdateSortedPlayers();
+            }
+        }
+        UI::EndCombo();
+    }
+
     // SizingFixedFit / fixedsame / strechsame / strechprop
-    if (UI::BeginTable("player times", 4, UI::TableFlags::SizingStretchProp)) {
+    if (UI::BeginTable("player times", 5, UI::TableFlags::SizingStretchProp | UI::TableFlags::ScrollY)) {
+        UI::TableSetupColumn("Pos.");
         UI::TableSetupColumn("Player");
         UI::TableSetupColumn("CP #");
         UI::TableSetupColumn("CP Lap Time");
@@ -83,9 +106,12 @@ void DrawMainInterior() {
             if (player.cpCount > theHook.CpCount) { // finished
                 UI::PushStyleColor(UI::Col::Text, vec4(.1, .9, .1, .85));
             } else {
+                // does nothing
                 UI::PushStyleColor(UI::Col::ChildBg, vec4(.1, .1, .1, .0));
             }
             UI::TableNextRow();
+            UI::TableNextColumn();
+            UI::Text("" + (i + 1) + ".");
             UI::TableNextColumn();
             UI::Text(player.name);
             UI::TableNextColumn();
@@ -119,6 +145,18 @@ CGameManiaAppPlayground@ get_cmap() {
     return app.Network.ClientManiaAppPlayground;
 }
 
+
+Cmp cmpPlayerCpInfo(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
+    switch (g_sortMethod) {
+        case SortMethod::Race: return cmpRace(p1, p2);
+        case SortMethod::TimeAttack: return cmpTimeAttack(p1, p2);
+        // default: break;
+    }
+    warn("Unknown sort method: " + tostring(g_sortMethod));
+    return Cmp::Eq;
+}
+
+
 Cmp cmpRace(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
     // if we have the same CPs, lowest time is better
     if (p1.cpCount == p2.cpCount)
@@ -128,14 +166,13 @@ Cmp cmpRace(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
     return Cmp::Gt;
 }
 
-// Cmp cmpTimeAttack(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
-//     // start isn't synchronized
-//     // idea 1: sort by fastest progress
-//     // - a player should be above everyone given their pace at that CP
-//     // - not based on % progression
-//     // todo: probably need a different data structure
-//     return Cmp::Eq;
-// }
+Cmp cmpTimeAttack(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
+    if (p1.bestTime < 0) return Cmp::Gt;
+    if (p2.bestTime < 0) return Cmp::Lt;
+    if (p1.bestTime < p2.bestTime) return Cmp::Lt;
+    if (p1.bestTime == p2.bestTime) return Cmp::Eq;
+    return Cmp::Gt;
+}
 
 Cmp cmpInt(int a, int b) {
     if (a < b) return Cmp::Lt;
@@ -147,17 +184,20 @@ class PlayerCpInfo {
     string name;
     int cpCount;
     int lastCpTime;
+    int bestTime;
     PlayerCpInfo(MwFastBuffer<wstring> &in msg) {
-        if (msg.Length < 3) {
+        if (msg.Length < 4) {
             warn('PlayerCpInfo msg had insufficient length');
             return;
         }
         name = msg[0];
         cpCount = Text::ParseInt(msg[1]);
         lastCpTime = Text::ParseInt(msg[2]);
+        bestTime = Text::ParseInt(msg[3]);
+        if (theHook !is null) theHook.bestTimes[name] = bestTime;
     }
     int opCmp(PlayerCpInfo@ other) {
-        return int(cmpRace(this, other));
+        return int(cmpPlayerCpInfo(this, other));
     }
 }
 

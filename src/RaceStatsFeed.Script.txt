@@ -6,6 +6,7 @@ Void MLHookLog(Text msg) {
 }
 
 Integer GetBestRaceTime(CSmPlayer Player) {
+    if (Player == Null || Player.Score == Null) return -1;
     if (Player.Score.BestRaceTimes.count == 0) return -1;
     return Player.Score.BestRaceTimes[Player.Score.BestRaceTimes.count - 1];
 }
@@ -54,7 +55,7 @@ Void SendPlayerLatestCP(CSmPlayer Player) {
         }
         // events should be prefixed with "MLHook_Event_" + PageUID.
         // Suffixes can be applied if multiple types of events are sent.
-        SendCustomEvent("MLHook_Event_RaceStats", [Player.User.Name, ""^CPCount, LatestCPTime]);
+        SendCustomEvent("MLHook_Event_RaceStats", [Player.User.Name, ""^CPCount, LatestCPTime, ""^GetBestRaceTime(Player)]);
     }
 }
 
