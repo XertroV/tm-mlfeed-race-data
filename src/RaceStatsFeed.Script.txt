@@ -74,7 +74,7 @@ Void InitialSend() {
         if (CPCount > 0) {
             LatestCPTime = ""^Player.RaceWaypointTimes[CPCount - 1];
         }
-        SendCustomEvent("MLHook_Event_RaceStats", [Name, ""^CPCount, LatestCPTime]);
+        SendCustomEvent("MLHook_Event_RaceStats", [Name, ""^CPCount, LatestCPTime, ""^GetBestRaceTime(Player)]);
     }
     MLHookLog("Completed: InitialSend");
 }
@@ -92,6 +92,17 @@ Void CheckMapChange() {
     }
 }
 
+Void CheckIncoming() {
+    declare Text[][] MLHook_Inbound_RaceStats for ClientUI;
+    foreach (Event in MLHook_Inbound_RaceStats) {
+        if (Event[0] == "SendAllPlayerStates") {
+            InitialSend();
+        }
+        MLHookLog("Processed Incoming Event: "^Event[0]);
+    }
+    MLHook_Inbound_RaceStats = [];
+}
+
 main() {
     declare Integer LoopCounter = 0;
     MLHookLog("Starting RaceStatsFeed");
@@ -100,8 +111,8 @@ main() {
     }
     MLHookLog("RaceStatsFeed got init players");
     yield;
-    InitialSend();
-    MLHookLog("RaceStatsFeed did init send");
+    // InitialSend();
+    // MLHookLog("RaceStatsFeed did init send");
     while (True) {
         yield;
         CheckPlayers();
@@ -109,6 +120,9 @@ main() {
         if (LoopCounter % 60 == 0) {
             SendActivePlayers();
             CheckMapChange();
+        }
+        if (LoopCounter % 60 == 20) {
+            CheckIncoming();
         }
     }
 }

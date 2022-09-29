@@ -1,14 +1,21 @@
+[Setting category="Trails"]
+bool Setting_DrawTrails = false;
+[Setting category="Trails" description="Draws 4 lines per car instead of 1. 4x the load."]
+bool Setting_Draw4Wheels = false;
 [Setting hidden]
-uint TrailPointsLength = 5000;
-[Setting hidden]
+uint TrailPointsLength = 1000;
+[Setting category="Trails" min="1" max="300" description="1 point per frame. Lower = shorter trails but less processing."];
 uint TrailPointsToDraw = 10;
+[Setting category="Trails" min="1" max="20" description="Thickness of trails in px"]
+uint TrailThickness = 3;
+
 
 vec4 RandVec4Color() {
     return vec4(
         Math::Rand(.3, 1.0),
         Math::Rand(.3, 1.0),
         Math::Rand(.3, 1.0),
-        Math::Rand(.7, .9)
+        Math::Rand(.35, .45)
     );
 }
 
@@ -36,8 +43,10 @@ class PlayerTrail {
         lefts[pathIx] = left;
     }
     void DrawPath() {
-        for (float lr = -1; lr <= 1; lr += 2) {
-            for (float dSign = -.7; dSign < 2; dSign += 1.7) {
+        float initLR = Setting_Draw4Wheels ? -1 : 0;
+        float initDSign = Setting_Draw4Wheels ? -.7 : 0;
+        for (float lr = initLR; lr <= 1; lr += 2) {
+            for (float dSign = initDSign; dSign <= 1.01; dSign += 1.7) {
                 nvg::BeginPath();
                 vec3 p;
                 vec3 lp;
@@ -57,7 +66,8 @@ class PlayerTrail {
                     }
                     lp = p;
                 }
-                nvg::StrokeWidth(3.);
+                nvg::LineCap(nvg::LineCapType::Round);
+                nvg::StrokeWidth(float(TrailThickness));
                 nvg::StrokeColor(col);
                 nvg::Stroke();
                 nvg::ClosePath();

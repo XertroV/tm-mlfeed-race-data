@@ -32,7 +32,9 @@ Void UpdatePlayerStatus() {
         declare netread Boolean Net_Knockout_PlayerIsAlive for Score;
         declare netread Boolean Net_Knockout_DNF for Score;
         declare Text UserId = Score.User.Name;
-        if (ScoreLastAlive[UserId] != Net_Knockout_PlayerIsAlive
+        if (!ScoreLastAlive.existskey(UserId)
+            || !ScoreLastDNF.existskey(UserId)
+            || ScoreLastAlive[UserId] != Net_Knockout_PlayerIsAlive
             || ScoreLastDNF[UserId] != Net_Knockout_DNF) {
                 MLHookUpdatePlayerStatus(UserId, Net_Knockout_PlayerIsAlive, Net_Knockout_DNF);
                 ScoreLastAlive[UserId] = Net_Knockout_PlayerIsAlive;

@@ -6,8 +6,6 @@ UI::Font@ subheadingFont = UI::LoadFont("DroidSans.ttf", 18, -1, -1, true, true)
 
 enum Cmp {Lt = -1, Eq = 0, Gt = 1}
 
-string ThePlayersLogin;
-
 /*
 
 todo show green when players fin
@@ -23,9 +21,8 @@ void Main() {
 }
 
 void Update(float dt) {
-#if DEV
-    // DrawPlayers();
-#endif
+    if (Setting_DrawTrails)
+        DrawPlayers();
 }
 
 void InitCoro() {
@@ -105,9 +102,10 @@ void DrawMainInterior() {
             auto player = cast<PlayerCpInfo>(theHook.sortedPlayers[i]);
             if (player.cpCount > theHook.CpCount) { // finished
                 UI::PushStyleColor(UI::Col::Text, vec4(.1, .9, .1, .85));
+            } else if (player.name == LocalUserName) {
+                UI::PushStyleColor(UI::Col::Text, vec4(.9, .1, .6, .85));
             } else {
-                // does nothing
-                UI::PushStyleColor(UI::Col::ChildBg, vec4(.1, .1, .1, .0));
+                UI::PushStyleColor(UI::Col::Text, vec4(1, 1, 1, 1));
             }
             UI::TableNextRow();
             UI::TableNextColumn();
@@ -167,10 +165,10 @@ Cmp cmpRace(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
 }
 
 Cmp cmpTimeAttack(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
+    if (p1.bestTime == p2.bestTime) return cmpRace(p1, p2);
     if (p1.bestTime < 0) return Cmp::Gt;
     if (p2.bestTime < 0) return Cmp::Lt;
     if (p1.bestTime < p2.bestTime) return Cmp::Lt;
-    if (p1.bestTime == p2.bestTime) return Cmp::Eq;
     return Cmp::Gt;
 }
 
@@ -214,6 +212,8 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
     uint CpCount;
 
     void MainCoro() {
+        sleep(50);
+        MLHook::Queue_MessageManialinkPlayground("RaceStats", {"SendAllPlayerStates"});
         while (true) {
             yield();
             while (incoming_msgs.Length > 0) {
@@ -334,6 +334,17 @@ string get_LocalUserLogin() {
     return _localUserLogin;
 }
 
+string _localUserName;
+string get_LocalUserName() {
+    if (_localUserName.Length == 0) {
+        auto pcsa = GetApp().Network.PlaygroundClientScriptAPI;
+        if (pcsa !is null && pcsa.LocalUser !is null) {
+            _localUserName = pcsa.LocalUser.Name;
+        }
+    }
+    return _localUserName;
+}
+
 
 #if DEV
 void CheckVis() {
@@ -444,39 +455,6 @@ void DrawPlayerIndicatorAt(vec2 uv, vec4 col) {
     nvg::ClosePath();
 }
 
-
-void DrawPlayerLights() {
-    auto cpg = cast<CSmArenaClient>(GetApp().CurrentPlayground);
-    if (cpg is null) return;
-    auto nPlayers = cpg.Players.Length;
-    auto scene = cpg.GameScene;
-    if (scene is null) return;
-    auto zone = scene.HackScene.Sector.Zone;
-    print('zone.DynamicLightArrays.Length: ' + zone.DynamicLightArrays.Length);
-    auto pimp = zone.PImp;
-    // pimp.LightDir_Lights[0] // some kind of global lighting
-    // auto lights = pimp.LightDynamic_Frustum_Lights; -- openplanet complains, can't do `lbuffer`s
-    print('pimp.LightDynamic_Frustum_Lights.Length: ' + pimp.LightDynamic_Frustum_Lights.Length);
-    SLightDynaFrustum@[] justGoodLights;
-    for (uint i = 0; i < pimp.LightDynamic_Frustum_Lights.Length; i++) {
-        auto light = pimp.LightDynamic_Frustum_Lights[i];
-        if (light.gxLight.IsOrtho) {
-            // mb good, Technique=GenShadowMask; iSG=3
-            // alt is 2dBallLight; iSG=0
-            justGoodLights.InsertLast(light);
-        }
-    }
-    print('justGoodLights.Length: ' + justGoodLights.Length + ' == ' + nPlayers + ' nPlayers?');
-    for (uint i = 0; i < justGoodLights.Length; i++) {
-        auto light = justGoodLights[i];
-        auto loc = light.Location;
-        auto pos = vec3(loc.tx, loc.ty, loc.tz);
-        print(pos.ToString());
-        if (Camera::IsBehind(pos)) continue;
-        auto uv = Camera::ToScreenSpace(pos);
-        DrawPlayerIndicatorAt(uv);
-    }
-}
 
 void DrawPlayerIndicatorAt(vec2 uv) {
     nvg::BeginPath();
