@@ -82,6 +82,13 @@ enum SortMethod {
     Race, TimeAttack
 }
 
+/* with race, the winning players unspawn. how to differentiate?
+maybe track *when* they unspawned, and group those.
+so active racers get grouped with most recent unspawn.
+then, when the respawn happens, racers all respawn at the same time,
+so we can track the number of respawns
+*/
+
 SortMethod[] AllSortMethods = {Race, TimeAttack};
 
 [Setting hidden]
@@ -106,12 +113,13 @@ void DrawMainInterior() {
     }
 
     // SizingFixedFit / fixedsame / strechsame / strechprop
-    if (UI::BeginTable("player times", 5, UI::TableFlags::SizingStretchProp | UI::TableFlags::ScrollY)) {
+    if (UI::BeginTable("player times", 6, UI::TableFlags::SizingStretchProp | UI::TableFlags::ScrollY)) {
         UI::TableSetupColumn("Pos.");
         UI::TableSetupColumn("Player");
         UI::TableSetupColumn("CP #");
         UI::TableSetupColumn("CP Lap Time");
         UI::TableSetupColumn("Best Time");
+        UI::TableSetupColumn("unspwn-ix");
         UI::TableHeadersRow();
 
         for (uint i = 0; i < theHook.sortedPlayers.Length; i++) {
@@ -144,6 +152,8 @@ void DrawMainInterior() {
             if (bt > 0) {
                 UI::Text(MsToSeconds(bt));
             }
+            UI::TableNextColumn();
+            UI::Text(tostring(player.spawnIndex));
             UI::PopStyleColor(colVars);
         }
         UI::EndTable();
@@ -182,10 +192,19 @@ Cmp cmpPlayerCpInfo(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
 
 
 Cmp cmpRace(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
+    // if we're in race mode, then we want to count the player as spawned if their spawnIndex == SpawnCounter
+    SpawnStatus p1SS = p1.spawnStatus;
+    SpawnStatus p2SS = p2.spawnStatus;
+    if (theHook !is null) {
+        if (p1.spawnStatus == SpawnStatus::NotSpawned && p1.spawnIndex == theHook.SpawnCounter)
+            p1SS = SpawnStatus::Spawned;
+        if (p2.spawnStatus == SpawnStatus::NotSpawned && p2.spawnIndex == theHook.SpawnCounter)
+            p2SS = SpawnStatus::Spawned;
+    }
     // spawned status dominates
-    if (p1.spawnStatus != p2.spawnStatus) {
+    if (p1SS != p2SS) {
         // not spawned is smallest, so we want the opposite of cmpInt, so flip the args
-        return cmpInt(int(p2.spawnStatus), int(p1.spawnStatus));
+        return cmpInt(int(p2SS), int(p1SS));
     }
     // if we have the same CPs, lowest time is better
     if (p1.cpCount == p2.cpCount)
@@ -215,7 +234,9 @@ class PlayerCpInfo {
     int lastCpTime;
     int bestTime;
     SpawnStatus spawnStatus;
-    PlayerCpInfo(MwFastBuffer<wstring> &in msg) {
+    uint spawnIndex = 0;
+    PlayerCpInfo(MwFastBuffer<wstring> &in msg, uint _spawnIndex) {
+        spawnIndex = _spawnIndex;
         if (msg.Length < 5) {
             warn('PlayerCpInfo msg had insufficient length');
             return;
@@ -226,10 +247,6 @@ class PlayerCpInfo {
         bestTime = Text::ParseInt(msg[3]);
         spawnStatus = SpawnStatus(Text::ParseInt(msg[4]));
         if (theHook !is null) theHook.bestTimes[name] = bestTime;
-        // for (uint i = 0; i < msg.Length; i++) {
-        //     auto item = msg[i];
-        //     trace('data[' + i + '] = ' + item);
-        // }
     }
     int opCmp(PlayerCpInfo@ other) {
         return int(cmpPlayerCpInfo(this, other));
@@ -247,6 +264,7 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
     dictionary bestTimes;
     array<PlayerCpInfo@> sortedPlayers;
     uint CpCount;
+    uint SpawnCounter = 0;
 
     void MainCoro() {
         sleep(50);
@@ -265,7 +283,7 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
     }
 
     void ProcessMsg(MwFastBuffer<wstring> &in msg) {
-        UpdatePlayer(PlayerCpInfo(msg));
+        UpdatePlayer(PlayerCpInfo(msg, SpawnCounter));
     }
 
     void OnEvent(const string &in type, MwFastBuffer<wstring> &in data) override {
@@ -279,7 +297,16 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
 
     /* main functionality logic */
 
+    PlayerCpInfo@ GetPlayer(const string &in name) {
+        return cast<PlayerCpInfo>(latestPlayerStats[name]);
+    }
+
     void UpdatePlayer(PlayerCpInfo@ player) {
+        // auto playerPrev = GetPlayer(player.name);
+        // bool playerPrevWasNotSpawned = (playerPrev is null || playerPrev.spawnStatus != SpawnStatus::Spawned);
+        if (player.spawnStatus == SpawnStatus::Spawned && player.cpCount == 0) {
+            SpawnCounter += 1;
+        }
         @latestPlayerStats[player.name] = player;
         UpdateSortedPlayers();
     }
@@ -288,7 +315,7 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
         sortedPlayers.RemoveRange(0, sortedPlayers.Length);
         auto ps = latestPlayerStats.GetKeys();
         for (uint i = 0; i < ps.Length; i++) {
-            auto player = cast<PlayerCpInfo>(latestPlayerStats[ps[i]]);
+            auto player = GetPlayer(ps[i]); // cast<PlayerCpInfo>(latestPlayerStats[ps[i]]);
             sortedPlayers.InsertLast(player);
         }
         sortedPlayers.SortAsc();
