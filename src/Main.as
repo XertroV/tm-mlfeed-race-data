@@ -102,7 +102,8 @@ void DrawMainInterior() {
     if (theHook.latestPlayerStats is null) return;
     if (theHook.sortedPlayers.Length == 0) return;
 
-    UI::Text("" + theHook.sortedPlayers.Length + " Players  |  " + theHook.CPsToFinish + " Total Checkpoints");
+    string cpCountStr = theHook.LapCount == 1 ? "" : ("; " + (theHook.CpCount + 1) + " per Lap");
+    UI::Text("" + theHook.sortedPlayers.Length + " Players  |  " + theHook.CPsToFinish + " Total Checkpoints" + cpCountStr);
 
     if (UI::BeginCombo("Sort Method", tostring(g_sortMethod))) {
         for (uint i = 0; i < AllSortMethods.Length; i++) {
@@ -403,9 +404,12 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
             if (landmark.Tag == "Checkpoint") {
                 cpCount++;
                 continue;
-            }
-            if (landmark.Tag == "LinkedCheckpoint") {
+            } else if (landmark.Tag == "LinkedCheckpoint") {
                 lcps.Set('' + landmark.Order, true);
+                continue;
+            } else {
+                cpCount++;
+                warn('A cp was not as it appeared! had tag: ' + landmark.Tag);
                 continue;
             }
         }
