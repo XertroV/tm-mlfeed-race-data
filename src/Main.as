@@ -102,7 +102,7 @@ void DrawMainInterior() {
     if (theHook.latestPlayerStats is null) return;
     if (theHook.sortedPlayers.Length == 0) return;
 
-    UI::Text("" + theHook.sortedPlayers.Length + " Players / " + theHook.CpCount + " Checkpoints");
+    UI::Text("" + theHook.sortedPlayers.Length + " Players  |  " + theHook.CPsToFinish + " Total Checkpoints");
 
     if (UI::BeginCombo("Sort Method", tostring(g_sortMethod))) {
         for (uint i = 0; i < AllSortMethods.Length; i++) {
@@ -136,7 +136,7 @@ void DrawMainInterior() {
             auto player = cast<PlayerCpInfo>(theHook.sortedPlayers[i]);
             if (player.spawnStatus != SpawnStatus::Spawned) {
                 UI::PushStyleColor(UI::Col::Text, vec4(.3, .65, 1, .9));
-            } else if (player.cpCount > int(theHook.CpCount)) { // finished 1-lap
+            } else if (player.cpCount >= int(theHook.CPsToFinish)) { // finished 1-lap
                 UI::PushStyleColor(UI::Col::Text, vec4(.2, 1, .2, .9));
             } else if (player.name == LocalUserName) {
                 UI::PushStyleColor(UI::Col::Text, vec4(1, .3, .65, .9));
@@ -152,7 +152,7 @@ void DrawMainInterior() {
             UI::Text(player.name);
 
             UI::TableNextColumn();
-            UI::PushStyleColor(UI::Col::Text, ScaledCpColor(player.cpCount, theHook.CpCount));
+            UI::PushStyleColor(UI::Col::Text, ScaledCpColor(player.cpCount, theHook.CPsToFinish));
             UI::Text('' + player.cpCount);
             UI::PopStyleColor();
 
@@ -282,6 +282,7 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
     dictionary bestTimes;
     array<PlayerCpInfo@> sortedPlayers;
     uint CpCount;
+    uint LapCount;
     uint SpawnCounter = 0;
 
     void MainCoro() {
@@ -328,7 +329,7 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
         @latestPlayerStats[player.name] = player;
         // bugged on multilap
         // race events don't update the local players best time until they've respawned for some reason (other ppl are immediate)
-        if (player.cpCount == this.CpCount + 1 && player.name == LocalUserName && player.IsSpawned) {
+        if (player.cpCount == this.CPsToFinish && player.name == LocalUserName && player.IsSpawned) {
             // note: this doesn't seem to really help
             player.bestTime = player.lastCpTime;
             bestTimes[player.name] = player.bestTime;
@@ -405,6 +406,11 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
             }
         }
         this.CpCount = cpCount + lcps.GetSize();
+        this.LapCount = cp.Map.MapInfo.TMObjective_NbLaps;
+    }
+
+    uint get_CPsToFinish() {
+        return (CpCount + 1) * LapCount;
     }
 }
 
