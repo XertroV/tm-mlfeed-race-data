@@ -16,9 +16,6 @@ todo show green when players fin
 void Main() {
     MLHook::RequireVersionApi('0.2.0');
     startnew(InitCoro);
-#if DEV
-    // startnew(CheckVis);
-#endif
 }
 
 void OnDestroyed() { _Unload(); }
@@ -32,34 +29,31 @@ void _Unload() {
     // MLHook::RemoveInjectedMLFromPlayground("CotdKoFeed");
 }
 
-void Update(float dt) {
-    if (Setting_DrawTrails)
-        DrawPlayers();
-}
-
 void InitCoro() {
     auto hook = HookRaceStatsEvents();
     @theHook = hook;
     MLHook::RegisterMLHook(hook, "RaceStats");
     MLHook::RegisterMLHook(hook, "RaceStats_ActivePlayers");
+    // ml load
+    yield();
+    IO::FileSource refreshCode("RaceStatsFeed.Script.txt");
+    string manialinkScript = refreshCode.ReadToEnd();
+    MLHook::InjectManialinkToPlayground("RaceStatsFeed", manialinkScript, true);
+    yield();
+    // start coros
+    startnew(CoroutineFunc(hook.MainCoro));
+#if DEV
     // cotd hook setup
     @cotdHook = MLHook::DebugLogAllHook("MLHook_Event_CotdKoFeed");
     MLHook::RegisterMLHook(cotdHook, "CotdKoFeed_PlayerStatus");
     MLHook::RegisterMLHook(cotdHook, "CotdKoFeed_MatchKeyPair");
     // MLHook::RegisterMLHook(cotdHook, "RaceStats"); // bc its the debug hook
     // MLHook::RegisterMLHook(cotdHook, "RaceStats_ActivePlayers"); // bc its the debug hook
-    // ml load
-    yield();
-    IO::FileSource refreshCode("RaceStatsFeed.Script.txt");
-    string manialinkScript = refreshCode.ReadToEnd();
-    MLHook::InjectManialinkToPlayground("RaceStatsFeed", manialinkScript, true);
-    //---------
+    // cotd ml
     IO::FileSource cotdML("CotdKoFeed.Script.txt");
     MLHook::InjectManialinkToPlayground("CotdKoFeed", cotdML.ReadToEnd(), true);
-    yield();
-    // start coros
-    startnew(CoroutineFunc(hook.MainCoro));
     startnew(CotdKoFeedMainCoro);
+#endif
 }
 
 void RenderInterface() {
@@ -113,21 +107,20 @@ void DrawMainInterior() {
     }
 
     // SizingFixedFit / fixedsame / strechsame / strechprop
-    if (UI::BeginTable("player times", 6, UI::TableFlags::SizingStretchProp | UI::TableFlags::ScrollY)) {
+    if (UI::BeginTable("player times", 5, UI::TableFlags::SizingStretchProp | UI::TableFlags::ScrollY)) {
         UI::TableSetupColumn("Pos.");
         UI::TableSetupColumn("Player");
         UI::TableSetupColumn("CP #");
         UI::TableSetupColumn("CP Lap Time");
         UI::TableSetupColumn("Best Time");
-        UI::TableSetupColumn("unspwn-ix");
         UI::TableHeadersRow();
 
         for (uint i = 0; i < theHook.sortedPlayers.Length; i++) {
             uint colVars = 1;
             auto player = cast<PlayerCpInfo>(theHook.sortedPlayers[i]);
-            if (player.cpCount > int(theHook.CpCount)) { // finished 1-lap
+            if (player.spawnStatus != SpawnStatus::Spawned) {
                 UI::PushStyleColor(UI::Col::Text, vec4(.1, .9, .1, .85));
-            } else if (player.spawnStatus == SpawnStatus::NotSpawned) {
+            } else if (player.cpCount > int(theHook.CpCount)) { // finished 1-lap
                 UI::PushStyleColor(UI::Col::Text, vec4(.1, .5, .9, .85));
             } else if (player.name == LocalUserName) {
                 UI::PushStyleColor(UI::Col::Text, vec4(.9, .1, .6, .85));
@@ -135,25 +128,27 @@ void DrawMainInterior() {
                 UI::PushStyleColor(UI::Col::Text, vec4(1, 1, 1, 1));
             }
             UI::TableNextRow();
+
             UI::TableNextColumn();
             UI::Text("" + (i + 1) + ".");
+
             UI::TableNextColumn();
             UI::Text(player.name);
+
             UI::TableNextColumn();
             UI::Text('' + player.cpCount);
+
             UI::TableNextColumn();
             if (player.cpCount > 0) {
                 UI::Text(MsToSeconds(player.lastCpTime));
             } else {
                 UI::Text('---');
             }
+
             UI::TableNextColumn();
             auto bt = int(theHook.bestTimes[player.name]);
-            if (bt > 0) {
-                UI::Text(MsToSeconds(bt));
-            }
-            UI::TableNextColumn();
-            UI::Text(tostring(player.spawnIndex));
+            if (bt > 0) UI::Text(MsToSeconds(bt));
+
             UI::PopStyleColor(colVars);
         }
         UI::EndTable();
@@ -315,7 +310,7 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
         sortedPlayers.RemoveRange(0, sortedPlayers.Length);
         auto ps = latestPlayerStats.GetKeys();
         for (uint i = 0; i < ps.Length; i++) {
-            auto player = GetPlayer(ps[i]); // cast<PlayerCpInfo>(latestPlayerStats[ps[i]]);
+            auto player = GetPlayer(ps[i]);
             sortedPlayers.InsertLast(player);
         }
         sortedPlayers.SortAsc();
@@ -345,8 +340,6 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
         if (CurrentMap != "") {
             startnew(CoroutineFunc(SetCheckpointCount));
         }
-        trails.DeleteAll();
-        visLookup.DeleteAll();
     }
 
     string get_CurrentMap() const {
@@ -408,123 +401,3 @@ string get_LocalUserName() {
     }
     return _localUserName;
 }
-
-
-#if DEV
-void CheckVis() {
-    // while (true) {
-    //     yield();
-    //     auto cpg = cast<CSmArenaClient>(GetApp().CurrentPlayground);
-    //     while (cpg is null) {
-    //         sleep(100);
-    //         @cpg = cast<CSmArenaClient>(GetApp().CurrentPlayground);
-    //     }
-    //     while (cpg !is null) {
-    //         auto nPlayers = cpg.Players.Length;
-    //         auto scene = cpg.GameScene;
-    //         if (scene is null) continue;
-    //         auto zone = scene.HackScene.Sector.Zone;
-    //         print('zone.DynamicLightArrays.Length: ' + zone.DynamicLightArrays.Length);
-    //         auto pimp = zone.PImp;
-    //         // pimp.LightDir_Lights[0] // some kind of global lighting
-    //         // auto lights = pimp.LightDynamic_Frustum_Lights; -- openplanet complains, can't do `lbuffer`s
-    //         print('pimp.LightDynamic_Frustum_Lights.Length: ' + pimp.LightDynamic_Frustum_Lights.Length);
-    //         SLightDynaFrustum@[] justGoodLights;
-    //         for (uint i = 0; i < pimp.LightDynamic_Frustum_Lights.Length; i++) {
-    //             auto light = pimp.LightDynamic_Frustum_Lights[i];
-    //             if (light.gxLight.IsOrtho) {
-    //                 // mb good, Technique=GenShadowMask; iSG=3
-    //                 // alt is 2dBallLight; iSG=0
-    //                 justGoodLights.InsertLast(light);
-    //             }
-    //         }
-    //         print('justGoodLights.Length: ' + justGoodLights.Length + ' == ' + nPlayers + ' nPlayers?');
-    //         for (uint i = 0; i < justGoodLights.Length; i++) {
-    //             auto light = justGoodLights[i];
-    //             auto loc = light.Location;
-    //             auto pos = vec3(loc.tx, loc.ty, loc.tz);
-    //             print(pos.ToString());
-    //         }
-    //         sleep(1000);
-    //     }
-    // }
-}
-
-
-// auto nPlayers = cpg.Players.Length;
-
-// array<PlayerTrail@> trails;
-dictionary@ trails = dictionary();
-dictionary@ visLookup = dictionary();
-
-void DrawPlayers() {
-    auto cpg = cast<CSmArenaClient>(GetApp().CurrentPlayground);
-    if (cpg is null) return;
-    auto scene = cpg.GameScene;
-    auto players = cpg.Players;
-    for (uint i = 0; i < players.Length; i++) {
-        auto player = cast<CSmPlayer>(players[i]);
-        if (player is null || player.User.Login == LocalUserLogin) continue;
-        auto vis = cast<CSceneVehicleVis>(visLookup[player.User.Name]);
-        if (vis is null) {
-            @vis = VehicleState::GetVis(scene, player);
-            @visLookup[player.User.Name] = vis;
-        }
-        if (vis is null) continue; // something went wrong
-        // DrawIndicator(vis.AsyncState);
-        // trail
-        // print(player.User.Name);
-        auto trail = cast<PlayerTrail>(trails[player.User.Name]);
-        if (trail is null) {
-            @trail = PlayerTrail();
-            @trails[player.User.Name] = trail;
-        }
-        trail.AddPoint(vis.AsyncState.Position, vis.AsyncState.Dir, vis.AsyncState.Left);
-        trail.DrawPath();
-    }
-
-    // probs a bit faster, but also draws ghosts
-    // auto allVis = VehicleState::GetAllVis(scene);
-    // // if (allVis.Length != trails.Length) trails.Resize()
-    // for (uint i = 0; i < allVis.Length; i++) {
-    //     DrawIndicator(allVis[i].AsyncState);
-    //     // if (!trails.Exists())
-    //     // CPlugVehicleVisModel
-    //     print(allVis[i].Model.Id.Value);
-    // }
-}
-
-void DrawIndicator(CSceneVehicleVisState@ vis) {
-    if (Camera::IsBehind(vis.Position)) return;
-    auto uv = Camera::ToScreenSpace(vis.Position); // possible div by 0
-    auto gear = vis.CurGear;
-    vec4 col;
-    switch(gear) {
-        case 0: col = vec4(.1, .1, .5, .5); break;
-        case 1: col = vec4(.1, .4, .9, .5); break;
-        case 2: col = vec4(.1, .9, .4, .5); break;
-        case 3: col = vec4(.4, .9, .4, .5); break;
-        case 4: col = vec4(.9, .4, .1, .5); break;
-        case 5: col = vec4(.9, .1, .1, .5); break;
-        default: col = vec4(.9, .1, .6, .5); print('unknown gear: ' + gear);
-    }
-    DrawPlayerIndicatorAt(uv, col);
-}
-
-void DrawPlayerIndicatorAt(vec2 uv, vec4 col) {
-    nvg::BeginPath();
-    nvg::RoundedRect(uv - vec2(20, 20)/2, vec2(20, 20), 4);
-    nvg::FillColor(col);
-    nvg::Fill();
-    nvg::ClosePath();
-}
-
-
-void DrawPlayerIndicatorAt(vec2 uv) {
-    nvg::BeginPath();
-    nvg::RoundedRect(uv - vec2(20, 20)/2, vec2(20, 20), 4);
-    nvg::FillColor(vec4(.99, .2, .92, .5));
-    nvg::Fill();
-}
-
-#endif
