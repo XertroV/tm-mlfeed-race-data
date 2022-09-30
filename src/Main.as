@@ -14,7 +14,7 @@ todo show green when players fin
 
  */
 void Main() {
-    MLHook::RequireVersionApi('0.2.0');
+    MLHook::RequireVersionApi('0.2.1');
     startnew(InitCoro);
 }
 
@@ -30,10 +30,10 @@ void _Unload() {
 }
 
 void InitCoro() {
-    auto hook = HookRaceStatsEvents();
+    HookRaceStatsEvents@ hook = HookRaceStatsEvents();
     @theHook = hook;
-    MLHook::RegisterMLHook(hook, "RaceStats");
-    MLHook::RegisterMLHook(hook, "RaceStats_ActivePlayers");
+    MLHook::RegisterMLHook(theHook, "RaceStats");
+    MLHook::RegisterMLHook(theHook, "RaceStats_ActivePlayers");
     // ml load
     yield();
     IO::FileSource refreshCode("RaceStatsFeed.Script.txt");
@@ -87,6 +87,15 @@ SortMethod[] AllSortMethods = {Race, TimeAttack};
 
 [Setting hidden]
 SortMethod g_sortMethod = SortMethod::TimeAttack;
+[Setting hidden]
+bool Setting_ShowBestTimeCol = true;
+
+vec4 finishColor = vec4(.2, 1, .2, .9);
+
+vec4 ScaledCpColor(uint cp, uint totalCps) {
+    float progress = float(cp) / float(totalCps + 1);
+    return finishColor * progress + vec4(1,1,1,1) * (1 - progress);
+}
 
 void DrawMainInterior() {
     if (theHook is null) return;
@@ -106,37 +115,46 @@ void DrawMainInterior() {
         UI::EndCombo();
     }
 
+    Setting_ShowBestTimeCol = UI::Checkbox("Show Best Times?", Setting_ShowBestTimeCol);
+
+    uint cols = 4;
+    if (Setting_ShowBestTimeCol)
+        cols++;
+
     // SizingFixedFit / fixedsame / strechsame / strechprop
-    if (UI::BeginTable("player times", 5, UI::TableFlags::SizingStretchProp | UI::TableFlags::ScrollY)) {
+    if (UI::BeginTable("player times", cols, UI::TableFlags::SizingStretchProp | UI::TableFlags::ScrollY)) {
         UI::TableSetupColumn("Pos.");
         UI::TableSetupColumn("Player");
         UI::TableSetupColumn("CP #");
         UI::TableSetupColumn("CP Lap Time");
-        UI::TableSetupColumn("Best Time");
+        if (Setting_ShowBestTimeCol)
+            UI::TableSetupColumn("Best Time");
         UI::TableHeadersRow();
 
         for (uint i = 0; i < theHook.sortedPlayers.Length; i++) {
             uint colVars = 1;
             auto player = cast<PlayerCpInfo>(theHook.sortedPlayers[i]);
             if (player.spawnStatus != SpawnStatus::Spawned) {
-                UI::PushStyleColor(UI::Col::Text, vec4(.1, .9, .1, .85));
+                UI::PushStyleColor(UI::Col::Text, vec4(.3, .65, 1, .9));
             } else if (player.cpCount > int(theHook.CpCount)) { // finished 1-lap
-                UI::PushStyleColor(UI::Col::Text, vec4(.1, .5, .9, .85));
+                UI::PushStyleColor(UI::Col::Text, vec4(.2, 1, .2, .9));
             } else if (player.name == LocalUserName) {
-                UI::PushStyleColor(UI::Col::Text, vec4(.9, .1, .6, .85));
+                UI::PushStyleColor(UI::Col::Text, vec4(1, .3, .65, .9));
             } else {
                 UI::PushStyleColor(UI::Col::Text, vec4(1, 1, 1, 1));
             }
             UI::TableNextRow();
 
             UI::TableNextColumn();
-            UI::Text("" + (i + 1) + ".");
+            UI::Text("" + (i + 1) + "."); // rank
 
             UI::TableNextColumn();
             UI::Text(player.name);
 
             UI::TableNextColumn();
+            UI::PushStyleColor(UI::Col::Text, ScaledCpColor(player.cpCount, theHook.CpCount));
             UI::Text('' + player.cpCount);
+            UI::PopStyleColor();
 
             UI::TableNextColumn();
             if (player.cpCount > 0) {
@@ -145,9 +163,11 @@ void DrawMainInterior() {
                 UI::Text('---');
             }
 
-            UI::TableNextColumn();
-            auto bt = int(theHook.bestTimes[player.name]);
-            if (bt > 0) UI::Text(MsToSeconds(bt));
+            if (Setting_ShowBestTimeCol) {
+                UI::TableNextColumn();
+                auto bt = int(player.bestTime);
+                if (bt > 0) UI::Text(MsToSeconds(bt));
+            }
 
             UI::PopStyleColor(colVars);
         }
@@ -246,6 +266,9 @@ class PlayerCpInfo {
     int opCmp(PlayerCpInfo@ other) {
         return int(cmpPlayerCpInfo(this, other));
     }
+    bool get_IsSpawned() {
+        return spawnStatus == SpawnStatus::Spawned;
+    }
 }
 
 class HookRaceStatsEvents : MLHook::HookMLEventsByType {
@@ -303,6 +326,13 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
             SpawnCounter += 1;
         }
         @latestPlayerStats[player.name] = player;
+        // bugged on multilap
+        // race events don't update the local players best time until they've respawned for some reason (other ppl are immediate)
+        if (player.cpCount == this.CpCount + 1 && player.name == LocalUserName && player.IsSpawned) {
+            // note: this doesn't seem to really help
+            player.bestTime = player.lastCpTime;
+            bestTimes[player.name] = player.bestTime;
+        }
         UpdateSortedPlayers();
     }
 
@@ -321,8 +351,12 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
         auto newBestTimes = bestTimesCsv.Split(",");
         bestTimes.DeleteAll();
         for (uint i = 0; i < players.Length; i++) {
-            auto bt = Text::ParseInt(newBestTimes[i]);
-            bestTimes[players[i]] = bt;
+            auto player = GetPlayer(players[i]);
+            if (player !is null)
+                bestTimes[players[i]] = player.bestTime;
+            else {
+                bestTimes[players[i]] = Text::ParseInt(newBestTimes[i]);
+            }
         }
         auto prevPlayers = latestPlayerStats.GetKeys();
         for (uint i = 0; i < prevPlayers.Length; i++) {
@@ -336,7 +370,7 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
     void OnMapChange() {
         latestPlayerStats.DeleteAll();
         sortedPlayers.RemoveRange(0, sortedPlayers.Length);
-        CpCount = 0;
+        this.CpCount = 0;
         if (CurrentMap != "") {
             startnew(CoroutineFunc(SetCheckpointCount));
         }
