@@ -133,7 +133,8 @@ void DrawMainInterior() {
 
         for (uint i = 0; i < theHook.sortedPlayers.Length; i++) {
             uint colVars = 1;
-            auto player = cast<PlayerCpInfo>(theHook.sortedPlayers[i]);
+            auto player = theHook.sortedPlayers[i];
+            if (player is null) continue;
             if (player.spawnStatus != SpawnStatus::Spawned) {
                 UI::PushStyleColor(UI::Col::Text, vec4(.3, .65, 1, .9));
             } else if (player.cpCount >= int(theHook.CPsToFinish)) { // finished 1-lap
@@ -330,8 +331,11 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
         // bugged on multilap
         // race events don't update the local players best time until they've respawned for some reason (other ppl are immediate)
         if (player.cpCount == this.CPsToFinish && player.name == LocalUserName && player.IsSpawned) {
-            // note: this doesn't seem to really help
-            player.bestTime = player.lastCpTime;
+            int bt = int(bestTimes[player.name]);
+            if (bt <= 0) {
+                bt = 1 << 30;
+            }
+            player.bestTime = Math::Min(bt, player.lastCpTime);
             bestTimes[player.name] = player.bestTime;
         }
         UpdateSortedPlayers();
