@@ -5,6 +5,22 @@ Void MLHookLog(Text msg) {
     SendCustomEvent("MLHook_LogMe_RaceStats", [msg]);
 }
 
+Integer SpawnStatusToUint(CSmPlayer::ESpawnStatus status) {
+    switch (status) {
+        case CSmPlayer::ESpawnStatus::NotSpawned: {
+            return 0;
+        }
+        case CSmPlayer::ESpawnStatus::Spawning: {
+            return 1;
+        }
+        case CSmPlayer::ESpawnStatus::Spawned: {
+            return 2;
+        }
+        default: {}
+    }
+    return 0;
+}
+
 Integer GetBestRaceTime(CSmPlayer Player) {
     if (Player == Null || Player.Score == Null) return -1;
     if (Player.Score.BestRaceTimes.count == 0) return -1;
@@ -14,74 +30,68 @@ Integer GetBestRaceTime(CSmPlayer Player) {
 declare Integer[Text] LastSpawnTime;
 
 // send a complete list of players every now and then.
-Void SendActivePlayers() {
-    declare Text activePlayerNames = "";
+Void SendKnownPlayers() {
+    declare Text playerNames = "";
     declare Text bestTimes = "";
     foreach (Player in Players) {
         declare Text Name = Player.User.Name;
         if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::Spawned) {
             LastSpawnTime[Name] = GameTime;
         }
-        // skip players that have not been spawned for >60s
-        if (!LastSpawnTime.existskey(Name) || LastSpawnTime[Name] + 60000 < GameTime)
-            continue;
-        if (activePlayerNames == "") {
-            activePlayerNames = Player.User.Name;
+        // // skip players that have not been spawned for >60s
+        // if (!LastSpawnTime.existskey(Name) || LastSpawnTime[Name] + 60000 < GameTime)
+        //     continue;
+        if (playerNames == "") {
+            playerNames = Player.User.Name;
             bestTimes = ""^GetBestRaceTime(Player);
         } else {
-            activePlayerNames = activePlayerNames^","^Player.User.Name;
+            playerNames = playerNames^","^Player.User.Name;
             bestTimes = bestTimes^","^GetBestRaceTime(Player);
         }
     }
-    SendCustomEvent("MLHook_Event_RaceStats_ActivePlayers", [activePlayerNames, bestTimes]);
+    SendCustomEvent("MLHook_Event_RaceStats_ActivePlayers", [playerNames, bestTimes]);
 }
 
 // we only want to send info when a player's CP count changes.
 declare Integer[Text] LastCPCounts;
+declare CSmPlayer::ESpawnStatus[Text] LastSpawn;
 
-Void SendPlayerLatestCP(CSmPlayer Player) {
+Void _SendPlayerStats(CSmPlayer Player, Boolean Force) {
     declare Text Name = Player.User.Name;
-    // skip players who haven't been spawned for 3s, long enough to get an updated 0 time
-    if (!LastSpawnTime.existskey(Name) || LastSpawnTime[Name] + 3000 < GameTime)
-        return;
-    if (Player.SpawnStatus != CSmPlayer::ESpawnStatus::Spawned) return;
     declare CPCount = Player.RaceWaypointTimes.count;
-    // update condition: the key doesn't exist, or cp counts changed = > not (key exists AND cp counts same)
-    if (!(LastCPCounts.existskey(Name) && CPCount == LastCPCounts[Name])) {
-        LastCPCounts[Name] = CPCount;
+    // update spawned time
+    if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::Spawned) {
+        LastSpawnTime[Player.User.Name] = GameTime;
+    }
+    // check for changes
+    declare Boolean SpawnChanged = LastSpawn.existskey(Name) && Player.SpawnStatus != LastSpawn[Name];
+    declare Boolean CpsChanged = LastCPCounts.existskey(Name) && CPCount != LastCPCounts[Name];
+    // update if there are changes or the update is forced.
+    if (Force || SpawnChanged || CpsChanged) {
         declare LatestCPTime = "";
         if (CPCount > 0) {
             LatestCPTime = ""^Player.RaceWaypointTimes[CPCount - 1];
         }
         // events should be prefixed with "MLHook_Event_" + PageUID.
         // Suffixes can be applied if multiple types of events are sent.
-        SendCustomEvent("MLHook_Event_RaceStats", [Player.User.Name, ""^CPCount, LatestCPTime, ""^GetBestRaceTime(Player)]);
+        SendCustomEvent("MLHook_Event_RaceStats", [Name, ""^CPCount, LatestCPTime, ""^GetBestRaceTime(Player), ""^SpawnStatusToUint(Player.SpawnStatus)]);
     }
+    // update last spawn and cp count always
+    LastCPCounts[Name] = CPCount;
+    LastSpawn[Name] = Player.SpawnStatus;
 }
 
 // to start with we want to send all data.
 Void InitialSend() {
     foreach (Player in Players) {
-        if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::Spawned) {
-            LastSpawnTime[Player.User.Name] = GameTime;
-        } else {
-            continue; // only send spawned players initially
-        }
-        declare Name = Player.User.Name;
-        declare CPCount = Player.RaceWaypointTimes.count;
-        LastCPCounts[Name] = CPCount;
-        declare LatestCPTime = "";
-        if (CPCount > 0) {
-            LatestCPTime = ""^Player.RaceWaypointTimes[CPCount - 1];
-        }
-        SendCustomEvent("MLHook_Event_RaceStats", [Name, ""^CPCount, LatestCPTime, ""^GetBestRaceTime(Player)]);
+        _SendPlayerStats(Player, True);
     }
     MLHookLog("Completed: InitialSend");
 }
 
 Void CheckPlayers() {
     foreach (Player in Players) {
-        SendPlayerLatestCP(Player);
+        _SendPlayerStats(Player, False);
     }
 }
 
@@ -97,6 +107,9 @@ Void CheckIncoming() {
     foreach (Event in MLHook_Inbound_RaceStats) {
         if (Event[0] == "SendAllPlayerStates") {
             InitialSend();
+        } else {
+            MLHookLog("Skipped unknown incoming event: " ^ Event);
+            continue;
         }
         MLHookLog("Processed Incoming Event: "^Event[0]);
     }
@@ -111,14 +124,14 @@ main() {
     }
     MLHookLog("RaceStatsFeed got init players");
     yield;
-    // InitialSend();
-    // MLHookLog("RaceStatsFeed did init send");
+    InitialSend();
+    MLHookLog("RaceStatsFeed did init send");
     while (True) {
         yield;
         CheckPlayers();
         LoopCounter += 1;
         if (LoopCounter % 60 == 0) {
-            SendActivePlayers();
+            SendKnownPlayers();
             CheckMapChange();
         }
         if (LoopCounter % 60 == 20) {

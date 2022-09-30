@@ -1,4 +1,5 @@
 HookRaceStatsEvents@ theHook = null;
+MLHook::DebugLogAllHook@ cotdHook = null;
 [Setting hidden]
 bool g_windowVisible = false;
 
@@ -20,6 +21,17 @@ void Main() {
 #endif
 }
 
+void OnDestroyed() { _Unload(); }
+void OnDisabled() { _Unload(); }
+void _Unload() {
+    trace('_Unload, unloading hooks and removing injected ML');
+    MLHook::UnregisterMLHooksAndRemoveInjectedML();
+    // MLHook::UnregisterMLHookFromAll(theHook);
+    // MLHook::UnregisterMLHookFromAll(cotdHook);
+    // MLHook::RemoveInjectedMLFromPlayground("RaceStatsFeed");
+    // MLHook::RemoveInjectedMLFromPlayground("CotdKoFeed");
+}
+
 void Update(float dt) {
     if (Setting_DrawTrails)
         DrawPlayers();
@@ -28,20 +40,25 @@ void Update(float dt) {
 void InitCoro() {
     auto hook = HookRaceStatsEvents();
     @theHook = hook;
-    startnew(CoroutineFunc(hook.MainCoro));
     MLHook::RegisterMLHook(hook, "RaceStats");
     MLHook::RegisterMLHook(hook, "RaceStats_ActivePlayers");
+    // cotd hook setup
+    @cotdHook = MLHook::DebugLogAllHook("MLHook_Event_CotdKoFeed");
+    MLHook::RegisterMLHook(cotdHook, "CotdKoFeed_PlayerStatus");
+    MLHook::RegisterMLHook(cotdHook, "CotdKoFeed_MatchKeyPair");
+    // MLHook::RegisterMLHook(cotdHook, "RaceStats"); // bc its the debug hook
+    // MLHook::RegisterMLHook(cotdHook, "RaceStats_ActivePlayers"); // bc its the debug hook
+    // ml load
     yield();
     IO::FileSource refreshCode("RaceStatsFeed.Script.txt");
     string manialinkScript = refreshCode.ReadToEnd();
-    yield();
     MLHook::InjectManialinkToPlayground("RaceStatsFeed", manialinkScript, true);
     //---------
-    auto cotdHook = MLHook::DebugLogAllHook("MLHook_Event_CotdKoFeed");
-    MLHook::RegisterMLHook(cotdHook, "CotdKoFeed_PlayerStatus");
-    MLHook::RegisterMLHook(cotdHook, "CotdKoFeed_MatchKeyPair");
     IO::FileSource cotdML("CotdKoFeed.Script.txt");
     MLHook::InjectManialinkToPlayground("CotdKoFeed", cotdML.ReadToEnd(), true);
+    yield();
+    // start coros
+    startnew(CoroutineFunc(hook.MainCoro));
     startnew(CotdKoFeedMainCoro);
 }
 
@@ -100,8 +117,10 @@ void DrawMainInterior() {
         for (uint i = 0; i < theHook.sortedPlayers.Length; i++) {
             uint colVars = 1;
             auto player = cast<PlayerCpInfo>(theHook.sortedPlayers[i]);
-            if (player.cpCount > theHook.CpCount) { // finished
+            if (player.cpCount > int(theHook.CpCount)) { // finished 1-lap
                 UI::PushStyleColor(UI::Col::Text, vec4(.1, .9, .1, .85));
+            } else if (player.spawnStatus == SpawnStatus::NotSpawned) {
+                UI::PushStyleColor(UI::Col::Text, vec4(.1, .5, .9, .85));
             } else if (player.name == LocalUserName) {
                 UI::PushStyleColor(UI::Col::Text, vec4(.9, .1, .6, .85));
             } else {
@@ -144,6 +163,13 @@ CGameManiaAppPlayground@ get_cmap() {
 }
 
 
+enum SpawnStatus {
+    NotSpawned = 0,
+    Spawning = 1,
+    Spawned = 2
+}
+
+
 Cmp cmpPlayerCpInfo(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
     switch (g_sortMethod) {
         case SortMethod::Race: return cmpRace(p1, p2);
@@ -156,6 +182,11 @@ Cmp cmpPlayerCpInfo(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
 
 
 Cmp cmpRace(PlayerCpInfo@ p1, PlayerCpInfo@ p2) {
+    // spawned status dominates
+    if (p1.spawnStatus != p2.spawnStatus) {
+        // not spawned is smallest, so we want the opposite of cmpInt, so flip the args
+        return cmpInt(int(p2.spawnStatus), int(p1.spawnStatus));
+    }
     // if we have the same CPs, lowest time is better
     if (p1.cpCount == p2.cpCount)
         return cmpInt(p1.lastCpTime, p2.lastCpTime);
@@ -183,8 +214,9 @@ class PlayerCpInfo {
     int cpCount;
     int lastCpTime;
     int bestTime;
+    SpawnStatus spawnStatus;
     PlayerCpInfo(MwFastBuffer<wstring> &in msg) {
-        if (msg.Length < 4) {
+        if (msg.Length < 5) {
             warn('PlayerCpInfo msg had insufficient length');
             return;
         }
@@ -192,7 +224,12 @@ class PlayerCpInfo {
         cpCount = Text::ParseInt(msg[1]);
         lastCpTime = Text::ParseInt(msg[2]);
         bestTime = Text::ParseInt(msg[3]);
+        spawnStatus = SpawnStatus(Text::ParseInt(msg[4]));
         if (theHook !is null) theHook.bestTimes[name] = bestTime;
+        // for (uint i = 0; i < msg.Length; i++) {
+        //     auto item = msg[i];
+        //     trace('data[' + i + '] = ' + item);
+        // }
     }
     int opCmp(PlayerCpInfo@ other) {
         return int(cmpPlayerCpInfo(this, other));
