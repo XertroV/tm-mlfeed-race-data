@@ -1,18 +1,18 @@
-// CotdKoFeed.Script.txt
+// KoFeed.Script.txt
 
 // logging function, should be "MLHook_LogMe_" + PageUID
 Void MLHookLog(Text msg) {
-    SendCustomEvent("MLHook_LogMe_CotdKoFeed", [msg]);
+    SendCustomEvent("MLHook_LogMe_KoFeed", [msg]);
 }
 
 Void MLHookUpdatePlayerStatus(Text UserId, Boolean IsAlive, Boolean IsDNF) {
     declare Payload = [UserId, ""^IsAlive, ""^IsDNF];
-    SendCustomEvent("MLHook_Event_CotdKoFeed_PlayerStatus", Payload);
+    SendCustomEvent("MLHook_Event_KoFeed_PlayerStatus", Payload);
     MLHookLog("PlayerStatus: " ^ Payload);
 }
 
 Void MLHookUpdateKP(Text Key, Text Value) {
-    SendCustomEvent("MLHook_Event_CotdKoFeed_MatchKeyPair", [Key, Value]);
+    SendCustomEvent("MLHook_Event_KoFeed_MatchKeyPair", [Key, Value]);
     MLHookLog("MatchKeyPair: " ^ [Key, Value]);
 }
 
@@ -91,14 +91,28 @@ Void CheckRoundUpdates() {
         Last_KOI_KOsMilestone = Net_Knockout_KnockoutInfo_KOsMilestone;
         MLHookUpdateKP("KOsMilestone", ""^Net_Knockout_KnockoutInfo_KOsMilestone);
     }
-    if (Last_KOI_RankingUpdate != Net_Knockout_KnockoutInfo_RankingUpdate) {
-        Last_KOI_RankingUpdate = Net_Knockout_KnockoutInfo_RankingUpdate;
-        MLHookUpdateKP("RankingUpdate", ""^Net_Knockout_KnockoutInfo_RankingUpdate);
-    }
+    // if (Last_KOI_RankingUpdate != Net_Knockout_KnockoutInfo_RankingUpdate) {
+    //     Last_KOI_RankingUpdate = Net_Knockout_KnockoutInfo_RankingUpdate;
+    //     MLHookUpdateKP("RankingUpdate", ""^Net_Knockout_KnockoutInfo_RankingUpdate);
+    // }
     if (Last_KOI_ServerNumber != Net_Knockout_KnockoutInfo_ServerNumber) {
         Last_KOI_ServerNumber = Net_Knockout_KnockoutInfo_ServerNumber;
         MLHookUpdateKP("ServerNumber", ""^Net_Knockout_KnockoutInfo_ServerNumber);
     }
+}
+
+Void ResetAllTrackedState() {
+    Last_KOI_MapRoundNb = -2;
+    Last_KOI_MapRoundTotal = -2;
+    Last_KOI_RoundNb = -2;
+    Last_KOI_RoundTotal = -2;
+    Last_KOI_PlayersNb = -2;
+    Last_KOI_KOsNumber = -2;
+    Last_KOI_KOsMilestone = -2;
+    Last_KOI_RankingUpdate = -2;
+    Last_KOI_ServerNumber = -2;
+    ScoreLastAlive = [];
+    ScoreLastDNF = [];
 }
 
 declare Text G_PreviousMapUid;
@@ -106,31 +120,28 @@ declare Text G_PreviousMapUid;
 Void CheckMapChange() {
     if (Map != Null && Map.MapInfo.MapUid != G_PreviousMapUid) {
         G_PreviousMapUid = Map.MapInfo.MapUid;
-        Last_KOI_MapRoundNb = 0;
-        Last_KOI_MapRoundTotal = 0;
-        Last_KOI_RoundNb = 0;
-        Last_KOI_RoundTotal = 0;
-        Last_KOI_PlayersNb = 0;
-        Last_KOI_KOsNumber = 0;
-        Last_KOI_KOsMilestone = 0;
-        Last_KOI_RankingUpdate = 0;
-        Last_KOI_ServerNumber = 0;
-        ScoreLastAlive = [];
-        ScoreLastDNF = [];
+        ResetAllTrackedState();
     }
 }
 
 declare Text CurrentGameMode;
+declare Boolean IsKOGameMode;
 
 Void CheckGMChange() {
-    declare Text[][] MLHook_Inbound_CotdKoFeed for ClientUI;
-    foreach (Event in MLHook_Inbound_CotdKoFeed) {
+    declare Text[][] MLHook_Inbound_KoFeed for ClientUI;
+    foreach (Event in MLHook_Inbound_KoFeed) {
         if (Event[0] == "SetGameMode") {
             CurrentGameMode = Event[1];
             MLHookLog("Set new GameMode: "^CurrentGameMode);
+            IsKOGameMode = CurrentGameMode == "TM_KnockoutDaily_Online" || CurrentGameMode == "TM_Knockout_Online";
+        } else if (Event[0] == "SendAllMatchKeyPairs") {
+            ResetAllTrackedState();
+        } else if (Event[0] == "SendAllPlayerStates") {
+            ScoreLastAlive = []; // this will trigger an update next loop
         }
+        MLHookLog("processed incoming event: " ^ Event[0]);
     }
-    MLHook_Inbound_CotdKoFeed = [];
+    MLHook_Inbound_KoFeed = [];
 }
 
 main() {
@@ -138,7 +149,7 @@ main() {
         yield;
         CheckMapChange();
         CheckGMChange();
-        if (CurrentGameMode == "TM_KnockoutDaily_Online") {
+        if (IsKOGameMode) {
             CheckRoundUpdates();
             UpdatePlayerStatus();
         }

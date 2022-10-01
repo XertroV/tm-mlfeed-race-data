@@ -1,5 +1,6 @@
 HookRaceStatsEvents@ theHook = null;
-MLHook::DebugLogAllHook@ cotdHook = null;
+HookKoStatsEvents@ koFeedHook = null;
+
 [Setting hidden]
 bool g_windowVisible = false;
 
@@ -16,6 +17,10 @@ todo show green when players fin
 void Main() {
     MLHook::RequireVersionApi('0.2.1');
     startnew(InitCoro);
+    startnew(KoBuffer::Main);
+#if DEV
+        KoFeedUI::g_windowVisible = true;
+#endif
 }
 
 void OnDestroyed() { _Unload(); }
@@ -24,12 +29,14 @@ void _Unload() {
     trace('_Unload, unloading hooks and removing injected ML');
     MLHook::UnregisterMLHooksAndRemoveInjectedML();
     // MLHook::UnregisterMLHookFromAll(theHook);
-    // MLHook::UnregisterMLHookFromAll(cotdHook);
+    // MLHook::UnregisterMLHookFromAll(koFeedHook);
     // MLHook::RemoveInjectedMLFromPlayground("RaceStatsFeed");
     // MLHook::RemoveInjectedMLFromPlayground("CotdKoFeed");
 }
 
 void InitCoro() {
+    print('theHook is null? ' + (theHook is null ? 'y' : 'n'));
+    print('koFeedHook is null? ' + (koFeedHook is null ? 'y' : 'n'));
     HookRaceStatsEvents@ hook = HookRaceStatsEvents();
     @theHook = hook;
     MLHook::RegisterMLHook(theHook, "RaceStats");
@@ -42,18 +49,29 @@ void InitCoro() {
     yield();
     // start coros
     startnew(CoroutineFunc(hook.MainCoro));
+    // ko feed hook
+    @koFeedHook = HookKoStatsEvents();
+    MLHook::RegisterMLHook(koFeedHook, "KoFeed_PlayerStatus");
+    MLHook::RegisterMLHook(koFeedHook, "KoFeed_MatchKeyPair");
+    yield();
+    // ko feed ml
+    IO::FileSource cotdML("KoFeed.Script.txt");
+    MLHook::InjectManialinkToPlayground("KoFeed", cotdML.ReadToEnd(), true);
+    yield();
+    startnew(CoroutineFunc(koFeedHook.MainCoro));
 #if DEV
     // cotd hook setup
-    @cotdHook = MLHook::DebugLogAllHook("MLHook_Event_CotdKoFeed");
-    MLHook::RegisterMLHook(cotdHook, "CotdKoFeed_PlayerStatus");
-    MLHook::RegisterMLHook(cotdHook, "CotdKoFeed_MatchKeyPair");
-    // MLHook::RegisterMLHook(cotdHook, "RaceStats"); // bc its the debug hook
-    // MLHook::RegisterMLHook(cotdHook, "RaceStats_ActivePlayers"); // bc its the debug hook
-    // cotd ml
-    IO::FileSource cotdML("CotdKoFeed.Script.txt");
-    MLHook::InjectManialinkToPlayground("CotdKoFeed", cotdML.ReadToEnd(), true);
-    startnew(CotdKoFeedMainCoro);
+    auto devHook = MLHook::DebugLogAllHook("MLHook_Event_KoFeed");
+    MLHook::RegisterMLHook(devHook, "KoFeed_PlayerStatus");
+    MLHook::RegisterMLHook(devHook, "KoFeed_MatchKeyPair");
+    // MLHook::RegisterMLHook(devHook, "RaceStats"); // bc its the debug hook
+    // MLHook::RegisterMLHook(devHook, "RaceStats_ActivePlayers"); // bc its the debug hook
 #endif
+}
+
+void Render() {
+    KoFeedUI::Render();
+    KoBufferUI::Render();
 }
 
 void RenderInterface() {
@@ -70,6 +88,12 @@ void RenderMenu() {
     if (UI::MenuItem("\\$2f8" + Icons::ListAlt + "\\$z Race Stats", "", g_windowVisible)) {
         g_windowVisible = !g_windowVisible;
     }
+    KoFeedUI::RenderMenu();
+    KoBufferUI::RenderMenu();
+}
+
+UI::InputBlocking OnKeyPress(bool down, VirtualKey key) {
+    return KoBufferUI::OnKeyPress(down, key);
 }
 
 enum SortMethod {
@@ -89,6 +113,8 @@ SortMethod[] AllSortMethods = {Race, TimeAttack};
 SortMethod g_sortMethod = SortMethod::TimeAttack;
 [Setting hidden]
 bool Setting_ShowBestTimeCol = true;
+[Setting hidden]
+bool Setting_ShowPastCPs = false;
 
 vec4 finishColor = vec4(.2, 1, .2, .9);
 
@@ -120,6 +146,8 @@ void DrawMainInterior() {
 
     uint cols = 4;
     if (Setting_ShowBestTimeCol)
+        cols++;
+    if (Setting_ShowPastCPs)
         cols++;
 
     // SizingFixedFit / fixedsame / strechsame / strechprop
@@ -175,18 +203,6 @@ void DrawMainInterior() {
         }
         UI::EndTable();
     }
-}
-
-const string MsToSeconds(int t) {
-    return Text::Format("%.3f", float(t) / 1000.0);
-}
-
-CTrackMania@ get_app() {
-    return cast<CTrackMania>(GetApp());
-}
-
-CGameManiaAppPlayground@ get_cmap() {
-    return app.Network.ClientManiaAppPlayground;
 }
 
 
@@ -249,9 +265,12 @@ class PlayerCpInfo {
     string name;
     int cpCount;
     int lastCpTime;
+    int[] cpTimes;
     int bestTime;
     SpawnStatus spawnStatus;
     uint spawnIndex = 0;
+    uint lastRank = 0;
+
     PlayerCpInfo(MwFastBuffer<wstring> &in msg, uint _spawnIndex) {
         spawnIndex = _spawnIndex;
         if (msg.Length < 5) {
@@ -260,16 +279,33 @@ class PlayerCpInfo {
         }
         name = msg[0];
         cpCount = Text::ParseInt(msg[1]);
+        cpTimes.Resize(cpCount + 1);
         lastCpTime = Text::ParseInt(msg[2]);
         bestTime = Text::ParseInt(msg[3]);
         spawnStatus = SpawnStatus(Text::ParseInt(msg[4]));
         if (theHook !is null) theHook.bestTimes[name] = bestTime;
+    }
+    // create from another instance, useful for testing
+    PlayerCpInfo(PlayerCpInfo@ from, int cpOffset = 0) {
+        cpOffset = Math::Min(cpOffset, 0); // so cpOffset <= 0
+        int cpSetTo = Math::Max(from.cpCount + cpOffset, 0);
+        name = from.name;
+        cpCount = cpSetTo;
+        cpTimes = from.cpTimes;
+        cpTimes.Resize(cpCount + 1);
+        lastCpTime = cpTimes[cpCount];
+        bestTime = from.bestTime;
+        spawnStatus = from.spawnStatus;
     }
     int opCmp(PlayerCpInfo@ other) {
         return int(cmpPlayerCpInfo(this, other));
     }
     bool get_IsSpawned() {
         return spawnStatus == SpawnStatus::Spawned;
+    }
+    string ToString() const {
+        string[] inner = {name, ''+cpCount, ''+lastCpTime, ''+spawnStatus, ''+lastRank};
+        return "PlayerCpInfo(" + string::Join(inner, ", ") + ")";
     }
 }
 
@@ -328,10 +364,19 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
         if (player.spawnStatus == SpawnStatus::Spawned && player.cpCount == 0) {
             SpawnCounter += 1;
         }
+        auto prevPlayerStats = GetPlayer(player.name);
         @latestPlayerStats[player.name] = player;
-        // bugged on multilap
+        // copy past cp times
+        if (prevPlayerStats !is null && player.cpCount == 1 + prevPlayerStats.cpCount) {
+            player.cpTimes = prevPlayerStats.cpTimes;
+            player.cpTimes.InsertLast(player.lastCpTime);
+            // for (uint i = 0; i < prevPlayerStats.cpTimes.Length; i++) {
+            //     player.cpTimes[i] = prevPlayerStats.cpTimes[i];
+            // }
+            // player.cpTimes[player.cpTimes.Length - 1] = player.lastCpTime;
+        }
         // race events don't update the local players best time until they've respawned for some reason (other ppl are immediate)
-        if (player.cpCount == this.CPsToFinish && player.name == LocalUserName && player.IsSpawned) {
+        if (player.cpCount == int(this.CPsToFinish) && player.name == LocalUserName && player.IsSpawned) {
             int bt = int(bestTimes[player.name]);
             if (bt <= 0) {
                 bt = 1 << 30;
@@ -350,6 +395,11 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
             sortedPlayers.InsertLast(player);
         }
         sortedPlayers.SortAsc();
+        // set player ranks
+        for (uint i = 0; i < sortedPlayers.Length; i++) {
+            auto item = sortedPlayers[i];
+            item.lastRank = (i + 1);
+        }
     }
 
     void UpdateActivePlayers(const string &in playersCsv, const string &in bestTimesCsv) {
@@ -420,32 +470,4 @@ class HookRaceStatsEvents : MLHook::HookMLEventsByType {
     uint get_CPsToFinish() {
         return (CpCount + 1) * LapCount;
     }
-}
-
-
-// current playground
-CSmArenaClient@ get_cp() {
-    return cast<CSmArenaClient>(GetApp().CurrentPlayground);
-}
-
-string _localUserLogin;
-string get_LocalUserLogin() {
-    if (_localUserLogin.Length == 0) {
-        auto pcsa = GetApp().Network.PlaygroundClientScriptAPI;
-        if (pcsa !is null && pcsa.LocalUser !is null) {
-            _localUserLogin = pcsa.LocalUser.Login;
-        }
-    }
-    return _localUserLogin;
-}
-
-string _localUserName;
-string get_LocalUserName() {
-    if (_localUserName.Length == 0) {
-        auto pcsa = GetApp().Network.PlaygroundClientScriptAPI;
-        if (pcsa !is null && pcsa.LocalUser !is null) {
-            _localUserName = pcsa.LocalUser.Name;
-        }
-    }
-    return _localUserName;
 }
