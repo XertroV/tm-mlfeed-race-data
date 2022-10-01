@@ -1,5 +1,5 @@
 [meta]
-name     = "Race Stats"
+name     = "MLFeed: Race Data"
 author   = "XertroV"
 category = "MLHook"
 version  = "0.1.0"
@@ -7,3 +7,4 @@ version  = "0.1.0"
 [script]
 #__DEFINES__
 dependencies = ["MLHook"]
+exports = ["Export.as", "ExportShared_RaceData.as", "ExportShared_KOData.as"]

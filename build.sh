@@ -51,7 +51,7 @@ for pluginSrc in ${pluginSources[@]}; do
 
   # remove parens, replace spaces with dashes, and uppercase characters with lowercase ones
   # => `Never Give Up (Dev)` becomes `never-give-up-dev`
-  PLUGIN_NAME=$(echo "$PLUGIN_PRETTY_NAME" | tr -d '(),;'\''"' | tr 'A-Z ' 'a-z-')
+  PLUGIN_NAME=$(echo "$PLUGIN_PRETTY_NAME" | tr -d '(),:;'\''"' | tr 'A-Z ' 'a-z-')
   # echo $PLUGIN_NAME
   _colortext16 green "✅ Output file/folder name: ${PLUGIN_NAME}"
 
@@ -62,7 +62,7 @@ for pluginSrc in ${pluginSources[@]}; do
   PLUGIN_RELEASE_LOC=$PLUGINS_DIR/$RELEASE_NAME
 
   function buildPlugin {
-    7z a ./$BUILD_NAME ./fonts ./$pluginSrc/* ./LICENSE ./README.md
+    7z a ./$BUILD_NAME ./$pluginSrc/* ./LICENSE ./README.md
 
     cp -v $BUILD_NAME $RELEASE_NAME
 
@@ -79,7 +79,6 @@ for pluginSrc in ${pluginSources[@]}; do
       mkdir -p $_build_dest/
       rm -vr $_build_dest/* || true
       cp -LR -v ./$pluginSrc/* $_build_dest/
-      cp -LR -v ./fonts $_build_dest/fonts
       # cp -LR -v ./external/* $_build_dest/
       cp -LR -v ./info.toml $_build_dest/
       _copy_exit_code="$?"
