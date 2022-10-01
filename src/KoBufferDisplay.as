@@ -87,8 +87,7 @@ namespace KoBufferUI {
 
         if (localPlayer is null) return;
 #if DEV
-        if (preCpInfo is null && localPlayer !is null) warn("preCpInof null but player not null!");
-        if (nPlayers == 1 && postCpInfo is null && preCpInfo !is null) {
+        if (nPlayers == 1 && theHook.sortedPlayers.Length == 1 && (postCpInfo is null || preCpInfo is null)) {
             if (testInfo is null || lastPlayerCp != localPlayer.cpCount) {
                 lastPlayerCp = localPlayer.cpCount;
                 int randAdjust = Math::Rand(-150, 150);
@@ -173,14 +172,14 @@ namespace KoBufferUI {
     vec4 Col_BehindDefinite = vec4(0.629f, 0.000f, 0.000f, 1.000f);
 
     [Setting color category="KO Buffer Time" name="Color: Far Ahead (actively counts)"]
-    vec4 Col_FarAhead = vec4(0.082f, 0.533f, 0.082f, 0.800f);
+    vec4 Col_FarAhead = vec4(0.082f, 0.533f, 0.082f, 0.900f);
     [Setting color category="KO Buffer Time" name="Color: Far Behind (actively counts)"]
-    vec4 Col_FarBehind = vec4(0.873f, 0.145f, 0.145f, 0.800f);
+    vec4 Col_FarBehind = vec4(0.873f, 0.145f, 0.145f, 0.900f);
 
     [Setting category="KO Buffer Time" name="Enable Buffer Time BG Color"]
     bool Setting_DrawBufferTimeBG = true;
     [Setting color category="KO Buffer Time" name="Buffer Time BG Color" description="Add a background to the timer"]
-    vec4 Setting_BufferTimeBGColor = vec4(0,0,0,.25);
+    vec4 Setting_BufferTimeBGColor = vec4(0.000f, 0.000f, 0.000f, 0.631f);
 
     vec4 GetBufferTimeColor(bool sameCp, bool isBehind) {
         return sameCp

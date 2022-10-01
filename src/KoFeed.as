@@ -86,7 +86,7 @@ class HookKoStatsEvents : MLHook::HookMLEventsByType {
             trace(this.type + ': GM change from: ' + lastGM + ' to ' + CurrentGameMode);
             lastGM = CurrentGameMode;
             MLHook::Queue_MessageManialinkPlayground(this.type, {"SetGameMode", lastGM});
-                trace('gm change');
+            AskForAllMatchKeyPairs();
         }
     }
 
@@ -152,6 +152,7 @@ class HookKoStatsEvents : MLHook::HookMLEventsByType {
 
     void OnMapChange() {
         ResetState();
+        AskForAllMatchKeyPairs();
     }
 
     string get_CurrentMap() const {
