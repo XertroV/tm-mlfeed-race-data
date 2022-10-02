@@ -50,7 +50,6 @@ void InitCoro() {
     startnew(CoroutineFunc(koFeedHook.MainCoro));
 
 #if DEV
-    // cotd hook setup
     auto devHook = MLHook::DebugLogAllHook("MLHook_Event_" + KOsEvent);
     MLHook::RegisterMLHook(devHook, KOsEvent + "_PlayerStatus");
     MLHook::RegisterMLHook(devHook, KOsEvent + "_MatchKeyPair");
