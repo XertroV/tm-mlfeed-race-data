@@ -7,4 +7,6 @@ version  = "0.1.0"
 [script]
 #__DEFINES__
 dependencies = ["MLHook"]
-exports = ["Export.as", "ExportShared_RaceData.as", "ExportShared_KOData.as"]
+exports = ["Export.as"]
+shared_exports = ["ExportShared.as"]
+module = "MLFeed"

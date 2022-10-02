@@ -1,5 +1,8 @@
-MLFeed::HookRaceStatsEvents@ theHook = null;
-MLFeed::HookKoStatsEvents@ koFeedHook = null;
+RaceFeed::HookRaceStatsEvents@ theHook = null;
+KoFeed::HookKoStatsEvents@ koFeedHook = null;
+
+dictionary pluginToRaceData;
+dictionary pluginToKoData;
 
 /*
 
@@ -8,11 +11,11 @@ todo show green when players fin
 
  */
 void Main() {
-    MLHook::RequireVersionApi('0.2.1');
+    MLHook::RequireVersionApi('0.3.0');
 
     // initial objects, get them non-null ASAP
-    @theHook = MLFeed::HookRaceStatsEvents();
-    @koFeedHook = MLFeed::HookKoStatsEvents();
+    @theHook = RaceFeed::HookRaceStatsEvents();
+    @koFeedHook = KoFeed::HookKoStatsEvents();
 
     startnew(InitCoro);
 }
@@ -25,7 +28,7 @@ void _Unload() {
 }
 
 void InitCoro() {
-    string KOsEvent = MLFeed::KOsEvent;
+    string KOsEvent = KoFeed::KOsEvent;
     // Race Stats
     MLHook::RegisterMLHook(theHook, "RaceStats_PlayerCP");
     MLHook::RegisterMLHook(theHook, "RaceStats_PlayerLeft");
@@ -93,12 +96,13 @@ bool Setting_ShowBestTimeCol = true;
 [Setting hidden]
 bool Setting_ShowPastCPs = false;
 
+namespace RaceFeed {
+    enum Cmp {Lt = -1, Eq = 0, Gt = 1}
 
-namespace MLFeed {
-    funcdef Cmp CmpPlayers(const PlayerCpInfo@ &in p1, const PlayerCpInfo@ &in p2);
-    funcdef bool LessPlayers(const PlayerCpInfo@ &in p1, const PlayerCpInfo@ &in p2);
+    funcdef Cmp CmpPlayers(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2);
+    funcdef bool LessPlayers(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2);
 
-    Cmp cmpPlayerCpInfo(const PlayerCpInfo@ &in p1, const PlayerCpInfo@ &in p2) {
+    Cmp cmpPlayerCpInfo(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2) {
         switch (g_sortMethod) {
             case SortMethod::Race: return cmpRace(p1, p2);
             case SortMethod::TimeAttack: return cmpTimeAttack(p1, p2);
@@ -109,15 +113,15 @@ namespace MLFeed {
     }
 
 
-    Cmp cmpRace(const PlayerCpInfo@ &in p1, const PlayerCpInfo@ &in p2) {
+    Cmp cmpRace(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2) {
         // if we're in race mode, then we want to count the player as spawned if their spawnIndex == SpawnCounter
-        SpawnStatus p1SS = p1.spawnStatus;
-        SpawnStatus p2SS = p2.spawnStatus;
+        MLFeed::SpawnStatus p1SS = p1.spawnStatus;
+        MLFeed::SpawnStatus p2SS = p2.spawnStatus;
         if (theHook !is null) {
-            if (p1.spawnStatus == SpawnStatus::NotSpawned && p1.spawnIndex == theHook.SpawnCounter)
-                p1SS = SpawnStatus::Spawned;
-            if (p2.spawnStatus == SpawnStatus::NotSpawned && p2.spawnIndex == theHook.SpawnCounter)
-                p2SS = SpawnStatus::Spawned;
+            if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p1.spawnIndex == theHook.SpawnCounter)
+                p1SS = MLFeed::SpawnStatus::Spawned;
+            if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p2.spawnIndex == theHook.SpawnCounter)
+                p2SS = MLFeed::SpawnStatus::Spawned;
         }
         // spawned status dominates
         if (p1SS != p2SS) {
@@ -132,11 +136,11 @@ namespace MLFeed {
         return Cmp::Gt;
     }
 
-    bool lessRace(const PlayerCpInfo@ &in p1, const PlayerCpInfo@ &in p2) {
+    bool lessRace(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2) {
         return cmpRace(p1, p2) == Cmp::Lt;
     }
 
-    Cmp cmpTimeAttack(const PlayerCpInfo@ &in p1, const PlayerCpInfo@ &in p2) {
+    Cmp cmpTimeAttack(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2) {
         if (p1.bestTime == p2.bestTime) return cmpRace(p1, p2);
         if (p1.bestTime < 0) return Cmp::Gt;
         if (p2.bestTime < 0) return Cmp::Lt;
@@ -144,7 +148,7 @@ namespace MLFeed {
         return Cmp::Gt;
     }
 
-    bool lessTimeAttack(const PlayerCpInfo@ &in p1, const PlayerCpInfo@ &in p2) {
+    bool lessTimeAttack(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2) {
         return cmpTimeAttack(p1, p2) == Cmp::Lt;
     }
 
@@ -154,90 +158,7 @@ namespace MLFeed {
         return Cmp::Gt;
     }
 
-    shared enum Cmp {Lt = -1, Eq = 0, Gt = 1}
-
-    shared enum SpawnStatus {
-        NotSpawned = 0,
-        Spawning = 1,
-        Spawned = 2
-    }
-
-    shared class PlayerCpInfo {
-        string name;
-        int cpCount;
-        int lastCpTime;
-        int[] cpTimes;
-        int bestTime;
-        SpawnStatus spawnStatus;
-        uint spawnIndex = 0;
-        uint taRank = 0;  // set by hook; not sure if we can get it from ML
-        uint raceRank = 0;  // set by hook; not sure if we can get it from ML
-
-        PlayerCpInfo(MLHook::PendingEvent@ event, uint _spawnIndex) {
-            name = event.data[0]; // set once only
-            cpTimes.InsertLast(0); // zeroth cpTime always 0
-            UpdateFrom(event, _spawnIndex);
-        }
-        // create from another instance, useful for testing
-        PlayerCpInfo(PlayerCpInfo@ _from, int cpOffset = 0) {
-            cpOffset = Math::Min(cpOffset, 0); // so cpOffset <= 0
-            int cpSetTo = Math::Max(_from.cpCount + cpOffset, 0);
-            name = _from.name;
-            cpCount = cpSetTo;
-            cpTimes = _from.cpTimes;
-            cpTimes.Resize(cpCount + 1);
-            lastCpTime = cpTimes[cpCount];
-            bestTime = _from.bestTime;
-            spawnStatus = _from.spawnStatus;
-        }
-
-        void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex) {
-            spawnIndex = _spawnIndex;
-            if (event.data.Length < 5) {
-                warn('PlayerCpInfo event.data had insufficient length');
-                return;
-            }
-            cpCount = Text::ParseInt(event.data[1]);
-            lastCpTime = Text::ParseInt(event.data[2]);
-            cpTimes.Resize(cpCount + 1);
-            if (cpCount > 0) {
-                cpTimes[cpCount] = lastCpTime;
-            }
-            bestTime = Text::ParseInt(event.data[3]);
-            spawnStatus = SpawnStatus(Text::ParseInt(event.data[4]));
-        }
-
-        // int opCmp(PlayerCpInfo@ other) {
-        //     return int(cmpPlayerCpInfo(this, other));
-        // }
-        bool get_IsSpawned() {
-            return spawnStatus == SpawnStatus::Spawned;
-        }
-        string ToString() const {
-            string[] inner = {name, ''+cpCount, ''+lastCpTime, ''+spawnStatus, ''+raceRank, ''+taRank, ''+bestTime};
-            return "PlayerCpInfo(" + string::Join(inner, ", ") + ")";
-        }
-    }
-
-    shared class HookRaceStatsEventsBase : MLHook::HookMLEventsByType {
-        string lastMap;
-        dictionary latestPlayerStats;
-        array<PlayerCpInfo@> sortedPlayers_Race;
-        array<PlayerCpInfo@> sortedPlayers_TimeAttack;
-        uint CpCount;
-        uint LapCount;
-        uint SpawnCounter = 0;
-
-        HookRaceStatsEventsBase(const string &in type) {
-            super(type);
-        }
-
-        PlayerCpInfo@ GetPlayer(const string &in name) {
-            return cast<PlayerCpInfo>(latestPlayerStats[name]);
-        }
-    }
-
-    class HookRaceStatsEvents : HookRaceStatsEventsBase {
+    class HookRaceStatsEvents : MLFeed::HookRaceStatsEventsBase {
         // props defined in HookRaceStatsEventsBase
         MLHook::PendingEvent@[] incoming_msgs;
 
@@ -282,12 +203,12 @@ namespace MLFeed {
         void UpdatePlayer(MLHook::PendingEvent@ event) {
             uint spawnIx = SpawnCounter;
             string name = event.data[0];
-            PlayerCpInfo@ player;
+            MLFeed::PlayerCpInfo@ player;
             bool hadPlayer = latestPlayerStats.Get(name, @player);
             if (hadPlayer) {
                 player.UpdateFrom(event, spawnIx);
             } else {
-                @player = PlayerCpInfo(event, spawnIx);
+                @player = MLFeed::PlayerCpInfo(event, spawnIx);
                 @latestPlayerStats[name] = player;
                 sortedPlayers_Race.InsertLast(player);
                 sortedPlayers_TimeAttack.InsertLast(player);
@@ -295,7 +216,7 @@ namespace MLFeed {
                 player.taRank = sortedPlayers_TimeAttack.Length;
             }
 
-            if (player.spawnStatus == SpawnStatus::Spawned && player.cpCount == 0) {
+            if (player.spawnStatus == MLFeed::SpawnStatus::Spawned && player.cpCount == 0) {
                 SpawnCounter += 1;
             }
             // race events don't update the local players best time until they've respawned for some reason (other ppl are immediate)
@@ -309,16 +230,16 @@ namespace MLFeed {
             UpdatePlayerPosition(player);
         }
 
-        void UpdatePlayerPosition(PlayerCpInfo@ player) {
+        void UpdatePlayerPosition(MLFeed::PlayerCpInfo@ player) {
             // when a player is updated, they usually only go up or down by a few places at most.
             UpdatePlayerInSortedPlayersWithMethod(player, sortedPlayers_TimeAttack, LessPlayers(lessTimeAttack), false);
             UpdatePlayerInSortedPlayersWithMethod(player, sortedPlayers_Race, LessPlayers(lessRace), true);
         }
 
         // todo, refactor to use SortMethod
-        void UpdatePlayerInSortedPlayersWithMethod(PlayerCpInfo@ player, array<PlayerCpInfo@>@ &in sorted, LessPlayers@ lessFunc, bool isRace) {
+        void UpdatePlayerInSortedPlayersWithMethod(MLFeed::PlayerCpInfo@ player, array<MLFeed::PlayerCpInfo@>@ &in sorted, LessPlayers@ lessFunc, bool isRace) {
             uint ix = sorted.FindByRef(player);
-            PlayerCpInfo@ tmp;
+            MLFeed::PlayerCpInfo@ tmp;
             if (ix < 0) return;
             // improving in rank
             while (ix > 0 && lessFunc(player, sorted[ix - 1])) {
@@ -392,10 +313,6 @@ namespace MLFeed {
             }
             this.CpCount = cpCount + lcps.GetSize();
             this.LapCount = cp.Map.MapInfo.TMObjective_NbLaps;
-        }
-
-        uint get_CPsToFinish() {
-            return (CpCount + 1) * LapCount;
         }
     }
 }

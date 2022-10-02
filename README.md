@@ -1,6 +1,6 @@
 # MLFeed: Race Data
 
-Requires MLHook v0.2.1+
+Requires MLHook v0.3.0+
 
 This plugin provides other plugins with data about the current race. You might need to install it to make other plugins work.
 

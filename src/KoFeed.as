@@ -1,45 +1,7 @@
-namespace MLFeed {
+namespace KoFeed {
     const string KOsEvent = "MLFeedKOs";
 
-    shared class KoPlayerState {
-        string name;
-        bool isAlive = true;
-        bool isDNF = false;
-        KoPlayerState(const string &in n) {
-            name = n;
-        }
-        KoPlayerState(const string &in n, bool alive, bool dnf) {
-            name = n;
-            isAlive = alive;
-            isDNF = dnf;
-        }
-    }
-
-    shared class HookKoStatsEventsBase : MLHook::HookMLEventsByType {
-        HookKoStatsEventsBase(const string &in type) {
-            super(type);
-        }
-
-        string lastGM;
-        string lastMap;
-        string[] players;
-
-        int division = -1; // ServerNumber
-        int mapRoundNb = -1;
-        int mapRoundTotal = -1;
-        int roundNb = -1;
-        int roundTotal = -1;
-        int playersNb = -1;
-        int kosMilestone = -1;
-        int kosNumber = -1;
-        dictionary playerStates;
-
-        KoPlayerState@ GetPlayerState(const string &in name) {
-            return cast<KoPlayerState>(playerStates[name]);
-        }
-    }
-
-    class HookKoStatsEvents : HookKoStatsEventsBase {
+    class HookKoStatsEvents : MLFeed::HookKoStatsEventsBase {
         HookKoStatsEvents() {
             super(KOsEvent);
         }
@@ -121,7 +83,7 @@ namespace MLFeed {
             }
             string key = evt.data[0];
             int value = Text::ParseInt(evt.data[1]);
-            if (key == "ServerNumber") division = value;
+            if (key == "ServerNumber") division = (value + 1); // server number offset by 1
             else if (key == "MapRoundNb") mapRoundNb = value;
             else if (key == "MapRoundTotal") mapRoundTotal = value;
             else if (key == "RoundNb") roundNb = value;
@@ -134,8 +96,8 @@ namespace MLFeed {
             }
         }
 
-        // KoPlayerState@ GetPlayerState(const string &in name) {
-        //     return cast<KoPlayerState>(playerStates[name]);
+        // MLFeed::KoPlayerState@ GetPlayerState(const string &in name) {
+        //     return cast<MLFeed::KoPlayerState>(playerStates[name]);
         // }
 
         void UpdatePlayerState(MLHook::PendingEvent@ evt) {
@@ -146,9 +108,9 @@ namespace MLFeed {
             string name = evt.data[0];
             bool alive = evt.data[1] == "True";
             bool dnf = evt.data[2] == "True";
-            KoPlayerState@ ps;
+            MLFeed::KoPlayerState@ ps;
             if (!playerStates.Get(name, @ps)) {
-                @ps = KoPlayerState(name, alive, dnf);
+                @ps = MLFeed::KoPlayerState(name, alive, dnf);
                 @playerStates[name] = ps;
                 players.InsertLast(name);
                 return;

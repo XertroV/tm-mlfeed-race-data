@@ -21,7 +21,7 @@ namespace RaceFeedUI {
             auto @sorted = theHook.sortedPlayers_Race;
             UI::ListClipper clipper(sorted.Length);
             while (clipper.Step()) {
-                for (uint i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
                     auto ps = sorted[i];
                     if (ps is null) { continue; }
                     UI::Text(ps.ToString());
@@ -34,7 +34,7 @@ namespace RaceFeedUI {
             @sorted = theHook.sortedPlayers_TimeAttack;
             UI::ListClipper clipperTA(sorted.Length);
             while (clipperTA.Step()) {
-                for (uint i = clipperTA.DisplayStart; i < clipperTA.DisplayEnd; i++) {
+                for (int i = clipperTA.DisplayStart; i < clipperTA.DisplayEnd; i++) {
                     auto ps = sorted[i];
                     if (ps is null) { continue; }
                     UI::Text(ps.ToString());
