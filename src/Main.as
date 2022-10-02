@@ -214,7 +214,7 @@ namespace MLFeed {
             return spawnStatus == SpawnStatus::Spawned;
         }
         string ToString() const {
-            string[] inner = {name, ''+cpCount, ''+lastCpTime, ''+spawnStatus, ''+raceRank, ''+taRank};
+            string[] inner = {name, ''+cpCount, ''+lastCpTime, ''+spawnStatus, ''+raceRank, ''+taRank, ''+bestTime};
             return "PlayerCpInfo(" + string::Join(inner, ", ") + ")";
         }
     }

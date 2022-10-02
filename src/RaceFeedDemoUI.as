@@ -15,12 +15,32 @@ namespace RaceFeedUI {
             UI::Text("LapCount: " + theHook.LapCount);
             UI::Text("CPsToFinish: " + theHook.CPsToFinish);
             UI::Text("SpawnCounter: " + theHook.SpawnCounter);
+            UI::Dummy(vec2(0, 20));
+            UI::Text("Players sorted as in a Race");
             UI::Separator();
-            for (uint i = 0; i < theHook.sortedPlayers_Race.Length; i++) {
-                auto ps = theHook.sortedPlayers_Race[i];
-                if (ps is null) { continue; }
-                UI::Text(ps.ToString());
+            auto @sorted = theHook.sortedPlayers_Race;
+            UI::ListClipper clipper(sorted.Length);
+            while (clipper.Step()) {
+                for (uint i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+                    auto ps = sorted[i];
+                    if (ps is null) { continue; }
+                    UI::Text(ps.ToString());
+                }
             }
+
+            UI::Dummy(vec2(0, 20));
+            UI::Text("Players sorted by best time");
+            UI::Separator();
+            @sorted = theHook.sortedPlayers_TimeAttack;
+            UI::ListClipper clipperTA(sorted.Length);
+            while (clipperTA.Step()) {
+                for (uint i = clipperTA.DisplayStart; i < clipperTA.DisplayEnd; i++) {
+                    auto ps = sorted[i];
+                    if (ps is null) { continue; }
+                    UI::Text(ps.ToString());
+                }
+            }
+
             UI::End();
         }
     }
