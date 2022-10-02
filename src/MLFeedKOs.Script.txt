@@ -1,18 +1,18 @@
-// KoFeed.Script.txt
+// MLFeedKOs.Script.txt
 
 // logging function, should be "MLHook_LogMe_" + PageUID
 Void MLHookLog(Text msg) {
-    SendCustomEvent("MLHook_LogMe_KoFeed", [msg]);
+    SendCustomEvent("MLHook_LogMe_MLFeedKOs", [msg]);
 }
 
 Void MLHookUpdatePlayerStatus(Text UserId, Boolean IsAlive, Boolean IsDNF) {
     declare Payload = [UserId, ""^IsAlive, ""^IsDNF];
-    SendCustomEvent("MLHook_Event_KoFeed_PlayerStatus", Payload);
+    SendCustomEvent("MLHook_Event_MLFeedKOs_PlayerStatus", Payload);
     MLHookLog("PlayerStatus: " ^ Payload);
 }
 
 Void MLHookUpdateKP(Text Key, Text Value) {
-    SendCustomEvent("MLHook_Event_KoFeed_MatchKeyPair", [Key, Value]);
+    SendCustomEvent("MLHook_Event_MLFeedKOs_MatchKeyPair", [Key, Value]);
     MLHookLog("MatchKeyPair: " ^ [Key, Value]);
 }
 
@@ -39,6 +39,7 @@ Void UpdatePlayerStatus() {
                 MLHookUpdatePlayerStatus(UserId, Net_Knockout_PlayerIsAlive, Net_Knockout_DNF);
                 ScoreLastAlive[UserId] = Net_Knockout_PlayerIsAlive;
                 ScoreLastDNF[UserId] = Net_Knockout_DNF;
+                yield;
             }
     }
 }
@@ -128,12 +129,14 @@ declare Text CurrentGameMode;
 declare Boolean IsKOGameMode;
 
 Void CheckGMChange() {
-    declare Text[][] MLHook_Inbound_KoFeed for ClientUI;
-    foreach (Event in MLHook_Inbound_KoFeed) {
+    declare Text[][] MLHook_Inbound_MLFeedKOs for ClientUI;
+    foreach (Event in MLHook_Inbound_MLFeedKOs) {
         if (Event[0] == "SetGameMode") {
             CurrentGameMode = Event[1];
             MLHookLog("Set new GameMode: "^CurrentGameMode);
-            IsKOGameMode = CurrentGameMode == "TM_KnockoutDaily_Online" || CurrentGameMode == "TM_Knockout_Online";
+            IsKOGameMode = CurrentGameMode == "TM_KnockoutDaily_Online"
+                        || CurrentGameMode == "TM_Knockout_Debug"
+                        || CurrentGameMode == "TM_Knockout_Online";
         } else if (Event[0] == "SendAllMatchKeyPairs") {
             ResetAllTrackedState();
         } else if (Event[0] == "SendAllPlayerStates") {
@@ -141,7 +144,7 @@ Void CheckGMChange() {
         }
         MLHookLog("processed incoming event: " ^ Event[0]);
     }
-    MLHook_Inbound_KoFeed = [];
+    MLHook_Inbound_MLFeedKOs = [];
 }
 
 main() {

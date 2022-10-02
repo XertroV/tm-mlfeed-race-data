@@ -1,12 +1,5 @@
 namespace MLFeed {
-    shared class KoEvent {
-        string type;
-        MwFastBuffer<wstring> data;
-        KoEvent(const string &in t, MwFastBuffer<wstring> &in d) {
-            type = t;
-            data = d;
-        }
-    }
+    const string KOsEvent = "MLFeedKOs";
 
     shared class KoPlayerState {
         string name;
@@ -48,11 +41,11 @@ namespace MLFeed {
 
     class HookKoStatsEvents : HookKoStatsEventsBase {
         HookKoStatsEvents() {
-            super("KoFeed");
+            super(KOsEvent);
         }
 
         // most props defined in base
-        KoEvent@[] incoming_msgs;
+        MLHook::PendingEvent@[] incoming_msgs;
 
         void ResetState() {
             division = -1;
@@ -103,11 +96,12 @@ namespace MLFeed {
             }
         }
 
-        void OnEvent(const string &in type, MwFastBuffer<wstring> &in data) override {
-            incoming_msgs.InsertLast(KoEvent(type, data));
+        // void OnEvent(const string &in type, MwFastBuffer<wstring> &in data) override {
+        void OnEvent(MLHook::PendingEvent@ event) override {
+            incoming_msgs.InsertLast(event);
         }
 
-        void ProcessMsg(KoEvent@ evt) {
+        void ProcessMsg(MLHook::PendingEvent@ evt) {
             if (evt.type.EndsWith("PlayerStatus")) {
                 UpdatePlayerState(evt);
                 return;
@@ -120,7 +114,7 @@ namespace MLFeed {
 
         /* main functionality */
 
-        void UpdateMatchKeyPair(KoEvent@ evt) {
+        void UpdateMatchKeyPair(MLHook::PendingEvent@ evt) {
             if (evt.data.Length < 2) {
                 warn('UpdateMatchKeyPair data too short.');
                 return;
@@ -144,7 +138,7 @@ namespace MLFeed {
         //     return cast<KoPlayerState>(playerStates[name]);
         // }
 
-        void UpdatePlayerState(KoEvent@ evt) {
+        void UpdatePlayerState(MLHook::PendingEvent@ evt) {
             if (evt.data.Length < 3) {
                 warn('KO feed update player state got data with len ' + evt.data.Length + ' < 3');
                 return;

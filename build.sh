@@ -29,29 +29,32 @@ for pluginSrc in ${pluginSources[@]}; do
   # if we don't have `dos2unix` below then we need to add `\r` to the `tr -d`
   PLUGIN_PRETTY_NAME="$(cat ./info.toml | dos2unix | grep '^name' | cut -f 2 -d '=' | tr -d '\"\r' | sed 's/^[ ]*//')"
   PLUGIN_VERSION="$(cat ./info.toml | dos2unix | grep '^version' | cut -f 2 -d '=' | tr -d '\"\r' | sed 's/^[ ]*//')"
+  if [[ "$PLUGIN_PRETTY_NAME" == "MLFeed: Race Data" ]]; then
+    PLUGIN_PRETTY_NAME="MLFeedRaceData"
+  fi
 
-  # prelim stuff
-  case $_build_mode in
-    dev)
-      # we will replicate this in the info.toml file later
-      export PLUGIN_PRETTY_NAME="${PLUGIN_PRETTY_NAME:-} (Dev)"
-      ;;
-    prerelease)
-      export PLUGIN_PRETTY_NAME="${PLUGIN_PRETTY_NAME:-} (Prerelease)"
-      ;;
-    unittest)
-      export PLUGIN_PRETTY_NAME="${PLUGIN_PRETTY_NAME:-} (UnitTest)"
-      ;;
-    *)
-      ;;
-  esac
+  # # prelim stuff
+  # case $_build_mode in
+  #   dev)
+  #     # we will replicate this in the info.toml file later
+  #     export PLUGIN_PRETTY_NAME="${PLUGIN_PRETTY_NAME:-} (Dev)"
+  #     ;;
+  #   prerelease)
+  #     export PLUGIN_PRETTY_NAME="${PLUGIN_PRETTY_NAME:-} (Prerelease)"
+  #     ;;
+  #   unittest)
+  #     export PLUGIN_PRETTY_NAME="${PLUGIN_PRETTY_NAME:-} (UnitTest)"
+  #     ;;
+  #   *)
+  #     ;;
+  # esac
 
   echo
   _colortext16 green "✅ Building: ${PLUGIN_PRETTY_NAME} (./$pluginSrc)"
 
   # remove parens, replace spaces with dashes, and uppercase characters with lowercase ones
   # => `Never Give Up (Dev)` becomes `never-give-up-dev`
-  PLUGIN_NAME=$(echo "$PLUGIN_PRETTY_NAME" | tr -d '(),:;'\''"' | tr 'A-Z ' 'a-z-')
+  PLUGIN_NAME=$(echo "$PLUGIN_PRETTY_NAME" | tr -d '(),:;'\''"')
   # echo $PLUGIN_NAME
   _colortext16 green "✅ Output file/folder name: ${PLUGIN_NAME}"
 

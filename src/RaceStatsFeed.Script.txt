@@ -28,70 +28,77 @@ Integer GetBestRaceTime(CSmPlayer Player) {
 }
 
 declare Integer[Text] LastSpawnTime;
+declare Text[] LastKnownPlayers;
 
 // send a complete list of players every now and then.
-Void SendKnownPlayers() {
-    declare Text playerNames = "";
-    declare Text bestTimes = "";
+Void SendDepartedPlayers() {
+    declare Boolean[Text] CurrentPlayers;
+    declare Text[] CurrPlayerNames;
     foreach (Player in Players) {
-        declare Text Name = Player.User.Name;
-        if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::Spawned) {
-            LastSpawnTime[Name] = GameTime;
-        }
-        // // skip players that have not been spawned for >60s
-        // if (!LastSpawnTime.existskey(Name) || LastSpawnTime[Name] + 60000 < GameTime)
-        //     continue;
-        if (playerNames == "") {
-            playerNames = Player.User.Name;
-            bestTimes = ""^GetBestRaceTime(Player);
-        } else {
-            playerNames = playerNames^","^Player.User.Name;
-            bestTimes = bestTimes^","^GetBestRaceTime(Player);
-        }
+        CurrentPlayers[Player.User.Name] = True;
+        CurrPlayerNames.add(Player.User.Name);
     }
-    SendCustomEvent("MLHook_Event_RaceStats_ActivePlayers", [playerNames, bestTimes]);
+    foreach (PlayerName in LastKnownPlayers) {
+        if (CurrentPlayers.existskey(PlayerName)) continue;
+        SendCustomEvent("MLHook_Event_RaceStats_PlayerLeft", [PlayerName]);
+    }
+    LastKnownPlayers = CurrPlayerNames;
+}
+
+// send all players best times
+Void _SendPlayerTimes(CSmPlayer Player) {
+    if (Player.Score == Null) return;
+    declare Name = Player.User.Name;
+    declare RaceTimes = Player.RaceWaypointTimes;
+    SendCustomEvent("MLHook_Event_RaceStats_PlayerRaceTimes", [Name, ""^RaceTimes]);
 }
 
 // we only want to send info when a player's CP count changes.
 declare Integer[Text] LastCPCounts;
 declare CSmPlayer::ESpawnStatus[Text] LastSpawn;
 
-Void _SendPlayerStats(CSmPlayer Player, Boolean Force) {
+Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
     declare Text Name = Player.User.Name;
     declare CPCount = Player.RaceWaypointTimes.count;
-    // update spawned time
-    if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::Spawned) {
-        LastSpawnTime[Player.User.Name] = GameTime;
-    }
     // check for changes
     declare Boolean SpawnChanged = LastSpawn.existskey(Name) && Player.SpawnStatus != LastSpawn[Name];
     declare Boolean CpsChanged = LastCPCounts.existskey(Name) && CPCount != LastCPCounts[Name];
     // update if there are changes or the update is forced.
-    if (Force || SpawnChanged || CpsChanged) {
+    declare Boolean WillSendEvent = Force || SpawnChanged || CpsChanged;
+    if (WillSendEvent) {
         declare LatestCPTime = "";
         if (CPCount > 0) {
             LatestCPTime = ""^Player.RaceWaypointTimes[CPCount - 1];
         }
         // events should be prefixed with "MLHook_Event_" + PageUID.
         // Suffixes can be applied if multiple types of events are sent.
-        SendCustomEvent("MLHook_Event_RaceStats", [Name, ""^CPCount, LatestCPTime, ""^GetBestRaceTime(Player), ""^SpawnStatusToUint(Player.SpawnStatus)]);
+        SendCustomEvent("MLHook_Event_RaceStats_PlayerCP", [Name, ""^CPCount, LatestCPTime, ""^GetBestRaceTime(Player), ""^SpawnStatusToUint(Player.SpawnStatus)]);
     }
     // update last spawn and cp count always
     LastCPCounts[Name] = CPCount;
     LastSpawn[Name] = Player.SpawnStatus;
+    return WillSendEvent;
 }
 
 // to start with we want to send all data.
 Void InitialSend() {
     foreach (Player in Players) {
         _SendPlayerStats(Player, True);
+        _SendPlayerTimes(Player);
     }
     MLHookLog("Completed: InitialSend");
 }
 
 Void CheckPlayers() {
+    declare Integer c = 0;
     foreach (Player in Players) {
-        _SendPlayerStats(Player, False);
+        if (_SendPlayerStats(Player, False)) {
+            c += 1;
+        }
+        // if (c > 4) {
+        //     c = 0;
+        //     yield;
+        // }
     }
 }
 
@@ -131,7 +138,7 @@ main() {
         CheckPlayers();
         LoopCounter += 1;
         if (LoopCounter % 60 == 0) {
-            SendKnownPlayers();
+            SendDepartedPlayers();
             CheckMapChange();
         }
         if (LoopCounter % 60 == 20) {

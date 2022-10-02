@@ -22,8 +22,10 @@ string get_CurrentGameMode() {
 }
 
 bool get_IsGameModeCotdKO() {
-    return CurrentGameMode == "TM_KnockoutDaily_Online"
-        || CurrentGameMode == "TM_Knockout_Online";
+    auto cgm = CurrentGameMode;
+    return cgm == "TM_KnockoutDaily_Online"
+        || cgm == "TM_Knockout_Debug"
+        || cgm == "TM_Knockout_Online";
 }
 
 // current playground

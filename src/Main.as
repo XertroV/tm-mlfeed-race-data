@@ -15,9 +15,6 @@ void Main() {
     @koFeedHook = MLFeed::HookKoStatsEvents();
 
     startnew(InitCoro);
-#if DEV
-    KoFeedUI::g_windowVisible = true;
-#endif
 }
 
 void OnDestroyed() { _Unload(); }
@@ -28,19 +25,21 @@ void _Unload() {
 }
 
 void InitCoro() {
+    string KOsEvent = MLFeed::KOsEvent;
     // Race Stats
-    MLHook::RegisterMLHook(theHook, "RaceStats");
-    MLHook::RegisterMLHook(theHook, "RaceStats_ActivePlayers");
+    MLHook::RegisterMLHook(theHook, "RaceStats_PlayerCP");
+    MLHook::RegisterMLHook(theHook, "RaceStats_PlayerLeft");
+    MLHook::RegisterMLHook(theHook, "RaceStats_PlayerRaceTimes");
     // ko feed hook
-    MLHook::RegisterMLHook(koFeedHook, "KoFeed_PlayerStatus");
-    MLHook::RegisterMLHook(koFeedHook, "KoFeed_MatchKeyPair");
+    MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_PlayerStatus");
+    MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_MatchKeyPair");
 
     // ml load
     yield();
     IO::FileSource refreshCode("RaceStatsFeed.Script.txt");
-    MLHook::InjectManialinkToPlayground("RaceStatsFeed", refreshCode.ReadToEnd(), true);
-    IO::FileSource cotdML("KoFeed.Script.txt");
-    MLHook::InjectManialinkToPlayground("KoFeed", cotdML.ReadToEnd(), true);
+    MLHook::InjectManialinkToPlayground("MLFeedRace", refreshCode.ReadToEnd(), true);
+    IO::FileSource cotdML("MLFeedKOs.Script.txt");
+    MLHook::InjectManialinkToPlayground("MLFeedKOs", cotdML.ReadToEnd(), true);
     yield();
     yield();
     // start coros
@@ -49,9 +48,9 @@ void InitCoro() {
 
 #if DEV
     // cotd hook setup
-    auto devHook = MLHook::DebugLogAllHook("MLHook_Event_KoFeed");
-    MLHook::RegisterMLHook(devHook, "KoFeed_PlayerStatus");
-    MLHook::RegisterMLHook(devHook, "KoFeed_MatchKeyPair");
+    auto devHook = MLHook::DebugLogAllHook("MLHook_Event_" + KOsEvent);
+    MLHook::RegisterMLHook(devHook, KOsEvent + "_PlayerStatus");
+    MLHook::RegisterMLHook(devHook, KOsEvent + "_MatchKeyPair");
     // MLHook::RegisterMLHook(devHook, "RaceStats"); // bc its the debug hook
     // MLHook::RegisterMLHook(devHook, "RaceStats_ActivePlayers"); // bc its the debug hook
 #endif
@@ -60,6 +59,7 @@ void InitCoro() {
 #if SIG_DEVELOPER
 void Render() {
     KoFeedUI::Render();
+    RaceFeedUI::Render();
 }
 #endif
 
@@ -69,6 +69,7 @@ void RenderInterface() {
 #if SIG_DEVELOPER
 void RenderMenu() {
     KoFeedUI::RenderMenu();
+    RaceFeedUI::RenderMenu();
 }
 #endif
 
@@ -91,89 +92,6 @@ SortMethod g_sortMethod = SortMethod::TimeAttack;
 bool Setting_ShowBestTimeCol = true;
 [Setting hidden]
 bool Setting_ShowPastCPs = false;
-
-
-// void DrawMainInterior() {
-//     if (theHook is null) return;
-//     if (theHook.latestPlayerStats is null) return;
-//     if (theHook.sortedPlayers.Length == 0) return;
-
-//     string cpCountStr = theHook.LapCount == 1 ? "" : ("; " + (theHook.CpCount + 1) + " per Lap");
-//     UI::Text("" + theHook.sortedPlayers.Length + " Players  |  " + theHook.CPsToFinish + " Total Checkpoints" + cpCountStr);
-
-//     if (UI::BeginCombo("Sort Method", tostring(g_sortMethod))) {
-//         for (uint i = 0; i < AllSortMethods.Length; i++) {
-//             auto item = AllSortMethods[i];
-//             if (UI::Selectable(tostring(item), item == g_sortMethod)) {
-//                 g_sortMethod = item;
-//                 if (theHook !is null) theHook.UpdateSortedPlayers();
-//             }
-//         }
-//         UI::EndCombo();
-//     }
-
-//     Setting_ShowBestTimeCol = UI::Checkbox("Show Best Times?", Setting_ShowBestTimeCol);
-
-//     uint cols = 4;
-//     if (Setting_ShowBestTimeCol)
-//         cols++;
-//     if (Setting_ShowPastCPs)
-//         cols++;
-
-//     // SizingFixedFit / fixedsame / strechsame / strechprop
-//     if (UI::BeginTable("player times", cols, UI::TableFlags::SizingStretchProp | UI::TableFlags::ScrollY)) {
-//         UI::TableSetupColumn("Pos.");
-//         UI::TableSetupColumn("Player");
-//         UI::TableSetupColumn("CP #");
-//         UI::TableSetupColumn("CP Lap Time");
-//         if (Setting_ShowBestTimeCol)
-//             UI::TableSetupColumn("Best Time");
-//         UI::TableHeadersRow();
-
-//         for (uint i = 0; i < theHook.sortedPlayers.Length; i++) {
-//             uint colVars = 1;
-//             auto player = theHook.sortedPlayers[i];
-//             if (player is null) continue;
-//             if (player.spawnStatus != SpawnStatus::Spawned) {
-//                 UI::PushStyleColor(UI::Col::Text, vec4(.3, .65, 1, .9));
-//             } else if (player.cpCount >= int(theHook.CPsToFinish)) { // finished 1-lap
-//                 UI::PushStyleColor(UI::Col::Text, vec4(.2, 1, .2, .9));
-//             } else if (player.name == LocalUserName) {
-//                 UI::PushStyleColor(UI::Col::Text, vec4(1, .3, .65, .9));
-//             } else {
-//                 UI::PushStyleColor(UI::Col::Text, vec4(1, 1, 1, 1));
-//             }
-//             UI::TableNextRow();
-
-//             UI::TableNextColumn();
-//             UI::Text("" + (i + 1) + "."); // rank
-
-//             UI::TableNextColumn();
-//             UI::Text(player.name);
-
-//             UI::TableNextColumn();
-//             UI::PushStyleColor(UI::Col::Text, ScaledCpColor(player.cpCount, theHook.CPsToFinish));
-//             UI::Text('' + player.cpCount);
-//             UI::PopStyleColor();
-
-//             UI::TableNextColumn();
-//             if (player.cpCount > 0) {
-//                 UI::Text(MsToSeconds(player.lastCpTime));
-//             } else {
-//                 UI::Text('---');
-//             }
-
-//             if (Setting_ShowBestTimeCol) {
-//                 UI::TableNextColumn();
-//                 auto bt = int(player.bestTime);
-//                 if (bt > 0) UI::Text(MsToSeconds(bt));
-//             }
-
-//             UI::PopStyleColor(colVars);
-//         }
-//         UI::EndTable();
-//     }
-// }
 
 
 namespace MLFeed {
@@ -255,31 +173,40 @@ namespace MLFeed {
         uint taRank = 0;  // set by hook; not sure if we can get it from ML
         uint raceRank = 0;  // set by hook; not sure if we can get it from ML
 
-        PlayerCpInfo(MwFastBuffer<wstring> &in msg, uint _spawnIndex) {
-            spawnIndex = _spawnIndex;
-            if (msg.Length < 5) {
-                warn('PlayerCpInfo msg had insufficient length');
-                return;
-            }
-            name = msg[0];
-            cpCount = Text::ParseInt(msg[1]);
-            cpTimes.Resize(cpCount + 1);
-            lastCpTime = Text::ParseInt(msg[2]);
-            bestTime = Text::ParseInt(msg[3]);
-            spawnStatus = SpawnStatus(Text::ParseInt(msg[4]));
+        PlayerCpInfo(MLHook::PendingEvent@ event, uint _spawnIndex) {
+            name = event.data[0]; // set once only
+            cpTimes.InsertLast(0); // zeroth cpTime always 0
+            UpdateFrom(event, _spawnIndex);
         }
         // create from another instance, useful for testing
-        PlayerCpInfo(PlayerCpInfo@ from, int cpOffset = 0) {
+        PlayerCpInfo(PlayerCpInfo@ _from, int cpOffset = 0) {
             cpOffset = Math::Min(cpOffset, 0); // so cpOffset <= 0
-            int cpSetTo = Math::Max(from.cpCount + cpOffset, 0);
-            name = from.name;
+            int cpSetTo = Math::Max(_from.cpCount + cpOffset, 0);
+            name = _from.name;
             cpCount = cpSetTo;
-            cpTimes = from.cpTimes;
+            cpTimes = _from.cpTimes;
             cpTimes.Resize(cpCount + 1);
             lastCpTime = cpTimes[cpCount];
-            bestTime = from.bestTime;
-            spawnStatus = from.spawnStatus;
+            bestTime = _from.bestTime;
+            spawnStatus = _from.spawnStatus;
         }
+
+        void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex) {
+            spawnIndex = _spawnIndex;
+            if (event.data.Length < 5) {
+                warn('PlayerCpInfo event.data had insufficient length');
+                return;
+            }
+            cpCount = Text::ParseInt(event.data[1]);
+            lastCpTime = Text::ParseInt(event.data[2]);
+            cpTimes.Resize(cpCount + 1);
+            if (cpCount > 0) {
+                cpTimes[cpCount] = lastCpTime;
+            }
+            bestTime = Text::ParseInt(event.data[3]);
+            spawnStatus = SpawnStatus(Text::ParseInt(event.data[4]));
+        }
+
         // int opCmp(PlayerCpInfo@ other) {
         //     return int(cmpPlayerCpInfo(this, other));
         // }
@@ -295,7 +222,6 @@ namespace MLFeed {
     shared class HookRaceStatsEventsBase : MLHook::HookMLEventsByType {
         string lastMap;
         dictionary latestPlayerStats;
-        dictionary bestTimes;
         array<PlayerCpInfo@> sortedPlayers_Race;
         array<PlayerCpInfo@> sortedPlayers_TimeAttack;
         uint CpCount;
@@ -313,7 +239,7 @@ namespace MLFeed {
 
     class HookRaceStatsEvents : HookRaceStatsEventsBase {
         // props defined in HookRaceStatsEventsBase
-        MwFastBuffer<wstring>[] incoming_msgs;
+        MLHook::PendingEvent@[] incoming_msgs;
 
         HookRaceStatsEvents() {
             super("RaceStats");
@@ -335,100 +261,91 @@ namespace MLFeed {
             }
         }
 
-        void ProcessMsg(MwFastBuffer<wstring> &in msg) {
-            UpdatePlayer(PlayerCpInfo(msg, SpawnCounter));
+        void ProcessMsg(MLHook::PendingEvent@ event) {
+            if (event.type.EndsWith("PlayerLeft")) {
+                // update active player list
+                UpdatePlayerLeft(event);
+            } else if (event.type.EndsWith("PlayerRaceTimes")) {
+                // UpdatePlayerRaceTimes(event.data[0], event.data[1]);
+            } else if (event.type.EndsWith("PlayerCP")) {
+                UpdatePlayer(event);
+            }
         }
 
-        void OnEvent(const string &in type, MwFastBuffer<wstring> &in data) override {
-            if (type.EndsWith("ActivePlayers")) {
-                // update active player list
-                UpdateActivePlayers(data[0], data[1]);
-                return;
-            }
-            incoming_msgs.InsertLast(data);
+        // void OnEvent(const string &in type, MwFastBuffer<wstring> &in data) override {
+        void OnEvent(MLHook::PendingEvent@ event) override {
+            incoming_msgs.InsertLast(event);
         }
 
         /* main functionality logic */
 
-        void UpdatePlayer(PlayerCpInfo@ player) {
-            // auto playerPrev = GetPlayer(player.name);
-            // bool playerPrevWasNotSpawned = (playerPrev is null || playerPrev.spawnStatus != SpawnStatus::Spawned);
+        void UpdatePlayer(MLHook::PendingEvent@ event) {
+            uint spawnIx = SpawnCounter;
+            string name = event.data[0];
+            PlayerCpInfo@ player;
+            bool hadPlayer = latestPlayerStats.Get(name, @player);
+            if (hadPlayer) {
+                player.UpdateFrom(event, spawnIx);
+            } else {
+                @player = PlayerCpInfo(event, spawnIx);
+                @latestPlayerStats[name] = player;
+                sortedPlayers_Race.InsertLast(player);
+                sortedPlayers_TimeAttack.InsertLast(player);
+                player.raceRank = sortedPlayers_Race.Length;
+                player.taRank = sortedPlayers_TimeAttack.Length;
+            }
+
             if (player.spawnStatus == SpawnStatus::Spawned && player.cpCount == 0) {
                 SpawnCounter += 1;
             }
-            auto prevPlayerStats = GetPlayer(player.name);
-            @latestPlayerStats[player.name] = player;
-            bestTimes[player.name] = player.bestTime;
-            // copy past cp times
-            if (prevPlayerStats !is null && player.cpCount == 1 + prevPlayerStats.cpCount) {
-                player.cpTimes = prevPlayerStats.cpTimes;
-                player.cpTimes.InsertLast(player.lastCpTime);
-                // for (uint i = 0; i < prevPlayerStats.cpTimes.Length; i++) {
-                //     player.cpTimes[i] = prevPlayerStats.cpTimes[i];
-                // }
-                // player.cpTimes[player.cpTimes.Length - 1] = player.lastCpTime;
-            }
             // race events don't update the local players best time until they've respawned for some reason (other ppl are immediate)
             if (player.cpCount == int(this.CPsToFinish) && player.name == LocalUserName && player.IsSpawned) {
-                int bt = int(bestTimes[player.name]);
+                int bt = int(player.bestTime);
                 if (bt <= 0) {
                     bt = 1 << 30;
                 }
                 player.bestTime = Math::Min(bt, player.lastCpTime);
-                bestTimes[player.name] = player.bestTime;
             }
-            UpdateSortedPlayers();
+            UpdatePlayerPosition(player);
         }
 
-        void UpdateSortedPlayers() {
-            // sortedPlayers_TimeAttack.RemoveRange(0, sortedPlayers_TimeAttack.Length);
-            // auto ps = latestPlayerStats.GetKeys();
-            // for (uint i = 0; i < ps.Length; i++) {
-            //     auto player = GetPlayer(ps[i]);
-            //     sortedPlayers_TimeAttack.InsertLast(player);
-            // }
-            // sortedPlayers_TimeAttack.Sort(cmpTimeAttack);
-            UpdateSortedPlayersWithMethod(sortedPlayers_TimeAttack, LessPlayers(lessTimeAttack));
-            UpdateSortedPlayersWithMethod(sortedPlayers_Race, LessPlayers(lessRace));
-            // set player ranks
-            for (uint i = 0; i < sortedPlayers_TimeAttack.Length; i++) {
-                auto item = sortedPlayers_TimeAttack[i];
-                item.taRank = (i + 1);
-            }
-            for (uint i = 0; i < sortedPlayers_Race.Length; i++) {
-                auto item = sortedPlayers_Race[i];
-                item.raceRank = i + 1;
-            }
+        void UpdatePlayerPosition(PlayerCpInfo@ player) {
+            // when a player is updated, they usually only go up or down by a few places at most.
+            UpdatePlayerInSortedPlayersWithMethod(player, sortedPlayers_TimeAttack, LessPlayers(lessTimeAttack), false);
+            UpdatePlayerInSortedPlayersWithMethod(player, sortedPlayers_Race, LessPlayers(lessRace), true);
         }
 
-        void UpdateSortedPlayersWithMethod(array<PlayerCpInfo@>@ &in sorted, LessPlayers@ lessFunc) {
-            sorted.RemoveRange(0, sorted.Length);
-            auto ps = latestPlayerStats.GetKeys();
-            for (uint i = 0; i < ps.Length; i++) {
-                auto player = GetPlayer(ps[i]);
-                sorted.InsertLast(player);
-            }
-            sorted.Sort(lessFunc);
-        }
-
-        void UpdateActivePlayers(const string &in playersCsv, const string &in bestTimesCsv) {
-            auto players = playersCsv.Split(",");
-            auto newBestTimes = bestTimesCsv.Split(",");
-            bestTimes.DeleteAll();
-            for (uint i = 0; i < players.Length; i++) {
-                auto player = GetPlayer(players[i]);
-                if (player !is null)
-                    bestTimes[players[i]] = player.bestTime;
-                else {
-                    bestTimes[players[i]] = Text::ParseInt(newBestTimes[i]);
+        // todo, refactor to use SortMethod
+        void UpdatePlayerInSortedPlayersWithMethod(PlayerCpInfo@ player, array<PlayerCpInfo@>@ &in sorted, LessPlayers@ lessFunc, bool isRace) {
+            uint ix = sorted.FindByRef(player);
+            PlayerCpInfo@ tmp;
+            if (ix < 0) return;
+            // improving in rank
+            while (ix > 0 && lessFunc(player, sorted[ix - 1])) {
+                // swap these players
+                @tmp = sorted[ix - 1];
+                @sorted[ix - 1] = player;
+                @sorted[ix] = tmp;
+                ix--;
+                if (isRace) {
+                    player.raceRank--;
+                    tmp.raceRank++;
+                } else {
+                    player.taRank--;
+                    tmp.taRank++;
                 }
             }
-            auto prevPlayers = latestPlayerStats.GetKeys();
-            for (uint i = 0; i < prevPlayers.Length; i++) {
-                auto p = prevPlayers[i];
-                if (!bestTimes.Exists(p)) {
-                    latestPlayerStats.Delete(p);
-                }
+        }
+
+        void UpdatePlayerLeft(MLHook::PendingEvent@ event) {
+            string name = event.data[0];
+            auto player = GetPlayer(name);
+            if (player !is null) {
+                uint ix = sortedPlayers_Race.FindByRef(player);
+                if (ix >= 0) sortedPlayers_Race.RemoveAt(ix);
+                ix = sortedPlayers_TimeAttack.FindByRef(player);
+                if (ix >= 0) sortedPlayers_TimeAttack.RemoveAt(ix);
+                latestPlayerStats.Delete(name);
             }
         }
 
