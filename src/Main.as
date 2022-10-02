@@ -158,6 +158,8 @@ namespace RaceFeed {
         return Cmp::Gt;
     }
 
+    // todo: add past list that tracks last known time of player?
+
     class HookRaceStatsEvents : MLFeed::HookRaceStatsEventsBase {
         // props defined in HookRaceStatsEventsBase
         MLHook::PendingEvent@[] incoming_msgs;
@@ -254,6 +256,19 @@ namespace RaceFeed {
                 } else {
                     player.taRank--;
                     tmp.taRank++;
+                }
+            }
+            // fix rankings if players dropped out -- todo: mb do this in updatePlayerLeft
+            if (1 != (isRace ? sorted[0].raceRank : sorted[0].taRank)) {
+                if (isRace) sorted[0].raceRank = 1;
+                else sorted[0].taRank = 1;
+            }
+            for (int i = 0; i < sorted.Length - 1; i++) {
+                auto preRank = isRace ? sorted[i].raceRank : sorted[i].taRank;
+                auto postRank = isRace ? sorted[i+1].raceRank : sorted[i+1].taRank;
+                if (preRank + 1 != postRank) {
+                    if (isRace) sorted[i+1].raceRank = preRank + 1;
+                    else sorted[i+1].taRank = preRank + 1;
                 }
             }
         }
