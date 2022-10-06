@@ -38,12 +38,10 @@ void InitCoro() {
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_MatchKeyPair");
 
     // ml load
-    yield();
-    IO::FileSource refreshCode("RaceStatsFeed.Script.txt");
-    MLHook::InjectManialinkToPlayground("MLFeedRace", refreshCode.ReadToEnd(), true);
-    IO::FileSource cotdML("MLFeedKOs.Script.txt");
-    MLHook::InjectManialinkToPlayground("MLFeedKOs", cotdML.ReadToEnd(), true);
-    yield();
+    yield(); // time for hooks to be instantiated etc
+    MLHook::InjectManialinkToPlayground("MLFeedRace", RACESTATSFEED_SCRIPT_TXT, true);
+    MLHook::InjectManialinkToPlayground("MLFeedKOs", MLFEEDKOS_SCRIPT_TXT, true);
+    yield(); // wait 2 frames for ML to load
     yield();
     // start coros
     startnew(CoroutineFunc(theHook.MainCoro));
