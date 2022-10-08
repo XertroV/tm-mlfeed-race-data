@@ -3,6 +3,7 @@ const string MsToSeconds(int t) {
     return Text::Format("%.3f", float(t) / 1000.0);
 }
 
+/*
 CTrackMania@ get_app() {
     return cast<CTrackMania>(GetApp());
 }
@@ -104,3 +105,4 @@ string get_LocalUserName() {
     }
     return _localUserName;
 }
+*/

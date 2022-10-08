@@ -41,12 +41,16 @@ namespace KoFeed {
             }
         }
 
-        void AskForAllPlayerStates() {
-            MLHook::Queue_MessageManialinkPlayground(this.type, {"SendAllPlayerStates"});
+        void OnMapChange() {
+            ResetState();
+            AskForAllMatchKeyPairs();
         }
 
-        void AskForAllMatchKeyPairs() {
-            MLHook::Queue_MessageManialinkPlayground(this.type, {"SendAllMatchKeyPairs"});
+        string get_CurrentMap() const {
+            auto map = GetApp().RootMap;
+            if (map is null) return "";
+            // return map.EdChallengeId;
+            return map.MapInfo.MapUid;
         }
 
         void CheckGMChange() {
@@ -56,6 +60,22 @@ namespace KoFeed {
                 MLHook::Queue_MessageManialinkPlayground(this.type, {"SetGameMode", lastGM});
                 AskForAllMatchKeyPairs();
             }
+        }
+
+        string get_CurrentGameMode() {
+            auto app = cast<CTrackMania>(GetApp());
+            auto serverInfo = cast<CTrackManiaNetworkServerInfo>(app.Network.ServerInfo);
+            if (serverInfo is null) return "";
+            return serverInfo.CurGameModeStr;
+        }
+
+
+        void AskForAllPlayerStates() {
+            MLHook::Queue_MessageManialinkPlayground(this.type, {"SendAllPlayerStates"});
+        }
+
+        void AskForAllMatchKeyPairs() {
+            MLHook::Queue_MessageManialinkPlayground(this.type, {"SendAllMatchKeyPairs"});
         }
 
         // void OnEvent(const string &in type, MwFastBuffer<wstring> &in data) override {
@@ -117,18 +137,6 @@ namespace KoFeed {
             }
             ps.isAlive = alive;
             ps.isDNF = dnf;
-        }
-
-        void OnMapChange() {
-            ResetState();
-            AskForAllMatchKeyPairs();
-        }
-
-        string get_CurrentMap() const {
-            auto map = GetApp().RootMap;
-            if (map is null) return "";
-            // return map.EdChallengeId;
-            return map.MapInfo.MapUid;
         }
     }
 }

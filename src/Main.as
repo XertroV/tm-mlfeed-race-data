@@ -8,7 +8,6 @@ dictionary pluginToKoData;
 
 todo show green when players fin
 
-
  */
 void Main() {
     MLHook::RequireVersionApi('0.3.0');
@@ -282,26 +281,11 @@ namespace RaceFeed {
             }
         }
 
-        void OnMapChange() {
-            latestPlayerStats.DeleteAll();
-            sortedPlayers_TimeAttack.RemoveRange(0, sortedPlayers_TimeAttack.Length);
-            sortedPlayers_Race.RemoveRange(0, sortedPlayers_Race.Length);
-            this.CpCount = 0;
-            if (CurrentMap != "") {
-                startnew(CoroutineFunc(SetCheckpointCount));
-            }
-        }
-
-        string get_CurrentMap() const {
-            auto map = GetApp().RootMap;
-            if (map is null) return "";
-            // return map.EdChallengeId;
-            return map.MapInfo.MapUid;
-        }
-
         void SetCheckpointCount() {
+            auto cp = cast<CSmArenaClient>(GetApp().CurrentPlayground);
             while (cp is null) {
                 yield();
+                @cp = cast<CSmArenaClient>(GetApp().CurrentPlayground);
             }
             auto landmarks = cp.Arena.MapLandmarks;
             uint cpCount = 0;
@@ -325,6 +309,34 @@ namespace RaceFeed {
             }
             this.CpCount = cpCount + lcps.GetSize();
             this.LapCount = cp.Map.MapInfo.TMObjective_NbLaps;
+        }
+
+        void OnMapChange() {
+            latestPlayerStats.DeleteAll();
+            sortedPlayers_TimeAttack.RemoveRange(0, sortedPlayers_TimeAttack.Length);
+            sortedPlayers_Race.RemoveRange(0, sortedPlayers_Race.Length);
+            this.CpCount = 0;
+            if (CurrentMap != "") {
+                startnew(CoroutineFunc(SetCheckpointCount));
+            }
+        }
+
+        string get_CurrentMap() const {
+            auto map = GetApp().RootMap;
+            if (map is null) return "";
+            // return map.EdChallengeId;
+            return map.MapInfo.MapUid;
+        }
+
+        private string _localUserName;
+        string get_LocalUserName() {
+            if (_localUserName.Length == 0) {
+                auto pcsa = GetApp().Network.PlaygroundClientScriptAPI;
+                if (pcsa !is null && pcsa.LocalUser !is null) {
+                    _localUserName = pcsa.LocalUser.Name;
+                }
+            }
+            return _localUserName;
         }
     }
 }
