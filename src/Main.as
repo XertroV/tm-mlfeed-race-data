@@ -238,7 +238,7 @@ namespace RaceFeed {
         void UpdatePlayerInSortedPlayersWithMethod(MLFeed::PlayerCpInfo@ player, array<MLFeed::PlayerCpInfo@>@ &in sorted, LessPlayers@ lessFunc, bool isRace) {
             uint ix = sorted.FindByRef(player);
             MLFeed::PlayerCpInfo@ tmp;
-            if (ix < 0) return;
+            if (ix >= sorted.Length) return;
             // improving in rank
             while (ix > 0 && lessFunc(player, sorted[ix - 1])) {
                 // swap these players
@@ -254,6 +254,23 @@ namespace RaceFeed {
                     tmp.taRank++;
                 }
             }
+            // todo, need to go the other way, too?
+            // necessary when race sorted but not everyone gets reset at the same time
+            while (ix < sorted.Length - 1 && lessFunc(sorted[ix + 1], player)) {
+                // swap these players
+                @tmp = sorted[ix + 1];
+                @sorted[ix + 1] = player;
+                @sorted[ix] = tmp;
+                ix++;
+                if (isRace) {
+                    player.raceRank++;
+                    tmp.raceRank--;
+                } else {
+                    player.taRank++;
+                    tmp.taRank--;
+                }
+            }
+
             // fix rankings if players dropped out -- todo: mb do this in updatePlayerLeft
             if (1 != (isRace ? sorted[0].raceRank : sorted[0].taRank)) {
                 if (isRace) sorted[0].raceRank = 1;
