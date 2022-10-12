@@ -85,28 +85,11 @@ so we can track the number of respawns
 
 SortMethod[] AllSortMethods = {Race, TimeAttack};
 
-[Setting hidden]
-SortMethod g_sortMethod = SortMethod::TimeAttack;
-[Setting hidden]
-bool Setting_ShowBestTimeCol = true;
-[Setting hidden]
-bool Setting_ShowPastCPs = false;
-
 namespace RaceFeed {
     enum Cmp {Lt = -1, Eq = 0, Gt = 1}
 
     funcdef Cmp CmpPlayers(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2);
     funcdef bool LessPlayers(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2);
-
-    Cmp cmpPlayerCpInfo(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2) {
-        switch (g_sortMethod) {
-            case SortMethod::Race: return cmpRace(p1, p2);
-            case SortMethod::TimeAttack: return cmpTimeAttack(p1, p2);
-            // default: break;
-        }
-        warn("Unknown sort method: " + tostring(g_sortMethod));
-        return Cmp::Eq;
-    }
 
 
     Cmp cmpRace(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2) {

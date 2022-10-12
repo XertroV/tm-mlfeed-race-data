@@ -19,6 +19,7 @@ namespace KoFeedUI {
             UI::Text("kosMilestone: " + koFeedHook.kosMilestone);
             UI::Text("kosNumber: " + koFeedHook.kosNumber);
             UI::Separator();
+
             for (uint i = 0; i < koFeedHook.players.Length; i++) {
                 auto ps = koFeedHook.GetPlayerState(koFeedHook.players[i]);
                 if (ps is null) {

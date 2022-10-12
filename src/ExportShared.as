@@ -131,9 +131,6 @@ namespace MLFeed {
             spawnStatus = SpawnStatus(Text::ParseInt(event.data[4]));
         }
 
-        // int opCmp(PlayerCpInfo@ other) {
-        //     return int(cmpPlayerCpInfo(this, other));
-        // }
         bool get_IsSpawned() {
             return spawnStatus == SpawnStatus::Spawned;
         }
