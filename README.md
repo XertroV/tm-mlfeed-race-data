@@ -34,6 +34,14 @@ dependencies = ["MLHook", "MLFeedRaceData"] # need both
 
 see also: [https://openplanet.dev/docs/reference/info-toml](https://openplanet.dev/docs/reference/info-toml)
 
+[Exported functions (https://github.com/XertroV/tm-mlfeed-race-data/blob/master/src/Export.as)](https://github.com/XertroV/tm-mlfeed-race-data/blob/master/src/Export.as)
+
+[Exported classes (https://github.com/XertroV/tm-mlfeed-race-data/blob/master/src/ExportShared.as)](https://github.com/XertroV/tm-mlfeed-race-data/blob/master/src/ExportShared.as)
+
+[Example Usage](https://github.com/XertroV/tm-cotd-buffer-time/blob/57ee1bce5ccd115a0ebef2a9b23f72d77cbfa28a/src/KoBufferDisplay.as#L132-L133)
+
+*Still curious about how to use something? Read the examples and use github search to find usages! Still not sure? Ask @XertroV on the Openplanet Discord*
+
 ## Boring Stuff
 
 License: Public Domain
