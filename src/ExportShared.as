@@ -162,10 +162,24 @@ namespace MLFeed {
         }
     }
 
+    shared class HookRecordEventsBase : MLHook::HookMLEventsByType {
+        protected int _lastRecordTime = -1;
+
+        HookRecordEventsBase(const string &in type) {
+            super(type);
+        }
+
+        int get_LastRecordTime() const final {
+            return _lastRecordTime;
+        }
+    }
+
     shared class RaceDataProxy {
         private HookRaceStatsEventsBase@ hook;
-        RaceDataProxy(HookRaceStatsEventsBase@ h) {
+        private HookRecordEventsBase@ recHook;
+        RaceDataProxy(HookRaceStatsEventsBase@ h, HookRecordEventsBase@ rh) {
             @hook = h;
+            @recHook = rh;
         }
         const PlayerCpInfo@ GetPlayer(const string &in name) const {
             return hook.GetPlayer(name);
@@ -190,6 +204,9 @@ namespace MLFeed {
         }
         uint get_SpawnCounter() const {
             return hook.SpawnCounter;
+        }
+        int get_LastRecordTime() const {
+            return recHook.LastRecordTime;
         }
     }
 }

@@ -1,3 +1,5 @@
+const string NOTE_OPTIONAL = "\\$bbb (Optional component)\\$z";
+
 namespace RaceFeedUI {
     bool g_windowVisible = false;
 
@@ -6,15 +8,15 @@ namespace RaceFeedUI {
         if (theHook is null) return;
 
         if (UI::Begin("Race Feed Demo UI", g_windowVisible)) {
-            // if (UI::Button("Update Player States")) {
-            //     koFeedHook.AskForAllPlayerStates();
-            // }
             UI::Text("Last Map: " + theHook.lastMap);
             UI::Text("latestPlayerStats.GetSize(): " + theHook.latestPlayerStats.GetSize());
             UI::Text("CpCount: " + theHook.CpCount);
             UI::Text("LapCount: " + theHook.LapCount);
             UI::Text("CPsToFinish: " + theHook.CPsToFinish);
             UI::Text("SpawnCounter: " + theHook.SpawnCounter);
+            UI::Dummy(vec2(0, 20));
+            int lrt = recordHook is null ? -1 : recordHook.LastRecordTime;
+            UI::Text("LastRecordTime: " + lrt); // + NOTE_OPTIONAL);
             UI::Dummy(vec2(0, 20));
             UI::Text("Players sorted as in a Race");
             UI::Separator();

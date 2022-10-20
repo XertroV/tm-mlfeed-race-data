@@ -1,20 +1,10 @@
-RaceFeed::HookRaceStatsEvents@ theHook = null;
-KoFeed::HookKoStatsEvents@ koFeedHook = null;
-
-dictionary pluginToRaceData;
-dictionary pluginToKoData;
-
-/*
-
-todo show green when players fin
-
- */
 void Main() {
-    MLHook::RequireVersionApi('0.3.0');
+    MLHook::RequireVersionApi('0.3.2');
 
     // initial objects, get them non-null ASAP
     @theHook = RaceFeed::HookRaceStatsEvents();
     @koFeedHook = KoFeed::HookKoStatsEvents();
+    @recordHook = HookRecordFeed();
 
     startnew(InitCoro);
 }
@@ -35,6 +25,9 @@ void InitCoro() {
     // ko feed hook
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_PlayerStatus");
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_MatchKeyPair");
+    // records
+    // todo?: make optional component that must be requested to load
+    MLHook::RegisterMLHook(recordHook, recordHook.type, true);
 
     // ml load
     yield(); // time for hooks to be instantiated etc
@@ -321,13 +314,6 @@ namespace RaceFeed {
             }
         }
 
-        string get_CurrentMap() const {
-            auto map = GetApp().RootMap;
-            if (map is null) return "";
-            // return map.EdChallengeId;
-            return map.MapInfo.MapUid;
-        }
-
         private string _localUserName;
         string get_LocalUserName() {
             if (_localUserName.Length == 0) {
@@ -339,4 +325,11 @@ namespace RaceFeed {
             return _localUserName;
         }
     }
+}
+
+string get_CurrentMap() {
+    auto map = GetApp().RootMap;
+    if (map is null) return "";
+    // return map.EdChallengeId;
+    return map.MapInfo.MapUid;
 }
