@@ -85,7 +85,7 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
 Void InitialSend() {
     foreach (Player in Players) {
         _SendPlayerStats(Player, True);
-        _SendPlayerTimes(Player);
+        // _SendPlayerTimes(Player);
     }
     MLHookLog("Completed: InitialSend");
 }

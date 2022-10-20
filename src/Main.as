@@ -9,6 +9,9 @@ void Main() {
     startnew(InitCoro);
 }
 
+[SettingsTab name="sdf"]
+bool test = false;
+
 void OnDestroyed() { _Unload(); }
 void OnDisabled() { _Unload(); }
 void _Unload() {
@@ -160,8 +163,6 @@ namespace RaceFeed {
             if (event.type.EndsWith("PlayerLeft")) {
                 // update active player list
                 UpdatePlayerLeft(event);
-            } else if (event.type.EndsWith("PlayerRaceTimes")) {
-                // UpdatePlayerRaceTimes(event.data[0], event.data[1]);
             } else if (event.type.EndsWith("PlayerCP")) {
                 UpdatePlayer(event);
             }
@@ -230,7 +231,6 @@ namespace RaceFeed {
                     tmp.taRank++;
                 }
             }
-            // todo, need to go the other way, too?
             // necessary when race sorted but not everyone gets reset at the same time
             while (ix < sorted.Length - 1 && lessFunc(sorted[ix + 1], player)) {
                 // swap these players
@@ -262,6 +262,7 @@ namespace RaceFeed {
             }
         }
 
+        // a player left the server
         void UpdatePlayerLeft(MLHook::PendingEvent@ event) {
             string name = event.data[0];
             auto player = GetPlayer(name);

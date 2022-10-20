@@ -2,7 +2,6 @@ const string NewRecordEvent = "TMxSM_Race_Record_NewRecord";
 
 class HookRecordFeed : MLFeed::HookRecordEventsBase {
     private MLHook::PendingEvent@[] pendingEvents = {};
-    // private int _lastRecordTime = -1; // defined in superclass
     private string lastMap = "";
 
     HookRecordFeed() {
