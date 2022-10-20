@@ -13,6 +13,7 @@ Currently exposed data:
 * Knockout data (for COTD / KO)
   * Per-Player Alive and DNF status
 	* Total Rounds, Current Round, Alive Players, Number of KOs This Round, Next KO Milestone, Number of Players (originally)
+* The last record set by the current player
 
 Additional data exposure available upon request.
 
@@ -22,8 +23,6 @@ Example plugins:
 
 - https://github.com/XertroV/tm-cotd-buffer-time
 - https://github.com/XertroV/tm-race-stats/
-- https://github.com/XertroV/tm-too-many-ghosts
-- https://github.com/XertroV/tm-somewhat-better-records/ (older example)
 
 include this in your `info.toml` file:
 
@@ -33,6 +32,10 @@ dependencies = ["MLHook", "MLFeedRaceData"] # need both
 ```
 
 see also: [https://openplanet.dev/docs/reference/info-toml](https://openplanet.dev/docs/reference/info-toml)
+
+```AngelScript
+
+```
 
 [Exported functions (https://github.com/XertroV/tm-mlfeed-race-data/blob/master/src/Export.as)](https://github.com/XertroV/tm-mlfeed-race-data/blob/master/src/Export.as)
 
@@ -53,3 +56,9 @@ Suggestions/feedback: @XertroV on Openplanet discord
 Code/issues: [https://github.com/XertroV/tm-mlfeed-race-data](https://github.com/XertroV/tm-mlfeed-race-data)
 
 GL HF
+
+-----
+
+todo:
+
+* look into teams data, e.g. during ranked modes
