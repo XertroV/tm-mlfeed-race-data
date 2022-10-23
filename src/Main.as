@@ -9,9 +9,6 @@ void Main() {
     startnew(InitCoro);
 }
 
-[SettingsTab name="sdf"]
-bool test = false;
-
 void OnDestroyed() { _Unload(); }
 void OnDisabled() { _Unload(); }
 void _Unload() {
