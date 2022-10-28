@@ -243,7 +243,7 @@ namespace MLFeed {
 
 #### Usage: See Also
 
-The Demo UIs available in (openplanet's) developer mode & score code in [the repo](https://github.com/XertroV/tm-mlfeed-race-data).
+The Demo UIs available in (openplanet's) developer mode (via `Scripts` menu) & associated source code in [the repo](https://github.com/XertroV/tm-mlfeed-race-data).
 
 [Exported functions (https://github.com/XertroV/tm-mlfeed-race-data/blob/master/src/Export.as)](https://github.com/XertroV/tm-mlfeed-race-data/blob/master/src/Export.as)
 
