@@ -5,6 +5,7 @@ void Main() {
     @theHook = RaceFeed::HookRaceStatsEvents();
     @koFeedHook = KoFeed::HookKoStatsEvents();
     @recordHook = HookRecordFeed();
+    @ghostHook = HookGhostData();
 
     startnew(InitCoro);
 }
@@ -28,6 +29,8 @@ void InitCoro() {
     // records
     // todo?: make optional component that must be requested to load
     MLHook::RegisterMLHook(recordHook, recordHook.type, true);
+    // GhostData
+    MLHook::RegisterMLHook(ghostHook);
 
     // ml load
     yield(); // time for hooks to be instantiated etc
@@ -41,9 +44,9 @@ void InitCoro() {
     startnew(CoroutineFunc(koFeedHook.MainCoro));
 
 #if DEV
-    auto devHook = MLHook::DebugLogAllHook("MLHook_Event_" + KOsEvent);
-    MLHook::RegisterMLHook(devHook, KOsEvent + "_PlayerStatus");
-    MLHook::RegisterMLHook(devHook, KOsEvent + "_MatchKeyPair");
+    auto devHook = MLHook::DebugLogAllHook("GhostData");
+    MLHook::RegisterMLHook(devHook);
+    // MLHook::RegisterMLHook(devHook, KOsEvent + "_MatchKeyPair");
     // MLHook::RegisterMLHook(devHook, "RaceStats"); // bc its the debug hook
     // MLHook::RegisterMLHook(devHook, "RaceStats_ActivePlayers"); // bc its the debug hook
 #endif
@@ -53,6 +56,7 @@ void InitCoro() {
 void Render() {
     KoFeedUI::Render();
     RaceFeedUI::Render();
+    GhostDataUI::Render();
 }
 #endif
 
@@ -63,6 +67,7 @@ void RenderInterface() {
 void RenderMenu() {
     KoFeedUI::RenderMenu();
     RaceFeedUI::RenderMenu();
+    GhostDataUI::RenderMenu();
 }
 #endif
 

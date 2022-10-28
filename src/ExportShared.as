@@ -265,4 +265,76 @@ namespace MLFeed {
             return recHook.LastRecordTime;
         }
     }
+
+    /* Provides access to ghost info.
+        This includes record ghosts loaded through the UI, and personal best ghosts.
+        When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
+        Therefore, duplicate ghost infos may be recorded.
+    */
+    shared class SharedGhostDataHook : MLHook::HookMLEventsByType {
+        SharedGhostDataHook(const string &in type) { super(type); }
+        // Number of currently loaded ghosts
+        uint get_NbGhosts() const { return 0; };
+        // Array of GhostInfos
+        const array<const MLFeed::GhostInfo@> get_Ghosts() const { return {}; };
+    }
+
+    /** Information about a currently loaded ghost. */
+    shared class GhostInfo {
+        private string _IdName;
+        private uint _IdUint;
+        private string _Nickname;
+        private int _Result_Score;
+        private int _Result_Time;
+        private uint[] _Checkpoints;
+
+        GhostInfo(const MLHook::PendingEvent@ &in event) {
+            if (event.data.Length < 5) {
+                warn("GhostInfo attempted instatiation with event.data.Length < 5. Bailing.");
+                return;
+            }
+            _IdName = event.data[0];
+            _Nickname = event.data[1];
+            _Result_Score = Text::ParseInt(event.data[2]);
+            _Result_Time = Text::ParseInt(event.data[3]);
+            string[] cpTimes = string(event.data[4]).Split(",");
+            for (uint i = 0; i < cpTimes.Length; i++) {
+                _Checkpoints.InsertLast(Text::ParseUInt(cpTimes[i]));
+            }
+            if (_IdName.Length > 0) {
+                _IdUint = Text::ParseUInt(_IdName.SubStr(1));
+            }
+        }
+
+        bool opEquals(const GhostInfo@ &in other) const {
+            bool isEqNoCps = true
+                && _IdName == other.IdName
+                && _Nickname == other.Nickname
+                && _Result_Score == other.Result_Score
+                && _Result_Time == other.Result_Time
+                && _Checkpoints.Length == other.Checkpoints.Length
+                ;
+            if (isEqNoCps) {
+                for (uint i = 0; i < _Checkpoints.Length; i++) {
+                    if (_Checkpoints[i] != other.Checkpoints[i])
+                        return false;
+                }
+            }
+            return isEqNoCps;
+        }
+
+        // Ghost.IdName
+        const string get_IdName() const { return _IdName; }
+        // Should be equiv to Ghost.Id.Value (experimental)
+        uint get_IdUint() const { return _IdUint; }
+        // Ghost.Nickname
+        const string get_Nickname() const { return _Nickname; }
+        // Ghost.Result.Score
+        int get_Result_Score() const { return _Result_Score; }
+        // Ghost.Result.Time
+        int get_Result_Time() const { return _Result_Time; }
+        // Ghost.Result.Checkpoints
+        const uint[]@ get_Checkpoints() const { return _Checkpoints; }
+    }
+
 }

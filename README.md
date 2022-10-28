@@ -8,12 +8,14 @@ This plugin provides other plugins with data about the current race. You might n
 
 Currently exposed data:
 * Sorted Player data
-    * For each player: LatestCPTime, CPCount, Cached Previous CP Times, Spawn Status, Best Time
-    * Sort methods: TimeAttack (sort by best time), Race (sorted by race leader)
+  * For each player: LatestCPTime, CPCount, Cached Previous CP Times, Spawn Status, Best Time
+  * Sort methods: TimeAttack (sort by best time), Race (sorted by race leader)
 * Knockout data (for COTD / KO)
   * Per-Player Alive and DNF status
     * Total Rounds, Current Round, Alive Players, Number of KOs This Round, Next KO Milestone, Number of Players (originally)
 * The last record set by the current player
+* Ghost Data
+  * Which ghosts have been loaded, the name of the ghost, and the ghost's checkpoint times.
 
 Additional data exposure available upon request.
 
@@ -43,12 +45,21 @@ void Main() {
      * Your plugin's `RaceDataProxy@` that exposes checkpoint data, spawn info, and lists of players for each sorting method.
      * You can call this function as often as you like -- it will always return the same proxy instance based on plugin ID.
      */
+
     MLFeed::RaceDataProxy@ RaceData = MLFeed::GetRaceData();
     /**
      * Your plugin's `KoDataProxy@` that exposes KO round information, and each player's , spawn info, and lists of players for each sorting method.
      * You can call this function as often as you like -- it will always return the same proxy instance based on plugin ID.
      */
     MLFeed::KoDataProxy@ KoData = MLFeed::GetKoData();
+
+    /** Object exposing GhostInfos for each loaded ghost.
+     *  This includes record ghosts loaded through the UI, and personal best ghosts.
+     *  When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
+     *  Therefore, duplicate ghost infos may be recorded.
+     *  The list is cleared on map change.
+     */
+    const MLFeed::SharedGhostDataHook@ GhostData = MLFeed::GetGhostData();
 }
 ```
 
@@ -193,10 +204,46 @@ namespace MLFeed {
         // Whether the player DNF'd or not. This is set to false the round after that player DNFs.
         bool isDNF = false;
     }
+
+
+    /* Provides access to ghost info.
+        This includes record ghosts loaded through the UI, and personal best ghosts.
+        When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
+        Therefore, duplicate ghost infos may be recorded.
+    */
+    interface SharedGhostDataHook : MLHook::HookMLEventsByType {
+        // Number of currently loaded ghosts
+        uint get_NbGhosts() const;
+        // Array of GhostInfos
+        const array<const MLFeed::GhostInfo@> get_Ghosts() const;
+    }
+
+    /** Information about a currently loaded ghost. */
+    interface GhostInfo {
+        // Ghost.IdName
+        const string get_IdName() const;
+
+        // Should be equiv to Ghost.Id.Value (experimental)
+        uint get_IdUint() const;
+
+        // Ghost.Nickname
+        const string get_Nickname() const;
+
+        // Ghost.Result.Score
+        int get_Result_Score() const;
+
+        // Ghost.Result.Time
+        int get_Result_Time() const;
+
+        // Ghost.Result.Checkpoints
+        const uint[]@ get_Checkpoints() const;
+    }
 }
 ```
 
 #### Usage: See Also
+
+The Demo UIs available in (openplanet's) developer mode & score code in [the repo](https://github.com/XertroV/tm-mlfeed-race-data).
 
 [Exported functions (https://github.com/XertroV/tm-mlfeed-race-data/blob/master/src/Export.as)](https://github.com/XertroV/tm-mlfeed-race-data/blob/master/src/Export.as)
 
