@@ -265,6 +265,18 @@ namespace RaceFeed {
             }
         }
 
+        void FixRanksRace() {
+            for (uint i = 0; i < sortedPlayers_Race.Length; i++) {
+                sortedPlayers_Race[i].raceRank = i + 1;
+            }
+        }
+
+        void FixRanksTimeAttack() {
+            for (uint i = 0; i < sortedPlayers_TimeAttack.Length; i++) {
+                sortedPlayers_TimeAttack[i].taRank = i + 1;
+            }
+        }
+
         // a player left the server
         void UpdatePlayerLeft(MLHook::PendingEvent@ event) {
             string name = event.data[0];
@@ -272,8 +284,10 @@ namespace RaceFeed {
             if (player !is null) {
                 uint ix = sortedPlayers_Race.FindByRef(player);
                 if (ix >= 0) sortedPlayers_Race.RemoveAt(ix);
+                FixRanksRace();
                 ix = sortedPlayers_TimeAttack.FindByRef(player);
                 if (ix >= 0) sortedPlayers_TimeAttack.RemoveAt(ix);
+                FixRanksTimeAttack();
                 latestPlayerStats.Delete(name);
             }
         }
