@@ -26,7 +26,7 @@ namespace RaceFeedUI {
                 for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
                     auto ps = sorted[i];
                     if (ps is null) { continue; }
-                    UI::Text(ps.ToString());
+                    UI::Text("" + ps.raceRank + ". " + ps.ToString());
                 }
             }
 
@@ -39,7 +39,7 @@ namespace RaceFeedUI {
                 for (int i = clipperTA.DisplayStart; i < clipperTA.DisplayEnd; i++) {
                     auto ps = sorted[i];
                     if (ps is null) { continue; }
-                    UI::Text(ps.ToString());
+                    UI::Text("" + ps.taRank + ". " + ps.ToString());
                 }
             }
 

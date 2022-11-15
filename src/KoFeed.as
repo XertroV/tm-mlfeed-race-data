@@ -6,6 +6,14 @@ namespace KoFeed {
             super(KOsEvent);
         }
 
+        // override this method to avoid reload crash?
+        MLFeed::KoPlayerState@ GetPlayerState(const string &in name) override {
+            // print("Getting state for: " + name + " exists? " + (playerStates.Exists(name) ? 'yes' : 'no'));
+            if (playerStates.Exists(name))
+                return cast<MLFeed::KoPlayerState>(playerStates[name]);
+            return MLFeed::KoPlayerState(name, false, false);
+        }
+
         // most props defined in base
         MLHook::PendingEvent@[] incoming_msgs;
 

@@ -250,19 +250,12 @@ namespace RaceFeed {
                 }
             }
 
-            // fix rankings if players dropped out -- todo: mb do this in updatePlayerLeft
-            if (1 != (isRace ? sorted[0].raceRank : sorted[0].taRank)) {
-                if (isRace) sorted[0].raceRank = 1;
-                else sorted[0].taRank = 1;
-            }
-            for (int i = 0; i < sorted.Length - 1; i++) {
-                auto preRank = isRace ? sorted[i].raceRank : sorted[i].taRank;
-                auto postRank = isRace ? sorted[i+1].raceRank : sorted[i+1].taRank;
-                if (preRank + 1 != postRank) {
-                    if (isRace) sorted[i+1].raceRank = preRank + 1;
-                    else sorted[i+1].taRank = preRank + 1;
-                }
-            }
+            // not fixing ranks here seems okay now that we do it via UpdatePlayerLeft
+            // if (isRace) {
+            //     FixRanksRace();
+            // } else {
+            //     FixRanksTimeAttack();
+            // }
         }
 
         void FixRanksRace() {

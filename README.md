@@ -4,6 +4,8 @@ This plugin provides other plugins with data about the current race. You might n
 
 *Requires MLHook (you need to install that plugin too)*
 
+**Please report performance issues!** See bottom of page for who/where.
+
 ## For Developers
 
 Currently exposed data:
@@ -12,7 +14,7 @@ Currently exposed data:
   * Sort methods: TimeAttack (sort by best time), Race (sorted by race leader)
 * Knockout data (for COTD / KO)
   * Per-Player Alive and DNF status
-    * Total Rounds, Current Round, Alive Players, Number of KOs This Round, Next KO Milestone, Number of Players (originally)
+  * Total Rounds, Current Round, Alive Players, Number of KOs This Round, Next KO Milestone, Number of Players (originally)
 * The last record set by the current player
 * Ghost Data
   * Which ghosts have been loaded, the name of the ghost, and the ghost's checkpoint times.
@@ -21,10 +23,11 @@ Additional data exposure available upon request.
 
 ### Using MLFeed: Race Data
 
-Example plugins:
+Some plugins already using MLFeed:
 
-- https://github.com/XertroV/tm-cotd-buffer-time
+- https://github.com/XertroV/tm-cotd-buffer-time/
 - https://github.com/XertroV/tm-race-stats/
+- https://github.com/XertroV/tm-list-players-pbs/
 
 #### Importing to your plugin
 
@@ -249,7 +252,11 @@ The Demo UIs available in (openplanet's) developer mode (via `Scripts` menu) & a
 
 [Exported classes (https://github.com/XertroV/tm-mlfeed-race-data/blob/master/src/ExportShared.as)](https://github.com/XertroV/tm-mlfeed-race-data/blob/master/src/ExportShared.as)
 
-[Example Usage](https://github.com/XertroV/tm-cotd-buffer-time/blob/57ee1bce5ccd115a0ebef2a9b23f72d77cbfa28a/src/KoBufferDisplay.as#L132-L133)
+[Example Usage - COTD Buffer Time](https://github.com/XertroV/tm-cotd-buffer-time/blob/57ee1bce5ccd115a0ebef2a9b23f72d77cbfa28a/src/KoBufferDisplay.as#L132-L133)
+
+[Example Usage - Race Stats](https://github.com/XertroV/tm-race-stats/blob/master/src/Main.as)
+
+[Example Optional Usage - List Players' PBs](https://github.com/XertroV/tm-list-players-pbs/blob/17a7afa6d80b235dfad93a5f4512ea57be82e432/src/Main.as#L237)
 
 *Still curious about how to use something? Read the examples and use github search to find usages! Still not sure? Ask @XertroV on the Openplanet Discord*
 

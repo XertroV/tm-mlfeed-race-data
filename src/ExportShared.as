@@ -336,5 +336,4 @@ namespace MLFeed {
         // Ghost.Result.Checkpoints
         const uint[]@ get_Checkpoints() const { return _Checkpoints; }
     }
-
 }
