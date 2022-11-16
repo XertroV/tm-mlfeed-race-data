@@ -4,6 +4,9 @@ namespace MLFeed {
      * You can call this function as often as you like -- it will always return the same proxy instance based on plugin ID.
      */
     import const RaceDataProxy@ GetRaceData() from "MLFeed";
+    /**
+     * Get a player's best CP times since the map loaded.
+     */
     import const array<uint>@ GetPlayersBestTimes(const string &in playerName) from "MLFeed";
 
     /**

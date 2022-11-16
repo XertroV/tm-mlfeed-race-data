@@ -54,7 +54,7 @@ namespace RaceFeedUI {
                     if (ps is null) { continue; }
                     auto @times = MLFeed::GetPlayersBestTimes(ps.name);
                     string ts = "";
-                    if (times is null) continue;
+                    // if (times is null) continue;
                     for (uint i = 0; i < times.Length; i++) {
                         ts += tostring(times[i]);
                         if (i < times.Length - 1) ts += ", ";

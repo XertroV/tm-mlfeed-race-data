@@ -346,6 +346,7 @@ namespace RaceFeed {
         }
 
         void OnMapChange() {
+            bestPlayerTimes.DeleteAll();
             latestPlayerStats.DeleteAll();
             sortedPlayers_TimeAttack.RemoveRange(0, sortedPlayers_TimeAttack.Length);
             sortedPlayers_Race.RemoveRange(0, sortedPlayers_Race.Length);
