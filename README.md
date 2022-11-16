@@ -10,7 +10,7 @@ This plugin provides other plugins with data about the current race. You might n
 
 Currently exposed data:
 * Sorted Player data
-  * For each player: LatestCPTime, CPCount, Cached Previous CP Times, Spawn Status, Best Time
+  * For each player: LatestCPTime, CPCount, Cached Previous CP Times, Spawn Status, Best Time, Best CP Times
   * Sort methods: TimeAttack (sort by best time), Race (sorted by race leader)
 * Knockout data (for COTD / KO)
   * Per-Player Alive and DNF status

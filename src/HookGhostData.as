@@ -4,6 +4,7 @@ const string GD_PageUID = "GhostData";
 class HookGhostData : MLFeed::SharedGhostDataHook {
     private array<const MLFeed::GhostInfo@> _ghosts;
     private string lastMap;
+    private dictionary seenGhosts;
 
     HookGhostData() {
         super(GD_PageUID);
@@ -18,6 +19,8 @@ class HookGhostData : MLFeed::SharedGhostDataHook {
 
     MLHook::PendingEvent@[] pending;
 
+    uint last_PGS_DFM_NbGhosts = 0;
+
     void MainCoro() {
         while(true) {
             yield();
@@ -30,12 +33,37 @@ class HookGhostData : MLFeed::SharedGhostDataHook {
                 }
                 pending.RemoveRange(0, pending.Length);
             }
+            // The following does not work b/c `ghost.Result.Checkpoints` is an UnknownType in AngelScript (note: it is a c++ array as per Nadeo ManiaLink docs)
+            /*
+            auto pgs = GetApp().PlaygroundScript;
+            if (pgs !is null) {
+                if (last_PGS_DFM_NbGhosts != pgs.DataFileMgr.Ghosts.Length) {
+                    last_PGS_DFM_NbGhosts = pgs.DataFileMgr.Ghosts.Length;
+                    string key;
+                    for (uint i = 0; i < pgs.DataFileMgr.Ghosts.Length; i++) {
+                        auto item = pgs.DataFileMgr.Ghosts[i];
+                        key = string(item.Nickname) + item.Result.Time;
+                        if (!seenGhosts.Exists(key)) {
+                            seenGhosts[key] = true;
+                            string cpTimes = "";
+                            for (uint i = 0; i < item.Result.Checkpoints.Length; i++) {
+                                cpTimes += tostring(item.Result.Checkpoints[i]);
+                                if (i < item.Result.Checkpoints.Length - 1)
+                                    cpTimes += ",";
+                            }
+                            _ghosts.InsertLast(MLFeed::GhostInfo(MLHook::PendingEvent("", {item.IdName, item.Nickname, tostring(item.Result.Score), tostring(item.Result.Time), cpTimes})));
+                        }
+                    }
+                }
+            } */
         }
     }
 
     void OnMapChange() {
         lastMap = CurrentMap;
         _ghosts.RemoveRange(0, _ghosts.Length);
+        last_PGS_DFM_NbGhosts = 0;
+        seenGhosts.DeleteAll();
         RefreshGhostData();
     }
 
@@ -47,6 +75,8 @@ class HookGhostData : MLFeed::SharedGhostDataHook {
         // only ghost data events, only one kind
         // send back: [Id.Value, Nickname, Result.Score, Result.Time, Result.Checkpoints]
         auto ghost = MLFeed::GhostInfo(event);
+        string key = ghost.Nickname + ghost.Result_Time;
+        seenGhosts[key] = true;
         _ghosts.InsertLast(ghost);
     }
 
@@ -96,8 +126,8 @@ namespace GhostDataUI {
             UI::Text("Checkpoints.Length: " + ghost.Checkpoints.Length);
             AddSimpleTooltip("Equivalent to Ghost.Result.Checkpoints.Length");
             string cpTimes = "";
-            for (uint i = 0; i < ghost.Checkpoints.Length; i++) {
-                cpTimes += (i == 0 ? "" : ", ") + ghost.Checkpoints[i];
+            for (uint j = 0; j < ghost.Checkpoints.Length; j++) {
+                cpTimes += (j == 0 ? "" : ", ") + ghost.Checkpoints[j];
             }
             UI::Text("Checkpoints: " + cpTimes);
             AddSimpleTooltip("Equivalent to Ghost.Result.Checkpoints");

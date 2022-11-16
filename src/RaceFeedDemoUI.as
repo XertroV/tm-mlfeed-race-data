@@ -55,9 +55,9 @@ namespace RaceFeedUI {
                     auto @times = MLFeed::GetPlayersBestTimes(ps.name);
                     string ts = "";
                     // if (times is null) continue;
-                    for (uint i = 0; i < times.Length; i++) {
-                        ts += tostring(times[i]);
-                        if (i < times.Length - 1) ts += ", ";
+                    for (uint j = 0; j < times.Length; j++) {
+                        ts += tostring(times[j]);
+                        if (j < times.Length - 1) ts += ", ";
                     }
                     UI::Text("" + ps.taRank + ". " + ts);
                 }

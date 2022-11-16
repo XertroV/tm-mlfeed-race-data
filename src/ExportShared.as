@@ -279,7 +279,9 @@ namespace MLFeed {
         const array<const MLFeed::GhostInfo@> get_Ghosts() const { return {}; };
     }
 
-    /** Information about a currently loaded ghost. */
+    /** Information about a currently loaded ghost.
+     * Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
+     */
     shared class GhostInfo {
         private string _IdName;
         private uint _IdUint;
@@ -288,6 +290,7 @@ namespace MLFeed {
         private int _Result_Time;
         private uint[] _Checkpoints;
 
+        // data: {IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with `,`)}
         GhostInfo(const MLHook::PendingEvent@ &in event) {
             if (event.data.Length < 5) {
                 warn("GhostInfo attempted instatiation with event.data.Length < 5. Bailing.");
