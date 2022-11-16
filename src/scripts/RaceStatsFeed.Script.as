@@ -1,9 +1,13 @@
 const string RACESTATSFEED_SCRIPT_TXT = """
+// 1 space indent due to openplanet preprocessor
+ #Const C_PageUID "RaceStats"
+ #Include "TextLib" as TL
+
 declare Text G_PreviousMapUid;
 
 // logging function, should be "MLHook_LogMe_" + PageUID
 Void MLHookLog(Text msg) {
-    SendCustomEvent("MLHook_LogMe_RaceStats", [msg]);
+    SendCustomEvent("MLHook_LogMe_" ^ C_PageUID, [msg]);
 }
 
 Integer SpawnStatusToUint(CSmPlayer::ESpawnStatus status) {
@@ -28,6 +32,12 @@ Integer GetBestRaceTime(CSmPlayer Player) {
     return Player.Score.BestRaceTimes[Player.Score.BestRaceTimes.count - 1];
 }
 
+// Integer[] GetBestRaceTimes(CSmPlayer Player) {
+//     if (Player == Null || Player.Score == Null) return [];
+//     return Player.Score.BestRaceTimes;
+// }
+
+
 declare Integer[Text] LastSpawnTime;
 declare Text[] LastKnownPlayers;
 
@@ -46,12 +56,23 @@ Void SendDepartedPlayers() {
     LastKnownPlayers = CurrPlayerNames;
 }
 
+
+Text[] CPTimesStr(Integer[] Checkpoints) {
+    declare Text[] Ret = [];
+    foreach (t in Checkpoints) {
+        Ret.add("" ^ t);
+    }
+    return Ret;
+}
+
+
 // send all players best times
 Void _SendPlayerTimes(CSmPlayer Player) {
     if (Player.Score == Null) return;
     declare Name = Player.User.Name;
     declare RaceTimes = Player.RaceWaypointTimes;
-    SendCustomEvent("MLHook_Event_RaceStats_PlayerRaceTimes", [Name, ""^RaceTimes]);
+    declare BestTimes = TL::Join(",", CPTimesStr(Player.Score.BestRaceTimes));
+    SendCustomEvent("MLHook_Event_RaceStats_PlayerRaceTimes", [Name, ""^RaceTimes, BestTimes]);
 }
 
 // we only want to send info when a player's CP count changes.
@@ -75,6 +96,9 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
         // Suffixes can be applied if multiple types of events are sent.
         SendCustomEvent("MLHook_Event_RaceStats_PlayerCP", [Name, ""^CPCount, LatestCPTime, ""^GetBestRaceTime(Player), ""^SpawnStatusToUint(Player.SpawnStatus)]);
     }
+    if (SpawnChanged || Force) {
+        _SendPlayerTimes(Player);
+    }
     // update last spawn and cp count always
     LastCPCounts[Name] = CPCount;
     LastSpawn[Name] = Player.SpawnStatus;
@@ -85,7 +109,7 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
 Void InitialSend() {
     foreach (Player in Players) {
         _SendPlayerStats(Player, True);
-        // _SendPlayerTimes(Player);
+        _SendPlayerTimes(Player);
     }
     MLHookLog("Completed: InitialSend");
 }

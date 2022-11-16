@@ -9,6 +9,10 @@ namespace MLFeed {
         return ret;
     }
 
+    const array<uint>@ GetPlayersBestTimes(const string &in playerName) {
+        return theHook.GetPlayersBestTimes(playerName);
+    }
+
     const KoDataProxy@ GetKoData() {
         auto plugin = Meta::ExecutingPlugin();
         KoDataProxy@ ret;

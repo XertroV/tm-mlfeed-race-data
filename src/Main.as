@@ -140,6 +140,11 @@ namespace RaceFeed {
 
     class HookRaceStatsEvents : MLFeed::HookRaceStatsEventsBase {
         // props defined in HookRaceStatsEventsBase
+
+        // expanded props
+        dictionary bestPlayerTimes;
+
+        //
         MLHook::PendingEvent@[] incoming_msgs;
 
         HookRaceStatsEvents() {
@@ -168,6 +173,8 @@ namespace RaceFeed {
                 UpdatePlayerLeft(event);
             } else if (event.type.EndsWith("PlayerCP")) {
                 UpdatePlayer(event);
+            } else if (event.type.EndsWith("PlayerRaceTimes")) {
+                UpdatePlayerRaceTimes(event);
             }
         }
 
@@ -283,6 +290,29 @@ namespace RaceFeed {
                 FixRanksTimeAttack();
                 latestPlayerStats.Delete(name);
             }
+        }
+
+        // got best times for a player
+        void UpdatePlayerRaceTimes(MLHook::PendingEvent@ event) {
+            // [name, current cp times, best cp times]
+            string name = event.data[0];
+            if (!bestPlayerTimes.Exists(name)) {
+                bestPlayerTimes[name] = array<uint>();
+            }
+            uint[]@ playersTimes = cast<uint[]>(bestPlayerTimes[name]);
+            auto parts = string(event.data[2]).Split(",");
+            playersTimes.Resize(parts.Length);
+            for (uint i = 0; i < parts.Length; i++) {
+                playersTimes[i] = Text::ParseUInt(parts[i]);
+            }
+        }
+
+        private array<uint> _emptyUintArray;
+        const array<uint>@ GetPlayersBestTimes(const string &in playerName) {
+            if (!bestPlayerTimes.Exists(playerName)) {
+                return _emptyUintArray;
+            }
+            return cast<uint[]>(bestPlayerTimes[playerName]);
         }
 
         void SetCheckpointCount() {

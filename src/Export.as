@@ -4,6 +4,8 @@ namespace MLFeed {
      * You can call this function as often as you like -- it will always return the same proxy instance based on plugin ID.
      */
     import const RaceDataProxy@ GetRaceData() from "MLFeed";
+    import const array<uint>@ GetPlayersBestTimes(const string &in playerName) from "MLFeed";
+
     /**
      * Your plugin's `KoDataProxy@` that exposes KO round information, and each player's , spawn info, and lists of players for each sorting method.
      * You can call this function as often as you like -- it will always return the same proxy instance based on plugin ID.

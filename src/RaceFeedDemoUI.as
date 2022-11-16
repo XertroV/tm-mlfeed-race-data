@@ -43,6 +43,26 @@ namespace RaceFeedUI {
                 }
             }
 
+            UI::Dummy(vec2(0, 20));
+            UI::Text("Players best cp times:");
+            UI::Separator();
+            @sorted = theHook.sortedPlayers_TimeAttack;
+            UI::ListClipper clipperTA2(sorted.Length);
+            while (clipperTA2.Step()) {
+                for (int i = clipperTA2.DisplayStart; i < clipperTA2.DisplayEnd; i++) {
+                    auto ps = sorted[i];
+                    if (ps is null) { continue; }
+                    auto @times = MLFeed::GetPlayersBestTimes(ps.name);
+                    string ts = "";
+                    if (times is null) continue;
+                    for (uint i = 0; i < times.Length; i++) {
+                        ts += tostring(times[i]);
+                        if (i < times.Length - 1) ts += ", ";
+                    }
+                    UI::Text("" + ps.taRank + ". " + ts);
+                }
+            }
+
             UI::End();
         }
     }
