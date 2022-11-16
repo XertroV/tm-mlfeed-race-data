@@ -48,8 +48,8 @@ void Main() {
      * Your plugin's `RaceDataProxy@` that exposes checkpoint data, spawn info, and lists of players for each sorting method.
      * You can call this function as often as you like -- it will always return the same proxy instance based on plugin ID.
      */
-
     MLFeed::RaceDataProxy@ RaceData = MLFeed::GetRaceData();
+
     /**
      * Your plugin's `KoDataProxy@` that exposes KO round information, and each player's , spawn info, and lists of players for each sorting method.
      * You can call this function as often as you like -- it will always return the same proxy instance based on plugin ID.
@@ -107,6 +107,11 @@ namespace MLFeed {
            Usage: `if (lastRecordTime != RaceData.LastRecordTime) OnNewRecord();` */
         int get_LastRecordTime();
     }
+
+    /**
+     * Get a player's best CP times since the map loaded.
+     */
+    const array<uint>@ GetPlayersBestTimes(const string &in playerName);
 
     /* Each's players status in the race, with a focus on CP related info. */
     interface PlayerCpInfo {
