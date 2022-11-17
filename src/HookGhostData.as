@@ -59,12 +59,13 @@ class HookGhostData : MLFeed::SharedGhostDataHook {
         }
     }
 
-    void OnMapChange() {
+    void OnMapChange(bool askForRefresh = true) {
         lastMap = CurrentMap;
         _ghosts.RemoveRange(0, _ghosts.Length);
         last_PGS_DFM_NbGhosts = 0;
         seenGhosts.DeleteAll();
-        RefreshGhostData();
+        if (askForRefresh)
+            RefreshGhostData();
     }
 
     void OnEvent(MLHook::PendingEvent@ event) override {
@@ -72,12 +73,23 @@ class HookGhostData : MLFeed::SharedGhostDataHook {
     }
 
     void ProcessEvent(MLHook::PendingEvent@ event) {
-        // only ghost data events, only one kind
+        // only ghost data events, only one type
+        // if it has fewer then 5 elements then it's a special message
+        if (event.data.Length < 5) {
+            // if (event.data.Length == 0) {
+            //     warn("HookGhostData got an empty message.");
+            // } else {
+            //     if (event.data[0] == "RESET") {
+            //         OnMapChange(false);
+            //     }
+            // }
+            return;
+        }
         // send back: [Id.Value, Nickname, Result.Score, Result.Time, Result.Checkpoints]
-        auto ghost = MLFeed::GhostInfo(event);
-        string key = ghost.Nickname + ghost.Result_Time;
+        string key = string(event.data[0]) + event.data[3];
+        if (seenGhosts.Exists(key)) return;
         seenGhosts[key] = true;
-        _ghosts.InsertLast(ghost);
+        _ghosts.InsertLast(MLFeed::GhostInfo(event));
     }
 
     uint get_NbGhosts() const override {
@@ -112,7 +124,7 @@ namespace GhostDataUI {
     }
 
     void DrawGhost(uint i, const MLFeed::GhostInfo@ ghost) {
-        if (UI::CollapsingHeader("" + i + ". " + ghost.Nickname)) {
+        if (UI::CollapsingHeader("" + i + ". " + ghost.Nickname + " (" + ghost.IdName + ")")) {
             UI::Text("IdName: " + ghost.IdName);
             AddSimpleTooltip("Equivalent to Ghost.IdName");
             UI::Text("IdUint: " + ghost.IdUint + " (0x" + Text::Format("%x", ghost.IdUint) + ")");

@@ -49,6 +49,7 @@ Integer[] ToScriptArray(Integer[] _Array) {
 Void ResetState() {
     LastNbGhosts = 0;
     SeenGhosts.clear();
+    // SendCustomEvent("MLHook_Event_" ^ C_PageUID, ["RESET"]);
 }
 
 Void CheckMapChange() {
