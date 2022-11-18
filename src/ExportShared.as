@@ -195,8 +195,12 @@ namespace MLFeed {
         const string get_Name() const { return name; }
         // How many CPs that player currently has
         int get_CpCount() const { return cpCount; };
-        // Their last CP time as on their chronometer
-        int get_LastCpTime() const { return lastCpTime; }
+        // Their last CP time OR their last respawn time (default changed in v0.4.0; used `LastCpTimeRaw` or `CpTimes[CpCount]` for the raw time)
+        int get_LastCpTime() const {
+            return Math::Max(LastCpTimeRaw, LastRespawnRaceTime);
+        }
+        // Their last CP time (as on the players chronometer)
+        int get_LastCpTimeRaw() const { return lastCpTime; }
         // LastCpOrLastRespawn
         // The times of each of their CPs since respawning
         const int[] get_CpTimes() const { return cpTimes; }
@@ -254,7 +258,7 @@ namespace MLFeed {
 
         // Formatted as: "PlayerCpInfo(name, rr: 17, tr: 3, cp: 5 (0:43.231), Spawned, bt: 0:55.992)"
         string ToString() const override {
-            string[] inner = {name, 'rr: ' + raceRank, 'tr: ' + taRank, 'cp: ' + cpCount + ' (' + Time::Format(uint(lastCpTime)) + ")", tostring(spawnStatus), 'bt: ' + Time::Format(bestTime)};
+            string[] inner = {Name, 'rr: ' + RaceRank, 'tr: ' + TaRank, 'cp: ' + CpCount + ' (' + Time::Format(uint(LastCpTime)) + ")", tostring(SpawnStatus), 'bt: ' + Time::Format(BestTime), 'lrs: ' + Time::Format(LastRespawnRaceTime)};
             return "PlayerCpInfo(" + string::Join(inner, ", ") + ")";
         }
     }
