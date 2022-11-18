@@ -89,7 +89,12 @@ class HookGhostData : MLFeed::SharedGhostDataHook {
         string key = string(event.data[0]) + event.data[3];
         if (seenGhosts.Exists(key)) return;
         seenGhosts[key] = true;
-        _ghosts.InsertLast(MLFeed::GhostInfo(event));
+        string nn = event.data[1];
+        if (nn.EndsWith("Personal best")) {
+            event.data[1] = "\\" + event.data[1];
+        }
+        auto g = MLFeed::GhostInfo(event);
+        _ghosts.InsertLast(g);
     }
 
     uint get_NbGhosts() const override {

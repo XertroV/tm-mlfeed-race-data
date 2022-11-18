@@ -103,6 +103,14 @@ Void CheckGhostsCPData() {
             SendGhostInfo(Ghost);
         }
     }
+    // does not work -- might work from game script code, but not ML
+    // if (Mode != Null) {
+    //     MLHookLog("Mode exists");
+    //     if (Mode.DataFileMgr != Null) {
+    //         MLHookLog("Mode.DataFileMgr exists");
+    //         MLHookLog("Mode.DataFileMgr ghosts: " ^ Mode.DataFileMgr.Ghosts.count);
+    //     }
+    // }
 }
 
 

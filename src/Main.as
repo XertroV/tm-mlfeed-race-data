@@ -138,7 +138,7 @@ namespace RaceFeed {
 
     // todo: add past list that tracks last known time of player?
 
-    class HookRaceStatsEvents : MLFeed::HookRaceStatsEventsBase {
+    class HookRaceStatsEvents : MLFeed::HookRaceStatsEventsBase_V2 {
         // props defined in HookRaceStatsEventsBase
 
         // expanded props
@@ -188,12 +188,12 @@ namespace RaceFeed {
         void UpdatePlayer(MLHook::PendingEvent@ event) {
             uint spawnIx = SpawnCounter;
             string name = event.data[0];
-            MLFeed::PlayerCpInfo@ player;
+            MLFeed::PlayerCpInfo_V2@ player;
             bool hadPlayer = latestPlayerStats.Get(name, @player);
             if (hadPlayer) {
                 player.UpdateFrom(event, spawnIx);
             } else {
-                @player = MLFeed::PlayerCpInfo(event, spawnIx);
+                @player = MLFeed::PlayerCpInfo_V2(event, spawnIx);
                 @latestPlayerStats[name] = player;
                 sortedPlayers_Race.InsertLast(player);
                 sortedPlayers_TimeAttack.InsertLast(player);
@@ -215,16 +215,16 @@ namespace RaceFeed {
             UpdatePlayerPosition(player);
         }
 
-        void UpdatePlayerPosition(MLFeed::PlayerCpInfo@ player) {
+        void UpdatePlayerPosition(MLFeed::PlayerCpInfo_V2@ player) {
             // when a player is updated, they usually only go up or down by a few places at most.
             UpdatePlayerInSortedPlayersWithMethod(player, sortedPlayers_TimeAttack, LessPlayers(lessTimeAttack), false);
             UpdatePlayerInSortedPlayersWithMethod(player, sortedPlayers_Race, LessPlayers(lessRace), true);
         }
 
         // todo, refactor to use SortMethod
-        void UpdatePlayerInSortedPlayersWithMethod(MLFeed::PlayerCpInfo@ player, array<MLFeed::PlayerCpInfo@>@ &in sorted, LessPlayers@ lessFunc, bool isRace) {
+        void UpdatePlayerInSortedPlayersWithMethod(MLFeed::PlayerCpInfo_V2@ player, array<MLFeed::PlayerCpInfo_V2@>@ &in sorted, LessPlayers@ lessFunc, bool isRace) {
             uint ix = sorted.FindByRef(player);
-            MLFeed::PlayerCpInfo@ tmp;
+            MLFeed::PlayerCpInfo_V2@ tmp;
             if (ix >= sorted.Length) return;
             // improving in rank
             while (ix > 0 && lessFunc(player, sorted[ix - 1])) {
@@ -280,7 +280,7 @@ namespace RaceFeed {
         // a player left the server
         void UpdatePlayerLeft(MLHook::PendingEvent@ event) {
             string name = event.data[0];
-            auto player = GetPlayer(name);
+            auto player = GetPlayer_V2(name);
             if (player !is null) {
                 uint ix = sortedPlayers_Race.FindByRef(player);
                 if (ix >= 0) sortedPlayers_Race.RemoveAt(ix);
@@ -305,14 +305,18 @@ namespace RaceFeed {
             for (uint i = 0; i < parts.Length; i++) {
                 playersTimes[i] = Text::ParseUInt(parts[i]);
             }
+            auto player = GetPlayer_V2(name);
+            if (player !is null) {
+                @player.BestRaceTimes = playersTimes;
+            }
         }
 
         private array<uint> _emptyUintArray;
         const array<uint>@ GetPlayersBestTimes(const string &in playerName) {
-            if (!bestPlayerTimes.Exists(playerName)) {
+            if (!latestPlayerStats.Exists(playerName)) {
                 return _emptyUintArray;
             }
-            return cast<uint[]>(bestPlayerTimes[playerName]);
+            return GetPlayer_V2(playerName).BestRaceTimes;
         }
 
         void SetCheckpointCount() {

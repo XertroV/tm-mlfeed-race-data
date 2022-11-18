@@ -27,9 +27,19 @@ Integer SpawnStatusToUint(CSmPlayer::ESpawnStatus status) {
 
 Integer GetBestRaceTime(CSmPlayer Player) {
     if (Player == Null || Player.Score == Null) return -1;
-    if (Player.Score.BestRaceTimes.count == 0) return -1;
-    return Player.Score.BestRaceTimes[Player.Score.BestRaceTimes.count - 1];
+    declare BrCount = Player.Score.BestRaceTimes.count;
+    if (BrCount == 0) return -1;
+    declare BrTime = Player.Score.BestRaceTimes[BrCount - 1];
+    if (Player.RaceWaypointTimes.count == BrCount) {
+        declare RwTime = Player.RaceWaypointTimes[BrCount - 1];
+        if (RwTime < BrTime) return RwTime;
+    }
+    return BrTime;
 }
+
+// Bool IsFinished(CSmPlayer Player) {
+//     declare NbCPs = Player.Score.BestRaceTimes.count;
+// }
 
 // Integer[] GetBestRaceTimes(CSmPlayer Player) {
 //     if (Player == Null || Player.Score == Null) return [];
@@ -69,23 +79,38 @@ Text[] CPTimesStr(Integer[] Checkpoints) {
 Void _SendPlayerTimes(CSmPlayer Player) {
     if (Player.Score == Null) return;
     declare Name = Player.User.Name;
-    declare RaceTimes = Player.RaceWaypointTimes;
+    declare RaceTimes = TL::Join(",", CPTimesStr(Player.RaceWaypointTimes));
     declare BestTimes = TL::Join(",", CPTimesStr(Player.Score.BestRaceTimes));
-    SendCustomEvent("MLHook_Event_RaceStats_PlayerRaceTimes", [Name, ""^RaceTimes, BestTimes]);
+    declare NbCurrCheckpoints = Player.RaceWaypointTimes.count;
+    if (NbCurrCheckpoints > 0
+        && NbCurrCheckpoints == Player.Score.BestRaceTimes.count
+        && Player.RaceWaypointTimes[NbCurrCheckpoints - 1] < Player.Score.BestRaceTimes[NbCurrCheckpoints - 1]
+    ) {
+        // BestRaceTimes just not updated yet, so return current CP times instead
+        BestTimes = RaceTimes;
+    }
+    SendCustomEvent("MLHook_Event_RaceStats_PlayerRaceTimes", [Name, RaceTimes, BestTimes]);
 }
 
 // we only want to send info when a player's CP count changes.
 declare Integer[Text] LastCPCounts;
+declare Integer[Text] LastRespawnsCount;
 declare CSmPlayer::ESpawnStatus[Text] LastSpawn;
+declare Integer MostCPsSeen;
 
 Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
     declare Text Name = Player.User.Name;
     declare CPCount = Player.RaceWaypointTimes.count;
+    declare RespawnsCount = Player.Score.NbRespawnsRequested;
+    if (CPCount > MostCPsSeen) {
+        MostCPsSeen = CPCount;
+    }
     // check for changes
     declare Boolean SpawnChanged = LastSpawn.existskey(Name) && Player.SpawnStatus != LastSpawn[Name];
     declare Boolean CpsChanged = LastCPCounts.existskey(Name) && CPCount != LastCPCounts[Name];
+    declare Boolean RespanwsChanged = LastRespawnsCount.existskey(Name) && RespawnsCount != LastRespawnsCount[Name];
     // update if there are changes or the update is forced.
-    declare Boolean WillSendEvent = Force || SpawnChanged || CpsChanged;
+    declare Boolean WillSendEvent = Force || SpawnChanged || CpsChanged || RespanwsChanged;
     if (WillSendEvent) {
         declare LatestCPTime = "";
         if (CPCount > 0) {
@@ -93,14 +118,15 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
         }
         // events should be prefixed with "MLHook_Event_" + PageUID.
         // Suffixes can be applied if multiple types of events are sent.
-        SendCustomEvent("MLHook_Event_RaceStats_PlayerCP", [Name, ""^CPCount, LatestCPTime, ""^GetBestRaceTime(Player), ""^SpawnStatusToUint(Player.SpawnStatus)]);
+        SendCustomEvent("MLHook_Event_RaceStats_PlayerCP", [Name, ""^CPCount, LatestCPTime, ""^GetBestRaceTime(Player), ""^SpawnStatusToUint(Player.SpawnStatus), ""^RespawnsCount^","^Player.StartTime]);
     }
-    if (SpawnChanged || Force) {
+    if (SpawnChanged || Force || CPCount == MostCPsSeen) {
         _SendPlayerTimes(Player);
     }
     // update last spawn and cp count always
     LastCPCounts[Name] = CPCount;
     LastSpawn[Name] = Player.SpawnStatus;
+    LastRespawnsCount[Name] = RespawnsCount;
     return WillSendEvent;
 }
 
@@ -130,6 +156,7 @@ Void CheckMapChange() {
     if (Map != Null && Map.MapInfo.MapUid != G_PreviousMapUid) {
         G_PreviousMapUid = Map.MapInfo.MapUid;
         LastCPCounts = [];
+        MostCPsSeen = 0;
     }
 }
 

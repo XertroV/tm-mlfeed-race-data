@@ -174,6 +174,92 @@ namespace MLFeed {
         }
     }
 
+// #if DEV && FALSE
+#if DEV
+    // shared
+    class PlayerCpInfo_V2 : PlayerCpInfo {
+        PlayerCpInfo_V2(MLHook::PendingEvent@ event, uint _spawnIndex) {
+            super(event, _spawnIndex);
+            UpdateFrom(event, _spawnIndex, false);
+            IsLocalPlayer = this.Name == LocalPlayersName;
+        }
+        PlayerCpInfo_V2(PlayerCpInfo_V2@ _from, int cpOffset) {
+            super(_from, cpOffset);
+            IsLocalPlayer = _from.IsLocalPlayer;
+            NbRespawnsRequested = _from.NbRespawnsRequested;
+            StartTime = _from.StartTime;
+            @BestRaceTimes = _from.BestRaceTimes;
+        }
+
+        // The player's name
+        const string get_Name() const { return name; }
+        // How many CPs that player currently has
+        int get_CpCount() const { return cpCount; };
+        // Their last CP time as on their chronometer
+        int get_LastCpTime() const { return lastCpTime; }
+        // LastCpOrLastRespawn
+        // The times of each of their CPs since respawning
+        const int[] get_CpTimes() const { return cpTimes; }
+        // The player's best time this session
+        int get_BestTime() const { return bestTime; }
+        // The players's spawn status: NotSpawned, Spawning, or Spawned
+        SpawnStatus get_SpawnStatus() const { return spawnStatus; }
+        // The spawn index when the player spawned
+        uint get_SpawnIndex() const { return spawnIndex; }
+        // The player's rank as measured in Time Attack (one more than their index in `RaceData.SortedPlayers_TimeAttack`)
+        uint get_TaRank() const { return taRank; }
+        // The player's rank as measured in a race (when all players would spawn at the same time).
+        uint get_RaceRank() const { return raceRank; }
+
+        // this player's CP times for their best performance this session (since the map loaded)
+        const array<uint>@ BestRaceTimes; // todo
+        // whether this player corresponds to the physical player playing the game
+        bool IsLocalPlayer;
+        // when the player spawned (measured against GameTime)
+        uint StartTime;
+        // This player's CurrentRaceTime
+        int get_CurrentRaceTime() const { return int(GameTime) - int(StartTime); }
+        // number of times the player has respawned
+        uint NbRespawnsRequested;
+        // the last time this player respawned (measure against CurrentRaceTime)
+        uint LastRespawnRaceTime;
+        // the last checkpoint that the player respawned at
+        uint LastRespawnCheckpoint;
+        // the amount of time the player has lost due to respawns
+        uint TimeLostToRespawns;
+
+        void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex) override {
+            UpdateFrom(event, _spawnIndex, true);
+        }
+
+        void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex, bool callSuper) {
+            auto priorNbRR = NbRespawnsRequested;
+            auto priorCpCount = CpCount;
+            if (callSuper) PlayerCpInfo::UpdateFrom(event, _spawnIndex);
+            auto parts = string(event.data[5]).Split(",");
+            NbRespawnsRequested = Text::ParseUInt(parts[0]);
+            StartTime = Text::ParseUInt(parts[1]);
+
+            // we'll always hit this when the player spawns, which is also when we should default respawn values
+            if (NbRespawnsRequested == 0) {
+                LastRespawnCheckpoint = 0;
+                LastRespawnRaceTime = 0;
+                TimeLostToRespawns = 0;
+            } if (priorNbRR != NbRespawnsRequested) {
+                TimeLostToRespawns += CurrentRaceTime - Math::Max(LastRespawnRaceTime, LastCpTime);
+                LastRespawnCheckpoint = CpCount;
+                LastRespawnRaceTime = CurrentRaceTime;
+            }
+        }
+
+        // Formatted as: "PlayerCpInfo(name, rr: 17, tr: 3, cp: 5 (0:43.231), Spawned, bt: 0:55.992)"
+        string ToString() const override {
+            string[] inner = {name, 'rr: ' + raceRank, 'tr: ' + taRank, 'cp: ' + cpCount + ' (' + Time::Format(uint(lastCpTime)) + ")", tostring(spawnStatus), 'bt: ' + Time::Format(bestTime)};
+            return "PlayerCpInfo(" + string::Join(inner, ", ") + ")";
+        }
+    }
+#endif
+
     shared class HookRaceStatsEventsBase : MLHook::HookMLEventsByType {
         string lastMap;
         dictionary latestPlayerStats;
@@ -195,6 +281,55 @@ namespace MLFeed {
             return (CpCount + 1) * LapCount;
         }
     }
+
+// && FALSE
+#if DEV
+    // shared
+    class HookRaceStatsEventsBase_V2 : HookRaceStatsEventsBase {
+        protected array<PlayerCpInfo_V2@> v2_sortedPlayers_Race;
+        protected array<PlayerCpInfo_V2@> v2_sortedPlayers_TimeAttack;
+
+        HookRaceStatsEventsBase_V2(const string &in type) {
+            super(type);
+        }
+
+        PlayerCpInfo_V2@ GetPlayer_V2(const string &in name) {
+            return cast<PlayerCpInfo_V2>(latestPlayerStats[name]);
+        }
+
+        /* An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest. */
+        const array<PlayerCpInfo_V2@>@ get_SortedPlayers_Race() const {
+            return v2_sortedPlayers_Race;
+        }
+
+        /* An array of `PlayerCpInfo_V2`s sorted by best time to worst time. */
+        const array<PlayerCpInfo_V2@>@ get_SortedPlayers_TimeAttack() const {
+            return v2_sortedPlayers_TimeAttack;
+        }
+
+        /* An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest. */
+        array<PlayerCpInfo_V2@>@ get_sortedPlayers_Race() {
+            return v2_sortedPlayers_Race;
+        }
+
+        /* An array of `PlayerCpInfo_V2`s sorted by best time to worst time. */
+        array<PlayerCpInfo_V2@>@ get_sortedPlayers_TimeAttack() {
+            return v2_sortedPlayers_TimeAttack;
+        }
+
+        /* The number of checkpoints each lap.
+           Linked checkpoints are counted as 1 checkpoint, and goal waypoints are not counted.
+        */
+        uint get_CPCount() const {
+            return CpCount;
+        }
+
+        /* The map UID */
+        const string get_Map() {
+            return lastMap;
+        }
+    }
+#endif
 
     shared class HookRecordEventsBase : MLHook::HookMLEventsByType {
         protected int _lastRecordTime = -1;
