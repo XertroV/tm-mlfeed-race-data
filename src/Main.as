@@ -87,11 +87,11 @@ SortMethod[] AllSortMethods = {Race, TimeAttack};
 namespace RaceFeed {
     enum Cmp {Lt = -1, Eq = 0, Gt = 1}
 
-    funcdef Cmp CmpPlayers(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2);
-    funcdef bool LessPlayers(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2);
+    funcdef Cmp CmpPlayers(const MLFeed::PlayerCpInfo@ p1, const MLFeed::PlayerCpInfo@ p2);
+    funcdef bool LessPlayers(const MLFeed::PlayerCpInfo@ p1, const MLFeed::PlayerCpInfo@ p2);
 
 
-    Cmp cmpRace(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2) {
+    Cmp cmpRace(const MLFeed::PlayerCpInfo@ p1, const MLFeed::PlayerCpInfo@ p2) {
         // if we're in race mode, then we want to count the player as spawned if their spawnIndex == SpawnCounter
         MLFeed::SpawnStatus p1SS = p1.spawnStatus;
         MLFeed::SpawnStatus p2SS = p2.spawnStatus;
@@ -114,11 +114,11 @@ namespace RaceFeed {
         return Cmp::Gt;
     }
 
-    bool lessRace(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2) {
+    bool lessRace(const MLFeed::PlayerCpInfo@ p1, const MLFeed::PlayerCpInfo@ p2) {
         return cmpRace(p1, p2) == Cmp::Lt;
     }
 
-    Cmp cmpTimeAttack(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2) {
+    Cmp cmpTimeAttack(const MLFeed::PlayerCpInfo@ p1, const MLFeed::PlayerCpInfo@ p2) {
         if (p1.bestTime == p2.bestTime) return cmpRace(p1, p2);
         if (p1.bestTime < 0) return Cmp::Gt;
         if (p2.bestTime < 0) return Cmp::Lt;
@@ -126,7 +126,7 @@ namespace RaceFeed {
         return Cmp::Gt;
     }
 
-    bool lessTimeAttack(const MLFeed::PlayerCpInfo@ &in p1, const MLFeed::PlayerCpInfo@ &in p2) {
+    bool lessTimeAttack(const MLFeed::PlayerCpInfo@ p1, const MLFeed::PlayerCpInfo@ p2) {
         return cmpTimeAttack(p1, p2) == Cmp::Lt;
     }
 
@@ -195,10 +195,10 @@ namespace RaceFeed {
             } else {
                 @player = MLFeed::PlayerCpInfo_V2(event, spawnIx);
                 @latestPlayerStats[name] = player;
-                sortedPlayers_Race.InsertLast(player);
-                sortedPlayers_TimeAttack.InsertLast(player);
-                player.raceRank = sortedPlayers_Race.Length;
-                player.taRank = sortedPlayers_TimeAttack.Length;
+                SortedPlayers_Race.InsertLast(player);
+                SortedPlayers_TimeAttack.InsertLast(player);
+                player.raceRank = SortedPlayers_Race.Length;
+                player.taRank = SortedPlayers_TimeAttack.Length;
             }
 
             if (player.spawnStatus == MLFeed::SpawnStatus::Spawned && player.cpCount == 0) {
@@ -213,16 +213,18 @@ namespace RaceFeed {
                 player.bestTime = Math::Min(bt, player.lastCpTime);
             }
             UpdatePlayerPosition(player);
+            DuplicateArraysForVersion1();
         }
 
         void UpdatePlayerPosition(MLFeed::PlayerCpInfo_V2@ player) {
             // when a player is updated, they usually only go up or down by a few places at most.
-            UpdatePlayerInSortedPlayersWithMethod(player, sortedPlayers_TimeAttack, LessPlayers(lessTimeAttack), false);
-            UpdatePlayerInSortedPlayersWithMethod(player, sortedPlayers_Race, LessPlayers(lessRace), true);
+            UpdatePlayerInSortedPlayersWithMethod(player, SortedPlayers_TimeAttack, LessPlayers(lessTimeAttack), false);
+            UpdatePlayerInSortedPlayersWithMethod(player, SortedPlayers_Race, LessPlayers(lessRace), true);
+
         }
 
         // todo, refactor to use SortMethod
-        void UpdatePlayerInSortedPlayersWithMethod(MLFeed::PlayerCpInfo_V2@ player, array<MLFeed::PlayerCpInfo_V2@>@ &in sorted, LessPlayers@ lessFunc, bool isRace) {
+        void UpdatePlayerInSortedPlayersWithMethod(MLFeed::PlayerCpInfo_V2@ player, array<MLFeed::PlayerCpInfo_V2@>@ sorted, LessPlayers@ lessFunc, bool isRace) {
             uint ix = sorted.FindByRef(player);
             MLFeed::PlayerCpInfo_V2@ tmp;
             if (ix >= sorted.Length) return;
@@ -266,14 +268,14 @@ namespace RaceFeed {
         }
 
         void FixRanksRace() {
-            for (uint i = 0; i < sortedPlayers_Race.Length; i++) {
-                sortedPlayers_Race[i].raceRank = i + 1;
+            for (uint i = 0; i < SortedPlayers_Race.Length; i++) {
+                SortedPlayers_Race[i].raceRank = i + 1;
             }
         }
 
         void FixRanksTimeAttack() {
-            for (uint i = 0; i < sortedPlayers_TimeAttack.Length; i++) {
-                sortedPlayers_TimeAttack[i].taRank = i + 1;
+            for (uint i = 0; i < SortedPlayers_TimeAttack.Length; i++) {
+                SortedPlayers_TimeAttack[i].taRank = i + 1;
             }
         }
 
@@ -282,14 +284,15 @@ namespace RaceFeed {
             string name = event.data[0];
             auto player = GetPlayer_V2(name);
             if (player !is null) {
-                uint ix = sortedPlayers_Race.FindByRef(player);
-                if (ix >= 0) sortedPlayers_Race.RemoveAt(ix);
+                uint ix = SortedPlayers_Race.FindByRef(player);
+                if (ix >= 0) SortedPlayers_Race.RemoveAt(ix);
                 FixRanksRace();
-                ix = sortedPlayers_TimeAttack.FindByRef(player);
-                if (ix >= 0) sortedPlayers_TimeAttack.RemoveAt(ix);
+                ix = SortedPlayers_TimeAttack.FindByRef(player);
+                if (ix >= 0) SortedPlayers_TimeAttack.RemoveAt(ix);
                 FixRanksTimeAttack();
                 latestPlayerStats.Delete(name);
             }
+            DuplicateArraysForVersion1();
         }
 
         // got best times for a player
@@ -352,8 +355,8 @@ namespace RaceFeed {
         void OnMapChange() {
             bestPlayerTimes.DeleteAll();
             latestPlayerStats.DeleteAll();
-            sortedPlayers_TimeAttack.RemoveRange(0, sortedPlayers_TimeAttack.Length);
-            sortedPlayers_Race.RemoveRange(0, sortedPlayers_Race.Length);
+            SortedPlayers_TimeAttack.RemoveRange(0, SortedPlayers_TimeAttack.Length);
+            SortedPlayers_Race.RemoveRange(0, SortedPlayers_Race.Length);
             this.CpCount = 0;
             if (CurrentMap != "") {
                 startnew(CoroutineFunc(SetCheckpointCount));
@@ -369,6 +372,16 @@ namespace RaceFeed {
                 }
             }
             return _localUserName;
+        }
+
+
+        void DuplicateArraysForVersion1() {
+            sortedPlayers_Race.Resize(SortedPlayers_Race.Length);
+            sortedPlayers_TimeAttack.Resize(SortedPlayers_TimeAttack.Length);
+            for (uint i = 0; i < sortedPlayers_Race.Length; i++) {
+                @sortedPlayers_Race[i] = SortedPlayers_Race[i];
+                @sortedPlayers_TimeAttack[i] = SortedPlayers_TimeAttack[i];
+            }
         }
     }
 }

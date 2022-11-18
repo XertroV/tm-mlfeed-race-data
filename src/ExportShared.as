@@ -302,22 +302,12 @@ namespace MLFeed {
         }
 
         /* An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest. */
-        const array<PlayerCpInfo_V2@>@ get_SortedPlayers_Race() const {
+        array<PlayerCpInfo_V2@>@ get_SortedPlayers_Race() {
             return v2_sortedPlayers_Race;
         }
 
         /* An array of `PlayerCpInfo_V2`s sorted by best time to worst time. */
-        const array<PlayerCpInfo_V2@>@ get_SortedPlayers_TimeAttack() const {
-            return v2_sortedPlayers_TimeAttack;
-        }
-
-        /* An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest. */
-        array<PlayerCpInfo_V2@>@ get_sortedPlayers_Race() {
-            return v2_sortedPlayers_Race;
-        }
-
-        /* An array of `PlayerCpInfo_V2`s sorted by best time to worst time. */
-        array<PlayerCpInfo_V2@>@ get_sortedPlayers_TimeAttack() {
+        array<PlayerCpInfo_V2@>@ get_SortedPlayers_TimeAttack() {
             return v2_sortedPlayers_TimeAttack;
         }
 

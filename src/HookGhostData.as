@@ -91,7 +91,7 @@ class HookGhostData : MLFeed::SharedGhostDataHook {
         seenGhosts[key] = true;
         string nn = event.data[1];
         if (nn.EndsWith("Personal best")) {
-            event.data[1] = "\\" + event.data[1];
+            event.data[1] = wstring(ColoredString(event.data[1]));
         }
         auto g = MLFeed::GhostInfo(event);
         _ghosts.InsertLast(g);
