@@ -201,15 +201,15 @@ namespace MLFeed {
         int get_CpCount() const { return cpCount; };
         // Their last CP time OR their last respawn time (default changed in v0.4.0; used `LastCpTimeRaw` or `CpTimes[CpCount]` for the raw time)
         int get_LastCpTime() const {
-            return Math::Max(LastCpTimeRaw, LastRespawnRaceTime);
+            return lastCpTime;
         }
         // Their last CP time (as on the players chronometer)
         int get_LastCpTimeRaw() const { return lastCpTimeRaw; }
         // LastCpOrLastRespawn
         // The times of each of their CPs since respawning
-        const int[] get_CpTimes() const { return cpTimes; }
+        const int[]@ get_CpTimes() const { return cpTimes; }
         // The times of each of their CPs since respawning
-        const int[] get_CpTimesRaw() const { return cpTimesRaw; }
+        const int[]@ get_CpTimesRaw() const { return cpTimesRaw; }
         // The player's best time this session
         int get_BestTime() const { return bestTime; }
         // The players's spawn status: NotSpawned, Spawning, or Spawned
@@ -222,7 +222,7 @@ namespace MLFeed {
         uint get_RaceRank() const { return raceRank; }
 
         // this player's CP times for their best performance this session (since the map loaded)
-        const array<uint>@ BestRaceTimes; // todo
+        const array<uint>@ BestRaceTimes;
         // whether this player corresponds to the physical player playing the game
         bool IsLocalPlayer;
         // when the player spawned (measured against GameTime)
@@ -248,18 +248,20 @@ namespace MLFeed {
             auto priorLastCpTime = LastCpTime; // this includes time lost to respawns
             if (callSuper) PlayerCpInfo::UpdateFrom(event, _spawnIndex);
 
-            // if (CpCount == 0 && cpTimesRaw.Length > 0) {
-            //     // for (uint i = 0; i < cpTimesRaw.Length; i++) {
-            //     //     cpTimesRaw[i] = 0;
-            //     //     timeLostToRespawns[i] = 0;
-            //     // }
-            //     cpTimesRaw[0] = 0;
-            //     timeLostToRespawns[0] = 0;
-            //     LastRespawnCheckpoint = 0;
-            //     LastRespawnRaceTime = 0;
-            //     TimeLostToRespawns = 0;
-            //     priorLastCpTime = 0;
-            // }
+            print('LCPT: ' + lastCpTime);
+
+            if (CpCount == 0 && cpTimesRaw.Length > 0) {
+                // for (uint i = 0; i < cpTimesRaw.Length; i++) {
+                //     cpTimesRaw[i] = 0;
+                //     timeLostToRespawns[i] = 0;
+                // }
+                cpTimesRaw[0] = 0;
+                timeLostToRespawns[0] = 0;
+                LastRespawnCheckpoint = 0;
+                LastRespawnRaceTime = 0;
+                TimeLostToRespawns = 0;
+                priorLastCpTime = 0;
+            }
 
             // cache raw CP times if the length changed; we'll alter them later
             if (priorCpCount != CpCount) {
@@ -267,6 +269,7 @@ namespace MLFeed {
                 timeLostToRespawns.Resize(cpTimes.Length);
                 lastCpTimeRaw = lastCpTime;
                 cpTimesRaw[CpCount] = cpTimes[CpCount];
+                timeLostToRespawns[timeLostToRespawns.Length - 1] = 0;
             }
             auto parts = string(event.data[5]).Split(",");
             NbRespawnsRequested = Text::ParseUInt(parts[0]);
@@ -282,7 +285,7 @@ namespace MLFeed {
                 // }
             } if (priorNbRR != NbRespawnsRequested) {
                 // last respawn time, here, is the old value, still
-                int newTimeLost = CurrentRaceTime - Math::Max(LastRespawnRaceTime, priorLastCpTime);
+                int newTimeLost = Math::Max(0, CurrentRaceTime - Math::Max(LastRespawnRaceTime, priorLastCpTime));
                 TimeLostToRespawns += newTimeLost;
                 lastCpTime = priorLastCpTime + newTimeLost;
                 cpTimes[CpCount] = lastCpTime;
@@ -290,6 +293,7 @@ namespace MLFeed {
                 LastRespawnRaceTime = CurrentRaceTime;
                 LastRespawnCheckpoint = CpCount;
             }
+            print('LCPT2: ' + lastCpTime);
 
         }
 
@@ -383,7 +387,6 @@ namespace MLFeed {
         private HookRecordEventsBase@ recHook;
         RaceDataProxy(HookRaceStatsEventsBase@ h, HookRecordEventsBase@ rh) {
             if (h is null) throw('cannot have null thing');
-            throw('ahh');
             @hook = h;
             @recHook = rh;
         }

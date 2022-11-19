@@ -1,13 +1,11 @@
 void Main() {
-    MLHook::RequireVersionApi('0.3.2');
-
     // initial objects, get them non-null ASAP
     @theHook = RaceFeed::HookRaceStatsEvents();
     @koFeedHook = KoFeed::HookKoStatsEvents();
     @recordHook = HookRecordFeed();
     @ghostHook = HookGhostData();
 
-    throw('ahh');
+    MLHook::RequireVersionApi('0.3.2');
 
     startnew(InitCoro);
 }
@@ -321,7 +319,9 @@ namespace RaceFeed {
             if (!latestPlayerStats.Exists(playerName)) {
                 return _emptyUintArray;
             }
-            return GetPlayer_V2(playerName).BestRaceTimes;
+            auto player = GetPlayer_V2(playerName);
+            if (player is null || player.BestRaceTimes is null) return _emptyUintArray;
+            return player.BestRaceTimes;
         }
 
         void SetCheckpointCount() {
