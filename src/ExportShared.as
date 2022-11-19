@@ -281,7 +281,7 @@ namespace MLFeed {
                 for (uint i = 0; i < timeLostToRespawns.Length; i++) {
                     timeLostToRespawns[i] = 0;
                 }
-            } if (priorNbRR != NbRespawnsRequested) {
+            } else if (priorNbRR != NbRespawnsRequested) {
                 // last respawn time, here, is the old value, still
                 int newTimeLost = Math::Max(0, CurrentRaceTime - Math::Max(LastRespawnRaceTime, priorLastCpTime));
                 TimeLostToRespawns += newTimeLost;

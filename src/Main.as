@@ -299,9 +299,8 @@ namespace RaceFeed {
         void UpdatePlayerRaceTimes(MLHook::PendingEvent@ event) {
             // [name, current cp times, best cp times]
             string name = event.data[0];
-            if (!bestPlayerTimes.Exists(name)) {
-                bestPlayerTimes[name] = array<uint>();
-            }
+            // if (!bestPlayerTimes.Exists(name)) {}
+            bestPlayerTimes[name] = array<uint>();  // re-init this always so that we don't auto update if someone has a reference to old times
             uint[]@ playersTimes = cast<uint[]>(bestPlayerTimes[name]);
             auto parts = string(event.data[2]).Split(",");
             playersTimes.Resize(parts.Length);
