@@ -7,6 +7,8 @@ void Main() {
     @recordHook = HookRecordFeed();
     @ghostHook = HookGhostData();
 
+    throw('ahh');
+
     startnew(InitCoro);
 }
 

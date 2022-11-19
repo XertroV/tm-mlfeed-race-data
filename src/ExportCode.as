@@ -2,6 +2,7 @@ namespace MLFeed {
     const RaceDataProxy@ GetRaceData() {
         auto plugin = Meta::ExecutingPlugin();
         RaceDataProxy@ ret;
+        while (theHook is null) yield();
         if (!pluginToRaceData.Get(plugin.ID, @ret)) {
             @ret = RaceDataProxy(theHook, recordHook);
             @pluginToRaceData[plugin.ID] = ret;

@@ -34,6 +34,7 @@ class HookGhostData : MLFeed::SharedGhostDataHook {
                 pending.RemoveRange(0, pending.Length);
             }
             // The following does not work b/c `ghost.Result.Checkpoints` is an UnknownType in AngelScript (note: it is a c++ array as per Nadeo ManiaLink docs)
+            // todo: maybe you can force cast it via pointer to an `array<int>` (or uint)
             /*
             auto pgs = GetApp().PlaygroundScript;
             if (pgs !is null) {
@@ -91,7 +92,7 @@ class HookGhostData : MLFeed::SharedGhostDataHook {
         seenGhosts[key] = true;
         string nn = event.data[1];
         if (nn.EndsWith("Personal best")) {
-            event.data[1] = wstring(ColoredString(event.data[1]));
+            event.data[1] = wstring("Personal best");
         }
         auto g = MLFeed::GhostInfo(event);
         _ghosts.InsertLast(g);

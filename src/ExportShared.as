@@ -178,6 +178,10 @@ namespace MLFeed {
 #if DEV
     // shared
     class PlayerCpInfo_V2 : PlayerCpInfo {
+        protected int lastCpTimeRaw;
+        protected array<int> cpTimesRaw;
+        protected array<int> timeLostToRespawns;
+
         PlayerCpInfo_V2(MLHook::PendingEvent@ event, uint _spawnIndex) {
             super(event, _spawnIndex);
             UpdateFrom(event, _spawnIndex, false);
@@ -200,10 +204,12 @@ namespace MLFeed {
             return Math::Max(LastCpTimeRaw, LastRespawnRaceTime);
         }
         // Their last CP time (as on the players chronometer)
-        int get_LastCpTimeRaw() const { return lastCpTime; }
+        int get_LastCpTimeRaw() const { return lastCpTimeRaw; }
         // LastCpOrLastRespawn
         // The times of each of their CPs since respawning
         const int[] get_CpTimes() const { return cpTimes; }
+        // The times of each of their CPs since respawning
+        const int[] get_CpTimesRaw() const { return cpTimesRaw; }
         // The player's best time this session
         int get_BestTime() const { return bestTime; }
         // The players's spawn status: NotSpawned, Spawning, or Spawned
@@ -239,7 +245,29 @@ namespace MLFeed {
         void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex, bool callSuper) {
             auto priorNbRR = NbRespawnsRequested;
             auto priorCpCount = CpCount;
+            auto priorLastCpTime = LastCpTime; // this includes time lost to respawns
             if (callSuper) PlayerCpInfo::UpdateFrom(event, _spawnIndex);
+
+            // if (CpCount == 0 && cpTimesRaw.Length > 0) {
+            //     // for (uint i = 0; i < cpTimesRaw.Length; i++) {
+            //     //     cpTimesRaw[i] = 0;
+            //     //     timeLostToRespawns[i] = 0;
+            //     // }
+            //     cpTimesRaw[0] = 0;
+            //     timeLostToRespawns[0] = 0;
+            //     LastRespawnCheckpoint = 0;
+            //     LastRespawnRaceTime = 0;
+            //     TimeLostToRespawns = 0;
+            //     priorLastCpTime = 0;
+            // }
+
+            // cache raw CP times if the length changed; we'll alter them later
+            if (priorCpCount != CpCount) {
+                cpTimesRaw.Resize(cpTimes.Length);
+                timeLostToRespawns.Resize(cpTimes.Length);
+                lastCpTimeRaw = lastCpTime;
+                cpTimesRaw[CpCount] = cpTimes[CpCount];
+            }
             auto parts = string(event.data[5]).Split(",");
             NbRespawnsRequested = Text::ParseUInt(parts[0]);
             StartTime = Text::ParseUInt(parts[1]);
@@ -249,11 +277,20 @@ namespace MLFeed {
                 LastRespawnCheckpoint = 0;
                 LastRespawnRaceTime = 0;
                 TimeLostToRespawns = 0;
+                // for (uint i = 0; i < timeLostToRespawns.Length; i++) {
+                //     timeLostToRespawns[i] = 0;
+                // }
             } if (priorNbRR != NbRespawnsRequested) {
-                TimeLostToRespawns += CurrentRaceTime - Math::Max(LastRespawnRaceTime, LastCpTime);
-                LastRespawnCheckpoint = CpCount;
+                // last respawn time, here, is the old value, still
+                int newTimeLost = CurrentRaceTime - Math::Max(LastRespawnRaceTime, priorLastCpTime);
+                TimeLostToRespawns += newTimeLost;
+                lastCpTime = priorLastCpTime + newTimeLost;
+                cpTimes[CpCount] = lastCpTime;
+                timeLostToRespawns[CpCount] += newTimeLost;
                 LastRespawnRaceTime = CurrentRaceTime;
+                LastRespawnCheckpoint = CpCount;
             }
+
         }
 
         // Formatted as: "PlayerCpInfo(name, rr: 17, tr: 3, cp: 5 (0:43.231), Spawned, bt: 0:55.992)"
@@ -261,6 +298,8 @@ namespace MLFeed {
             string[] inner = {Name, 'rr: ' + RaceRank, 'tr: ' + TaRank, 'cp: ' + CpCount + ' (' + Time::Format(uint(LastCpTime)) + ")", tostring(SpawnStatus), 'bt: ' + Time::Format(BestTime), 'lrs: ' + Time::Format(LastRespawnRaceTime)};
             return "PlayerCpInfo(" + string::Join(inner, ", ") + ")";
         }
+
+        // todo: opSub? mb to calc msDelta?
     }
 #endif
 
@@ -343,6 +382,8 @@ namespace MLFeed {
         private HookRaceStatsEventsBase@ hook;
         private HookRecordEventsBase@ recHook;
         RaceDataProxy(HookRaceStatsEventsBase@ h, HookRecordEventsBase@ rh) {
+            if (h is null) throw('cannot have null thing');
+            throw('ahh');
             @hook = h;
             @recHook = rh;
         }
@@ -467,5 +508,17 @@ namespace MLFeed {
         int get_Result_Time() const { return _Result_Time; }
         // Ghost.Result.Checkpoints
         const uint[]@ get_Checkpoints() const { return _Checkpoints; }
+    }
+
+    // shared
+    class GhostInfo_V2 : GhostInfo {
+        bool IsLocalPlayer;
+        bool IsPersonalBest;
+
+        GhostInfo_V2(const MLHook::PendingEvent@ &in event) {
+            super(event);
+            IsPersonalBest = Nickname == "Personal best"; // fixed by HookGhostData
+            IsLocalPlayer = IsPersonalBest || Nickname == LocalPlayersName;
+        }
     }
 }
