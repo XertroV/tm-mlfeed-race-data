@@ -94,6 +94,7 @@ Void _SendPlayerTimes(CSmPlayer Player) {
 
 // we only want to send info when a player's CP count changes.
 declare Integer[Text] LastCPCounts;
+declare Integer[Text] LastBestTimes;
 declare Integer[Text] LastRespawnsCount;
 declare CSmPlayer::ESpawnStatus[Text] LastSpawn;
 declare Integer MostCPsSeen;
@@ -102,6 +103,7 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
     declare Text Name = Player.User.Name;
     declare CPCount = Player.RaceWaypointTimes.count;
     declare RespawnsCount = Player.Score.NbRespawnsRequested;
+    declare BestTime = GetBestRaceTime(Player);
     if (CPCount > MostCPsSeen) {
         MostCPsSeen = CPCount;
     }
@@ -109,8 +111,9 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
     declare Boolean SpawnChanged = LastSpawn.existskey(Name) && Player.SpawnStatus != LastSpawn[Name];
     declare Boolean CpsChanged = LastCPCounts.existskey(Name) && CPCount != LastCPCounts[Name];
     declare Boolean RespanwsChanged = LastRespawnsCount.existskey(Name) && RespawnsCount != LastRespawnsCount[Name];
+    declare Boolean BestTimeChanged = !LastBestTimes.existskey(Name) || BestTime != LastBestTimes[Name];
     // update if there are changes or the update is forced.
-    declare Boolean WillSendEvent = Force || SpawnChanged || CpsChanged || RespanwsChanged;
+    declare Boolean WillSendEvent = Force || SpawnChanged || CpsChanged || RespanwsChanged || BestTimeChanged;
     if (WillSendEvent) {
         declare LatestCPTime = "";
         if (CPCount > 0) {
@@ -118,15 +121,16 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
         }
         // events should be prefixed with "MLHook_Event_" + PageUID.
         // Suffixes can be applied if multiple types of events are sent.
-        SendCustomEvent("MLHook_Event_RaceStats_PlayerCP", [Name, ""^CPCount, LatestCPTime, ""^GetBestRaceTime(Player), ""^SpawnStatusToUint(Player.SpawnStatus), ""^RespawnsCount^","^Player.StartTime]);
+        SendCustomEvent("MLHook_Event_RaceStats_PlayerCP", [Name, ""^CPCount, LatestCPTime, ""^BestTime, ""^SpawnStatusToUint(Player.SpawnStatus), ""^RespawnsCount^","^Player.StartTime]);
     }
-    if (SpawnChanged || Force || CPCount == MostCPsSeen) {
+    if (SpawnChanged || Force || CPCount == MostCPsSeen || BestTimeChanged) {
         _SendPlayerTimes(Player);
     }
     // update last spawn and cp count always
     LastCPCounts[Name] = CPCount;
     LastSpawn[Name] = Player.SpawnStatus;
     LastRespawnsCount[Name] = RespawnsCount;
+    LastBestTimes[Name] = BestTime;
     return WillSendEvent;
 }
 

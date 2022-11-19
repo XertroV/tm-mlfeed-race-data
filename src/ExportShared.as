@@ -287,6 +287,7 @@ namespace MLFeed {
                 TimeLostToRespawns += newTimeLost;
                 lastCpTime = priorLastCpTime + newTimeLost;
                 cpTimes[CpCount] = lastCpTime;
+                timeLostToRespawns.Resize(cpTimes.Length);
                 timeLostToRespawns[CpCount] += newTimeLost;
                 LastRespawnRaceTime = CurrentRaceTime;
                 LastRespawnCheckpoint = CpCount;
