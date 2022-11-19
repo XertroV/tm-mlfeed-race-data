@@ -248,8 +248,6 @@ namespace MLFeed {
             auto priorLastCpTime = LastCpTime; // this includes time lost to respawns
             if (callSuper) PlayerCpInfo::UpdateFrom(event, _spawnIndex);
 
-            print('LCPT: ' + lastCpTime);
-
             if (CpCount == 0 && cpTimesRaw.Length > 0) {
                 // for (uint i = 0; i < cpTimesRaw.Length; i++) {
                 //     cpTimesRaw[i] = 0;
@@ -280,9 +278,9 @@ namespace MLFeed {
                 LastRespawnCheckpoint = 0;
                 LastRespawnRaceTime = 0;
                 TimeLostToRespawns = 0;
-                // for (uint i = 0; i < timeLostToRespawns.Length; i++) {
-                //     timeLostToRespawns[i] = 0;
-                // }
+                for (uint i = 0; i < timeLostToRespawns.Length; i++) {
+                    timeLostToRespawns[i] = 0;
+                }
             } if (priorNbRR != NbRespawnsRequested) {
                 // last respawn time, here, is the old value, still
                 int newTimeLost = Math::Max(0, CurrentRaceTime - Math::Max(LastRespawnRaceTime, priorLastCpTime));
@@ -293,8 +291,6 @@ namespace MLFeed {
                 LastRespawnRaceTime = CurrentRaceTime;
                 LastRespawnCheckpoint = CpCount;
             }
-            print('LCPT2: ' + lastCpTime);
-
         }
 
         // Formatted as: "PlayerCpInfo(name, rr: 17, tr: 3, cp: 5 (0:43.231), Spawned, bt: 0:55.992)"
