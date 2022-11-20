@@ -284,13 +284,16 @@ namespace MLFeed {
             } else if (priorNbRR != NbRespawnsRequested) {
                 // last respawn time, here, is the old value, still
                 int newTimeLost = Math::Max(0, CurrentRaceTime - Math::Max(LastRespawnRaceTime, priorLastCpTime));
-                TimeLostToRespawns += newTimeLost;
-                lastCpTime = priorLastCpTime + newTimeLost;
-                cpTimes[CpCount] = lastCpTime;
-                timeLostToRespawns.Resize(cpTimes.Length);
-                timeLostToRespawns[CpCount] += newTimeLost;
-                LastRespawnRaceTime = CurrentRaceTime;
-                LastRespawnCheckpoint = CpCount;
+                // only update time loss if the player hasn't finished the race
+                if (BestRaceTimes is null || (BestRaceTimes.Length > 0 && CpCount != BestRaceTimes.Length)) {
+                    TimeLostToRespawns += newTimeLost;
+                    lastCpTime = priorLastCpTime + newTimeLost;
+                    cpTimes[CpCount] = lastCpTime;
+                    timeLostToRespawns.Resize(cpTimes.Length);
+                    timeLostToRespawns[CpCount] += newTimeLost;
+                    LastRespawnRaceTime = CurrentRaceTime;
+                    LastRespawnCheckpoint = CpCount;
+                }
             }
         }
 
