@@ -48,7 +48,6 @@ Integer GetBestRaceTime(CSmPlayer Player) {
 // }
 
 
-declare Integer[Text] LastSpawnTime;
 declare Text[] LastKnownPlayers;
 
 // send a complete list of players every now and then.
@@ -90,7 +89,8 @@ Void _SendPlayerTimes(CSmPlayer Player) {
         // BestRaceTimes just not updated yet, so return current CP times instead
         BestTimes = RaceTimes;
     }
-    SendCustomEvent("MLHook_Event_RaceStats_PlayerRaceTimes", [Name, RaceTimes, BestTimes]);
+    // we used to send race times at ix=1 but don't anymore, so zero it
+    SendCustomEvent("MLHook_Event_RaceStats_PlayerRaceTimes", [Name, "", BestTimes]);
 }
 
 // we only want to send info when a player's CP count changes.
@@ -124,7 +124,7 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
         // Suffixes can be applied if multiple types of events are sent.
         SendCustomEvent("MLHook_Event_RaceStats_PlayerCP", [Name, ""^CPCount, LatestCPTime, ""^BestTime, ""^SpawnStatusToUint(Player.SpawnStatus), ""^RespawnsCount^","^Player.StartTime]);
     }
-    if (SpawnChanged || Force || CPCount == MostCPsSeen || BestTimeChanged) {
+    if (Force || BestTimeChanged) {
         _SendPlayerTimes(Player);
     }
     // update last spawn and cp count always
@@ -139,7 +139,10 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
 Void InitialSend() {
     foreach (Player in Players) {
         _SendPlayerStats(Player, True);
+    }
+    foreach (Player in Players) {
         _SendPlayerTimes(Player);
+        yield;
     }
     MLHookLog("Completed: InitialSend");
 }
@@ -160,7 +163,11 @@ Void CheckPlayers() {
 Void CheckMapChange() {
     if (Map != Null && Map.MapInfo.MapUid != G_PreviousMapUid) {
         G_PreviousMapUid = Map.MapInfo.MapUid;
+        LastBestTimes = [];
         LastCPCounts = [];
+        LastKnownPlayers = [];
+        LastRespawnsCount = [];
+        LastSpawn = [];
         MostCPsSeen = 0;
     }
 }

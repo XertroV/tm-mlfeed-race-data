@@ -354,14 +354,25 @@ namespace RaceFeed {
         }
 
         void OnMapChange() {
-            bestPlayerTimes.DeleteAll();
-            latestPlayerStats.DeleteAll();
-            SortedPlayers_TimeAttack.RemoveRange(0, SortedPlayers_TimeAttack.Length);
-            SortedPlayers_Race.RemoveRange(0, SortedPlayers_Race.Length);
-            this.CpCount = 0;
+            ResetState();
             if (CurrentMap != "") {
                 startnew(CoroutineFunc(SetCheckpointCount));
             }
+        }
+
+        void ResetState() {
+            bestPlayerTimes.DeleteAll();
+            latestPlayerStats.DeleteAll();
+            // SortedPlayers_TimeAttack.RemoveRange(0, SortedPlayers_TimeAttack.Length);
+            SortedPlayers_TimeAttack.Resize(0);
+            // sortedPlayers_TimeAttack.RemoveRange(0, SortedPlayers_TimeAttack.Length);
+            sortedPlayers_TimeAttack.Resize(0);
+            // SortedPlayers_Race.RemoveRange(0, SortedPlayers_Race.Length);
+            SortedPlayers_Race.Resize(0);
+            // sortedPlayers_Race.RemoveRange(0, SortedPlayers_TimeAttack.Length);
+            sortedPlayers_Race.Resize(0);
+            this.CpCount = 0;
+            this.LapCount = 0;
         }
 
         private string _localUserName;
