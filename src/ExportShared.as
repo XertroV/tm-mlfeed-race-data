@@ -249,12 +249,13 @@ namespace MLFeed {
             if (callSuper) PlayerCpInfo::UpdateFrom(event, _spawnIndex);
 
             if (CpCount == 0 && cpTimesRaw.Length > 0) {
-                // for (uint i = 0; i < cpTimesRaw.Length; i++) {
-                //     cpTimesRaw[i] = 0;
-                //     timeLostToRespawns[i] = 0;
-                // }
-                cpTimesRaw[0] = 0;
-                timeLostToRespawns[0] = 0;
+                if (cpTimesRaw.Length != timeLostToRespawns.Length) timeLostToRespawns.Resize(cpTimesRaw.Length);
+                for (uint i = 0; i < cpTimesRaw.Length; i++) {
+                    cpTimesRaw[i] = 0;
+                    timeLostToRespawns[i] = 0;
+                }
+                // cpTimesRaw[0] = 0;
+                // timeLostToRespawns[0] = 0;
                 LastRespawnCheckpoint = 0;
                 LastRespawnRaceTime = 0;
                 TimeLostToRespawns = 0;
@@ -267,14 +268,20 @@ namespace MLFeed {
                 timeLostToRespawns.Resize(cpTimes.Length);
                 lastCpTimeRaw = lastCpTime;
                 cpTimesRaw[CpCount] = cpTimes[CpCount];
-                timeLostToRespawns[timeLostToRespawns.Length - 1] = 0;
+                timeLostToRespawns[CpCount] = 0;
             }
             auto parts = string(event.data[5]).Split(",");
             NbRespawnsRequested = Text::ParseUInt(parts[0]);
+            uint lastStartTime = StartTime;
             StartTime = Text::ParseUInt(parts[1]);
 
+            // sometimes we decrease for like 1 frame for no reason, anyway, after the first respawn, skip it if it decreases
+            if (NbRespawnsRequested == priorNbRR - 1 && lastStartTime == StartTime) {
+                NbRespawnsRequested = priorNbRR;
+            }
+
             // we'll always hit this when the player spawns, which is also when we should default respawn values
-            if (NbRespawnsRequested == 0) {
+            if (CpCount == 0 && NbRespawnsRequested == 0) {
                 LastRespawnCheckpoint = 0;
                 LastRespawnRaceTime = 0;
                 TimeLostToRespawns = 0;
