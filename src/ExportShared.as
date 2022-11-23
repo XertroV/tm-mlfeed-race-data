@@ -247,6 +247,7 @@ namespace MLFeed {
             auto priorCpCount = CpCount;
             auto priorLastCpTime = LastCpTime; // this includes time lost to respawns
             if (callSuper) PlayerCpInfo::UpdateFrom(event, _spawnIndex);
+            priorLastCpTime = Math::Max(priorLastCpTime, LastCpTime);
 
             if (CpCount == 0 && cpTimesRaw.Length > 0) {
                 if (cpTimesRaw.Length != timeLostToRespawns.Length) timeLostToRespawns.Resize(cpTimesRaw.Length);
@@ -264,10 +265,10 @@ namespace MLFeed {
 
             // cache raw CP times if the length changed; we'll alter them later
             if (priorCpCount != CpCount) {
-                cpTimesRaw.Resize(cpTimes.Length);
-                timeLostToRespawns.Resize(cpTimes.Length);
                 lastCpTimeRaw = lastCpTime;
+                cpTimesRaw.Resize(cpTimes.Length);
                 cpTimesRaw[CpCount] = cpTimes[CpCount];
+                timeLostToRespawns.Resize(cpTimes.Length);
                 timeLostToRespawns[CpCount] = 0;
             }
             auto parts = string(event.data[5]).Split(",");
@@ -276,6 +277,7 @@ namespace MLFeed {
             StartTime = Text::ParseUInt(parts[1]);
 
             // sometimes we decrease for like 1 frame for no reason, anyway, after the first respawn, skip it if it decreases
+            // note: `LastRespawnRaceTime` does not change
             if (NbRespawnsRequested == priorNbRR - 1 && lastStartTime == StartTime) {
                 NbRespawnsRequested = priorNbRR;
             }
