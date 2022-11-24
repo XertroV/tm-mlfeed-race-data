@@ -42,6 +42,7 @@ namespace MLFeed {
 
     // The current server's GameTime
     uint get_GameTime() {
+        if (GetApp().Network.PlaygroundClientScriptAPI is null) return 0;
         return uint(GetApp().Network.PlaygroundClientScriptAPI.GameTime);
     }
 }

@@ -179,8 +179,9 @@ namespace MLFeed {
     // shared
     class PlayerCpInfo_V2 : PlayerCpInfo {
         protected int lastCpTimeRaw;
+        // protected int LastCpOrRespawnTime;
         protected array<int> cpTimesRaw;
-        protected array<int> timeLostToRespawns;
+        protected array<int> timeLostToRespawnsByCp;
 
         PlayerCpInfo_V2(MLHook::PendingEvent@ event, uint _spawnIndex) {
             super(event, _spawnIndex);
@@ -198,18 +199,26 @@ namespace MLFeed {
         // The player's name
         const string get_Name() const { return name; }
         // How many CPs that player currently has
-        int get_CpCount() const { return cpCount; };
-        // Their last CP time OR their last respawn time (default changed in v0.4.0; used `LastCpTimeRaw` or `CpTimes[CpCount]` for the raw time)
-        int get_LastCpTime() const {
-            return lastCpTime;
-        }
-        // Their last CP time (as on the players chronometer)
-        int get_LastCpTimeRaw() const { return lastCpTimeRaw; }
-        // LastCpOrLastRespawn
+        int get_CpCount() const { return cpCount; }
+        // Player's last CP time
+        int get_LastCpTime() const { return lastCpTime; }
+        // Player's last CP time _OR_ their last respawn time if it is greater
+        int get_LastCpOrRespawnTime() const { return Math::Max(lastCpTime, LastRespawnRaceTime); }
         // The times of each of their CPs since respawning
         const int[]@ get_CpTimes() const { return cpTimes; }
         // The times of each of their CPs since respawning
-        const int[]@ get_CpTimesRaw() const { return cpTimesRaw; }
+        const int[]@ get_TimeLostToRespawnByCp() const { return timeLostToRespawnsByCp; }
+        // get the last CP time of the player minus time lost to respawns
+        int get_LastTheoreticalCpTime() const {
+            uint tl = 0;
+            for (uint i = 0; i < TimeLostToRespawnByCp.Length - 1; i++) {
+                tl += TimeLostToRespawnByCp[i];
+            }
+            return LastCpTime - tl;
+        }
+        int get_TheoreticalRaceTime() const {
+            return CurrentRaceTime - TimeLostToRespawns;
+        }
         // The player's best time this session
         int get_BestTime() const { return bestTime; }
         // The players's spawn status: NotSpawned, Spawning, or Spawned
@@ -227,8 +236,14 @@ namespace MLFeed {
         bool IsLocalPlayer;
         // when the player spawned (measured against GameTime)
         uint StartTime;
-        // This player's CurrentRaceTime
-        int get_CurrentRaceTime() const { return int(GameTime) - int(StartTime); }
+        // This player's CurrentRaceTime without accounting for latency
+        int get_CurrentRaceTimeRaw() const {
+            return int(GameTime) - int(StartTime);
+        }
+        // This player's CurrentRaceTime with latency taken into account
+        int get_CurrentRaceTime() const {
+            return CurrentRaceTimeRaw - int(latencyEstimate);
+        }
         // number of times the player has respawned
         uint NbRespawnsRequested;
         // the last time this player respawned (measure against CurrentRaceTime)
@@ -242,68 +257,119 @@ namespace MLFeed {
             UpdateFrom(event, _spawnIndex, true);
         }
 
+        float latencyEstimate = 0.;
+        float lagDataPoints = 0;
+
         void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex, bool callSuper) {
             auto priorNbRR = NbRespawnsRequested;
             auto priorCpCount = CpCount;
-            auto priorLastCpTime = LastCpTime; // this includes time lost to respawns
+            auto priorLastCpTime = LastCpTime;
+            auto priorNbRespawns = NbRespawnsRequested;
+
             if (callSuper) PlayerCpInfo::UpdateFrom(event, _spawnIndex);
-            priorLastCpTime = Math::Max(priorLastCpTime, LastCpTime);
 
-            if (CpCount == 0 && cpTimesRaw.Length > 0) {
-                if (cpTimesRaw.Length != timeLostToRespawns.Length) timeLostToRespawns.Resize(cpTimesRaw.Length);
-                for (uint i = 0; i < cpTimesRaw.Length; i++) {
-                    cpTimesRaw[i] = 0;
-                    timeLostToRespawns[i] = 0;
-                }
-                // cpTimesRaw[0] = 0;
-                // timeLostToRespawns[0] = 0;
-                LastRespawnCheckpoint = 0;
-                LastRespawnRaceTime = 0;
-                TimeLostToRespawns = 0;
-                priorLastCpTime = 0;
-            }
+            // priorLastCpTime = Math::Max(priorLastCpTime, LastCpTime);
 
-            // cache raw CP times if the length changed; we'll alter them later
-            if (priorCpCount != CpCount) {
-                lastCpTimeRaw = lastCpTime;
-                cpTimesRaw.Resize(cpTimes.Length);
-                cpTimesRaw[CpCount] = cpTimes[CpCount];
-                timeLostToRespawns.Resize(cpTimes.Length);
-                timeLostToRespawns[CpCount] = 0;
-            }
             auto parts = string(event.data[5]).Split(",");
-            NbRespawnsRequested = Text::ParseUInt(parts[0]);
+            // sometimes on respawn, a few frames later the respawn count decreases by 1 then increases again shortly after
+            // so just take the max b/c when it resets to zero we'll reset it differently.
+            NbRespawnsRequested = Math::Max(NbRespawnsRequested, Text::ParseUInt(parts[0]));
             uint lastStartTime = StartTime;
             StartTime = Text::ParseUInt(parts[1]);
 
-            // sometimes we decrease for like 1 frame for no reason, anyway, after the first respawn, skip it if it decreases
-            // note: `LastRespawnRaceTime` does not change
-            if (NbRespawnsRequested == priorNbRR - 1 && lastStartTime == StartTime) {
-                NbRespawnsRequested = priorNbRR;
-            }
+            bool raceReset = StartTime > lastStartTime;
+            bool didRespawn = NbRespawnsRequested > priorNbRespawns;
+            bool cpsChanged = CpCount != priorCpCount;
+            // bool isFinished = BestRaceTimes !is null && BestRaceTimes.Length > 0 && CpCount == BestRaceTimes.Length;
 
-            // we'll always hit this when the player spawns, which is also when we should default respawn values
-            if (CpCount == 0 && NbRespawnsRequested == 0) {
+            if (raceReset) {
+                NbRespawnsRequested = 0;
                 LastRespawnCheckpoint = 0;
                 LastRespawnRaceTime = 0;
                 TimeLostToRespawns = 0;
-                for (uint i = 0; i < timeLostToRespawns.Length; i++) {
-                    timeLostToRespawns[i] = 0;
+                for (uint i = 0; i < timeLostToRespawnsByCp.Length; i++) {
+                    timeLostToRespawnsByCp[i] = 0;
                 }
-            } else if (priorNbRR != NbRespawnsRequested) {
-                // last respawn time, here, is the old value, still
-                int newTimeLost = Math::Max(0, CurrentRaceTime - Math::Max(LastRespawnRaceTime, priorLastCpTime));
-                // only update time loss if the player hasn't finished the race
-                if (BestRaceTimes is null || (BestRaceTimes.Length > 0 && CpCount != BestRaceTimes.Length)) {
-                    TimeLostToRespawns += newTimeLost;
-                    lastCpTime = priorLastCpTime + newTimeLost;
-                    cpTimes[CpCount] = lastCpTime;
-                    timeLostToRespawns.Resize(cpTimes.Length);
-                    timeLostToRespawns[CpCount] += newTimeLost;
-                    LastRespawnRaceTime = CurrentRaceTime;
+                timeLostToRespawnsByCp.Resize(1);
+            } else {
+                timeLostToRespawnsByCp.Resize(cpTimes.Length);
+                if (cpsChanged) {
+                    timeLostToRespawnsByCp[CpCount] = 0;
+                    if (CpCount > 0) {
+                        // update latency estimate
+                        float lag = float(CurrentRaceTimeRaw - LastCpTime); // should be 0 if instant, or like 1 frame
+                        auto n = Math::Min(9., lagDataPoints);
+                        latencyEstimate = (latencyEstimate * n + lag) / (n + 1.); // simple exp/moving average type thing
+                        lagDataPoints += 1;
+                    }
+                }
+                if (didRespawn) {
+                    // lag is accounted for in CurrentRaceTime
+                    int newTimeLost = 1000 + Math::Max(0, CurrentRaceTime - LastCpTime);
+                    LastRespawnRaceTime = 1000 + CurrentRaceTime;
                     LastRespawnCheckpoint = CpCount;
+                    TimeLostToRespawns -= timeLostToRespawnsByCp[CpCount];
+                    timeLostToRespawnsByCp[CpCount] = newTimeLost;
+                    TimeLostToRespawns += newTimeLost;
                 }
             }
+
+
+
+
+            // if (CpCount == 0 && cpTimesRaw.Length > 0) {
+            //     if (cpTimesRaw.Length != timeLostToRespawnsByCp.Length) timeLostToRespawnsByCp.Resize(cpTimesRaw.Length);
+            //     for (uint i = 0; i < cpTimesRaw.Length; i++) {
+            //         cpTimesRaw[i] = 0;
+            //         timeLostToRespawnsByCp[i] = 0;
+            //     }
+            //     // cpTimesRaw[0] = 0;
+            //     // timeLostToRespawnsByCp[0] = 0;
+            //     LastRespawnCheckpoint = 0;
+            //     LastRespawnRaceTime = 0;
+            //     TimeLostToRespawns = 0;
+            //     priorLastCpTime = 0;
+            // }
+
+            // // cache raw CP times if the length changed; we'll alter them later
+            // if (priorCpCount != CpCount) {
+            //     lastCpTimeRaw = lastCpTime;
+            //     cpTimesRaw.Resize(cpTimes.Length);
+            //     cpTimesRaw[CpCount] = cpTimes[CpCount];
+            //     timeLostToRespawnsByCp.Resize(cpTimes.Length);
+            //     timeLostToRespawnsByCp[CpCount] = 0;
+            // }
+            // auto parts = string(event.data[5]).Split(",");
+            // NbRespawnsRequested = Text::ParseUInt(parts[0]);
+            // uint lastStartTime = StartTime;
+            // StartTime = Text::ParseUInt(parts[1]);
+
+            // // sometimes we decrease for like 1 frame for no reason, anyway, after the first respawn, skip it if it decreases
+            // // note: `LastRespawnRaceTime` does not change
+            // if (NbRespawnsRequested < priorNbRR && lastStartTime == StartTime) { NbRespawnsRequested = priorNbRR; }
+
+            // // we'll always hit this when the player spawns, which is also when we should default respawn values
+            // if (CpCount == 0 && NbRespawnsRequested == 0) {
+            //     LastRespawnCheckpoint = 0;
+            //     LastRespawnRaceTime = 0;
+            //     TimeLostToRespawns = 0;
+            //     for (uint i = 0; i < timeLostToRespawnsByCp.Length; i++) {
+            //         timeLostToRespawnsByCp[i] = 0;
+            //     }
+            // } else if (priorNbRR < NbRespawnsRequested) {
+            //     // last respawn time, here, is the old value, still
+            //     int newTimeLost = Math::Max(0, CurrentRaceTime - Math::Max(LastRespawnRaceTime, priorLastCpTime));
+            //     // only update time loss if the player hasn't finished the race
+            //     if (BestRaceTimes is null || (BestRaceTimes.Length > 0 && CpCount != BestRaceTimes.Length)) {
+            //         TimeLostToRespawns += newTimeLost;
+            //         lastCpTime = priorLastCpTime + newTimeLost;
+            //         cpTimes[CpCount] = lastCpTime;
+            //         timeLostToRespawnsByCp.Resize(cpTimes.Length);
+            //         timeLostToRespawnsByCp[CpCount] += newTimeLost;
+            //         LastRespawnRaceTime = CurrentRaceTime;
+            //         LastRespawnCheckpoint = CpCount;
+            //     }
+            // }
         }
 
         // Formatted as: "PlayerCpInfo(name, rr: 17, tr: 3, cp: 5 (0:43.231), Spawned, bt: 0:55.992)"
