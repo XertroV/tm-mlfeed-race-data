@@ -12,6 +12,7 @@ namespace RaceFeedUI {
         if (tabs.Length == 0) {
             tabs.InsertLast(MainTab());
             tabs.InsertLast(RaceTab());
+            tabs.InsertLast(RaceRespawnsTab());
             tabs.InsertLast(TaTab());
             tabs.InsertLast(BestTimesTab());
             tabs.InsertLast(CPTimes());
@@ -153,6 +154,19 @@ namespace RaceFeedUI {
         }
         uint PlayersRank(MLFeed::PlayerCpInfo_V2@ player) override {
             return player.TaRank;
+        }
+    }
+
+    class RaceRespawnsTab : RaceTab {
+        RaceRespawnsTab() {
+            super();
+        }
+        const string get_mode() override { return "Race Respawns"; }
+        array<MLFeed::PlayerCpInfo_V2@> get_Players() override {
+            return theHook.SortedPlayers_Race_Respawns;
+        }
+        uint PlayersRank(MLFeed::PlayerCpInfo_V2@ player) override {
+            return player.RaceRespawnRank;
         }
     }
 

@@ -71,10 +71,6 @@ void RenderMenu() {
 }
 #endif
 
-enum SortMethod {
-    Race, TimeAttack
-}
-
 /* with race, the winning players unspawn. how to differentiate?
 maybe track *when* they unspawned, and group those.
 so active racers get grouped with most recent unspawn.
@@ -82,16 +78,13 @@ then, when the respawn happens, racers all respawn at the same time,
 so we can track the number of respawns
 */
 
-SortMethod[] AllSortMethods = {Race, TimeAttack};
-
 namespace RaceFeed {
     enum Cmp {Lt = -1, Eq = 0, Gt = 1}
 
-    funcdef Cmp CmpPlayers(const MLFeed::PlayerCpInfo@ p1, const MLFeed::PlayerCpInfo@ p2);
-    funcdef bool LessPlayers(const MLFeed::PlayerCpInfo@ p1, const MLFeed::PlayerCpInfo@ p2);
+    funcdef Cmp CmpPlayers(const MLFeed::PlayerCpInfo_V2@ p1, const MLFeed::PlayerCpInfo_V2@ p2);
+    funcdef bool LessPlayers(const MLFeed::PlayerCpInfo_V2@ p1, const MLFeed::PlayerCpInfo_V2@ p2);
 
-
-    Cmp cmpRace(const MLFeed::PlayerCpInfo@ p1, const MLFeed::PlayerCpInfo@ p2) {
+    Cmp cmpRace(const MLFeed::PlayerCpInfo_V2@ p1, const MLFeed::PlayerCpInfo_V2@ p2) {
         // if we're in race mode, then we want to count the player as spawned if their spawnIndex == SpawnCounter
         MLFeed::SpawnStatus p1SS = p1.spawnStatus;
         MLFeed::SpawnStatus p2SS = p2.spawnStatus;
@@ -114,11 +107,38 @@ namespace RaceFeed {
         return Cmp::Gt;
     }
 
-    bool lessRace(const MLFeed::PlayerCpInfo@ p1, const MLFeed::PlayerCpInfo@ p2) {
+    bool lessRace(const MLFeed::PlayerCpInfo_V2@ p1, const MLFeed::PlayerCpInfo_V2@ p2) {
         return cmpRace(p1, p2) == Cmp::Lt;
     }
 
-    Cmp cmpTimeAttack(const MLFeed::PlayerCpInfo@ p1, const MLFeed::PlayerCpInfo@ p2) {
+    Cmp cmpRaceRespawn(const MLFeed::PlayerCpInfo_V2@ p1, const MLFeed::PlayerCpInfo_V2@ p2) {
+        // if we're in race mode, then we want to count the player as spawned if their spawnIndex == SpawnCounter
+        MLFeed::SpawnStatus p1SS = p1.spawnStatus;
+        MLFeed::SpawnStatus p2SS = p2.spawnStatus;
+        if (theHook !is null) {
+            if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p1.spawnIndex == theHook.SpawnCounter)
+                p1SS = MLFeed::SpawnStatus::Spawned;
+            if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p2.spawnIndex == theHook.SpawnCounter)
+                p2SS = MLFeed::SpawnStatus::Spawned;
+        }
+        // spawned status dominates
+        if (p1SS != p2SS) {
+            // not spawned is smallest, so we want the opposite of cmpInt, so flip the args
+            return cmpInt(int(p2SS), int(p1SS));
+        }
+        // if we have the same CPs, lowest time is better
+        if (p1.CpCount == p2.CpCount)
+            return cmpInt(p1.LastCpOrRespawnTime, p2.LastCpOrRespawnTime);
+        // Lt => better ranking, so more CPs is better
+        if (p1.CpCount > p2.CpCount) return Cmp::Lt;
+        return Cmp::Gt;
+    }
+
+    bool lessRaceRespawn(const MLFeed::PlayerCpInfo_V2@ p1, const MLFeed::PlayerCpInfo_V2@ p2) {
+        return cmpRaceRespawn(p1, p2) == Cmp::Lt;
+    }
+
+    Cmp cmpTimeAttack(const MLFeed::PlayerCpInfo_V2@ p1, const MLFeed::PlayerCpInfo_V2@ p2) {
         if (p1.bestTime == p2.bestTime) return cmpRace(p1, p2);
         if (p1.bestTime < 0) return Cmp::Gt;
         if (p2.bestTime < 0) return Cmp::Lt;
@@ -126,7 +146,7 @@ namespace RaceFeed {
         return Cmp::Gt;
     }
 
-    bool lessTimeAttack(const MLFeed::PlayerCpInfo@ p1, const MLFeed::PlayerCpInfo@ p2) {
+    bool lessTimeAttack(const MLFeed::PlayerCpInfo_V2@ p1, const MLFeed::PlayerCpInfo_V2@ p2) {
         return cmpTimeAttack(p1, p2) == Cmp::Lt;
     }
 
@@ -197,8 +217,10 @@ namespace RaceFeed {
                 @latestPlayerStats[name] = player;
                 SortedPlayers_Race.InsertLast(player);
                 SortedPlayers_TimeAttack.InsertLast(player);
+                SortedPlayers_Race_Respawns.InsertLast(player);
                 player.raceRank = SortedPlayers_Race.Length;
                 player.taRank = SortedPlayers_TimeAttack.Length;
+                player.raceRespawnRank = SortedPlayers_Race_Respawns.Length;
             }
 
             if (player.spawnStatus == MLFeed::SpawnStatus::Spawned && player.cpCount == 0) {
@@ -218,13 +240,12 @@ namespace RaceFeed {
 
         void UpdatePlayerPosition(MLFeed::PlayerCpInfo_V2@ player) {
             // when a player is updated, they usually only go up or down by a few places at most.
-            UpdatePlayerInSortedPlayersWithMethod(player, SortedPlayers_TimeAttack, LessPlayers(lessTimeAttack), false);
-            UpdatePlayerInSortedPlayersWithMethod(player, SortedPlayers_Race, LessPlayers(lessRace), true);
-
+            UpdatePlayerInSortedPlayersWithMethod(player, SortedPlayers_TimeAttack, LessPlayers(lessTimeAttack), MLFeed::RankType::TimeAttack);
+            UpdatePlayerInSortedPlayersWithMethod(player, SortedPlayers_Race, LessPlayers(lessRace), MLFeed::RankType::Race);
+            UpdatePlayerInSortedPlayersWithMethod(player, SortedPlayers_Race_Respawns, LessPlayers(lessRaceRespawn), MLFeed::RankType::RaceRespawns);
         }
 
-        // todo, refactor to use SortMethod
-        void UpdatePlayerInSortedPlayersWithMethod(MLFeed::PlayerCpInfo_V2@ player, array<MLFeed::PlayerCpInfo_V2@>@ sorted, LessPlayers@ lessFunc, bool isRace) {
+        void UpdatePlayerInSortedPlayersWithMethod(MLFeed::PlayerCpInfo_V2@ player, array<MLFeed::PlayerCpInfo_V2@>@ sorted, LessPlayers@ lessFunc, MLFeed::RankType rt) {
             uint ix = sorted.FindByRef(player);
             MLFeed::PlayerCpInfo_V2@ tmp;
             if (ix >= sorted.Length) return;
@@ -235,13 +256,15 @@ namespace RaceFeed {
                 @sorted[ix - 1] = player;
                 @sorted[ix] = tmp;
                 ix--;
-                if (isRace) {
-                    player.raceRank--;
-                    tmp.raceRank++;
-                } else {
-                    player.taRank--;
-                    tmp.taRank++;
-                }
+                player.ModifyRank(MLFeed::Dir::Down, rt);
+                tmp.ModifyRank(MLFeed::Dir::Up, rt);
+                // if (isRace) {
+                //     player.raceRank--;
+                //     tmp.raceRank++;
+                // } else {
+                //     player.taRank--;
+                //     tmp.taRank++;
+                // }
             }
             // necessary when race sorted but not everyone gets reset at the same time
             while (ix < sorted.Length - 1 && lessFunc(sorted[ix + 1], player)) {
@@ -250,26 +273,27 @@ namespace RaceFeed {
                 @sorted[ix + 1] = player;
                 @sorted[ix] = tmp;
                 ix++;
-                if (isRace) {
-                    player.raceRank++;
-                    tmp.raceRank--;
-                } else {
-                    player.taRank++;
-                    tmp.taRank--;
-                }
+                player.ModifyRank(MLFeed::Dir::Up, rt);
+                tmp.ModifyRank(MLFeed::Dir::Down, rt);
+                // if (isRace) {
+                //     player.raceRank++;
+                //     tmp.raceRank--;
+                // } else {
+                //     player.taRank++;
+                //     tmp.taRank--;
+                // }
             }
-
-            // not fixing ranks here seems okay now that we do it via UpdatePlayerLeft
-            // if (isRace) {
-            //     FixRanksRace();
-            // } else {
-            //     FixRanksTimeAttack();
-            // }
         }
 
         void FixRanksRace() {
             for (uint i = 0; i < SortedPlayers_Race.Length; i++) {
                 SortedPlayers_Race[i].raceRank = i + 1;
+            }
+        }
+
+        void FixRanksRaceRespawns() {
+            for (uint i = 0; i < SortedPlayers_Race_Respawns.Length; i++) {
+                SortedPlayers_Race_Respawns[i].raceRespawnRank = i + 1;
             }
         }
 
@@ -290,6 +314,9 @@ namespace RaceFeed {
                 ix = SortedPlayers_TimeAttack.FindByRef(player);
                 if (ix >= 0) SortedPlayers_TimeAttack.RemoveAt(ix);
                 FixRanksTimeAttack();
+                ix = SortedPlayers_Race_Respawns.FindByRef(player);
+                if (ix >= 0) SortedPlayers_Race_Respawns.RemoveAt(ix);
+                FixRanksRaceRespawns();
                 latestPlayerStats.Delete(name);
             }
             DuplicateArraysForVersion1();
@@ -363,16 +390,13 @@ namespace RaceFeed {
         void ResetState() {
             bestPlayerTimes.DeleteAll();
             latestPlayerStats.DeleteAll();
-            // SortedPlayers_TimeAttack.RemoveRange(0, SortedPlayers_TimeAttack.Length);
-            SortedPlayers_TimeAttack.Resize(0);
-            // sortedPlayers_TimeAttack.RemoveRange(0, SortedPlayers_TimeAttack.Length);
-            sortedPlayers_TimeAttack.Resize(0);
-            // SortedPlayers_Race.RemoveRange(0, SortedPlayers_Race.Length);
-            SortedPlayers_Race.Resize(0);
-            // sortedPlayers_Race.RemoveRange(0, SortedPlayers_TimeAttack.Length);
-            sortedPlayers_Race.Resize(0);
             this.CpCount = 0;
             this.LapCount = 0;
+            // sorted players
+            SortedPlayers_Race.Resize(0);
+            SortedPlayers_TimeAttack.Resize(0);
+            SortedPlayers_Race_Respawns.Resize(0);
+            DuplicateArraysForVersion1();
         }
 
         private string _localUserName;

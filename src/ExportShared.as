@@ -179,6 +179,7 @@ namespace MLFeed {
         // protected int LastCpOrRespawnTime;
         protected array<int> cpTimesRaw;
         protected array<int> timeLostToRespawnsByCp;
+        int raceRespawnRank;
 
         PlayerCpInfo_V2(MLHook::PendingEvent@ event, uint _spawnIndex) {
             super(event, _spawnIndex);
@@ -226,6 +227,8 @@ namespace MLFeed {
         uint get_TaRank() const { return taRank; }
         // The player's rank as measured in a race (when all players would spawn at the same time).
         uint get_RaceRank() const { return raceRank; }
+        // The player's rank as measured in a race (when all players would spawn at the same time), accounting for respawns.
+        uint get_RaceRespawnRank() const { return raceRespawnRank; }
 
         // this player's CP times for their best performance this session (since the map loaded)
         const array<uint>@ BestRaceTimes;
@@ -309,11 +312,29 @@ namespace MLFeed {
             }
         }
 
+        void ModifyRank(Dir dir, RankType rt) {
+            if (rt == RankType::Race) {
+                raceRank += int(dir);
+            } else if (rt == RankType::RaceRespawns) {
+                raceRespawnRank += int(dir);
+            } else {
+                taRank += int(dir);
+            }
+        }
+
         // Formatted as: "PlayerCpInfo(name, rr: 17, tr: 3, cp: 5 (0:43.231), Spawned, bt: 0:55.992)"
         string ToString() const override {
             string[] inner = {Name, 'rr: ' + RaceRank, 'tr: ' + TaRank, 'cp: ' + CpCount + ' (' + Time::Format(uint(LastCpTime)) + ")", tostring(SpawnStatus), 'bt: ' + Time::Format(BestTime), 'lrs: ' + Time::Format(LastRespawnRaceTime)};
             return "PlayerCpInfo(" + string::Join(inner, ", ") + ")";
         }
+    }
+
+    shared enum Dir {
+        Down = -1, Up = 1
+    }
+
+    shared enum RankType {
+        Race, RaceRespawns, TimeAttack
     }
 
     shared class HookRaceStatsEventsBase : MLHook::HookMLEventsByType {

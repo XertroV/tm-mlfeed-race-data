@@ -4,7 +4,18 @@ All types and functions should be prefixed with `MLFeed::`.
 
 ## Features in v0.4
 
-*
+* Race_Respawns
+* add respawn data for all players
+  * note: for non-local players these figures are an estimate; times are exact for the local player
+  * last respawn time
+  * last respawn cp
+  * time lost to respawn in total and by cp
+  * number of respawns
+* player
+  * is local player: bool
+  * start time
+  * current race time (per player, both raw and accounting for lag)
+  * latency info
 
 ## Replacements
 
