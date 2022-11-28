@@ -233,7 +233,7 @@ namespace RaceFeedUI {
             auto @players = Players;
             UI::Text("Players ("+players.Length+") CP Times.");
             uint nCols = 3 + theHook.CPsToFinish;
-            if (UI::BeginTable("players debug " + mode, nCols, UI::TableFlags::SizingFixedSame)) {
+            if (UI::BeginTable("players debug " + mode, nCols, UI::TableFlags::SizingStretchProp)) {
 
                 UI::TableSetupColumn("Name", UI::TableColumnFlags::WidthStretch);
                 for (uint i = 0; i <= theHook.CPsToFinish; i++) {
@@ -253,10 +253,10 @@ namespace RaceFeedUI {
                         UI::AlignTextToFramePadding();
                         UI::Text(ps.Name);
 
-                        for (uint i = 0; i <= theHook.CPsToFinish; i++) {
+                        for (uint cp = 0; cp <= theHook.CPsToFinish; cp++) {
                             UI::TableNextColumn();
-                            if (ps.CpTimes is null || ps.CpTimes.Length <= i) continue;
-                            UI::Text(Time::Format(ps.CpTimes[i]));
+                            if (ps.CpTimes is null || ps.CpTimes.Length <= cp) continue;
+                            UI::Text(Time::Format(ps.CpTimes[cp]));
                         }
 
                         UI::TableNextColumn();
@@ -303,10 +303,10 @@ namespace RaceFeedUI {
                         UI::AlignTextToFramePadding();
                         UI::Text(ps.Name);
 
-                        for (uint i = 0; i < theHook.CPsToFinish; i++) {
+                        for (uint cp = 0; cp <= theHook.CPsToFinish; cp++) {
                             UI::TableNextColumn();
-                            if (ps.BestRaceTimes is null || ps.BestRaceTimes.Length <= i) continue;
-                            UI::Text(Time::Format(ps.BestRaceTimes[i]));
+                            if (ps.BestRaceTimes is null || ps.BestRaceTimes.Length <= cp) continue;
+                            UI::Text(Time::Format(ps.BestRaceTimes[cp]));
                         }
 
                         UI::TableNextColumn();
@@ -399,7 +399,7 @@ namespace RaceFeedUI {
             uint nCols = 3 + theHook.CPsToFinish;
             if (UI::BeginTable("players debug " + mode, nCols, UI::TableFlags::SizingStretchProp)) {
 
-                UI::TableSetupColumn("Name", UI::TableColumnFlags::WidthStretch);
+                UI::TableSetupColumn("Name");
                 for (uint i = 0; i <= theHook.CPsToFinish; i++) {
                     UI::TableSetupColumn("CP " + i);
                 }
@@ -418,10 +418,10 @@ namespace RaceFeedUI {
                         UI::AlignTextToFramePadding();
                         UI::Text(ps.Name);
 
-                        for (uint i = 0; i <= theHook.CPsToFinish; i++) {
+                        for (uint cp = 0; cp <= theHook.CPsToFinish; cp++) {
                             UI::TableNextColumn();
-                            if (ps.TimeLostToRespawnByCp is null || ps.TimeLostToRespawnByCp.Length <= i) continue;
-                            UI::Text(tostring(ps.TimeLostToRespawnByCp[i]));
+                            if (ps.TimeLostToRespawnByCp is null || ps.TimeLostToRespawnByCp.Length <= cp) continue;
+                            UI::Text(tostring(ps.TimeLostToRespawnByCp[cp]));
                         }
 
                         UI::TableNextColumn();
