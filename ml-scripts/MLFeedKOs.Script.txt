@@ -32,6 +32,7 @@ Void UpdatePlayerStatus() {
         declare netread Boolean Net_Knockout_PlayerIsAlive for Score;
         declare netread Boolean Net_Knockout_DNF for Score;
         declare Text UserId = Score.User.Name;
+        if (UserId == "Unnamed") continue;
         if (!ScoreLastAlive.existskey(UserId)
             || !ScoreLastDNF.existskey(UserId)
             || ScoreLastAlive[UserId] != Net_Knockout_PlayerIsAlive

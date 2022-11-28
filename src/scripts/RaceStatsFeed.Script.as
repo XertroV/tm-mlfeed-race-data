@@ -196,8 +196,11 @@ main() {
     yield;
     InitialSend();
     MLHookLog("RaceStatsFeed did init send");
+    declare Integer StartTime = 0;
+    declare Integer Delta = 0;
     while (True) {
         yield;
+        StartTime = Now;
         CheckPlayers();
         LoopCounter += 1;
         if (LoopCounter % 60 == 0) {
@@ -206,6 +209,10 @@ main() {
         }
         if (LoopCounter % 60 == 20) {
             CheckIncoming();
+        }
+        Delta = Now - StartTime;
+        if (Delta >= 1) {
+            MLHookLog("Race Stats loop execution time: " ^ Delta ^ " ms");
         }
     }
 }

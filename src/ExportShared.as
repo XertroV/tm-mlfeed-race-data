@@ -301,9 +301,11 @@ namespace MLFeed {
                     }
                 }
                 if (didRespawn) {
+                    // if we respawn at the start of the race (and it isn't a restart) then the car moves instantly
+                    int respawnOverhead = CpCount == 0 ? 0 : 1000;
                     // lag is accounted for in CurrentRaceTime
-                    int newTimeLost = 1000 + Math::Max(0, CurrentRaceTime - LastCpTime);
-                    LastRespawnRaceTime = 1000 + CurrentRaceTime;
+                    int newTimeLost = respawnOverhead + Math::Max(0, CurrentRaceTime - LastCpTime);
+                    LastRespawnRaceTime = respawnOverhead + CurrentRaceTime;
                     LastRespawnCheckpoint = CpCount;
                     TimeLostToRespawns -= timeLostToRespawnsByCp[CpCount];
                     timeLostToRespawnsByCp[CpCount] = newTimeLost;
@@ -368,22 +370,39 @@ namespace MLFeed {
             super(type);
         }
 
-        PlayerCpInfo_V2@ GetPlayer_V2(const string &in name) {
+        /* Get a player's info */
+        const PlayerCpInfo_V2@ GetPlayer_V2(const string &in name) const {
+            return cast<PlayerCpInfo_V2>(latestPlayerStats[name]);
+        }
+
+        PlayerCpInfo_V2@ _GetPlayer_V2(const string &in name) {
             return cast<PlayerCpInfo_V2>(latestPlayerStats[name]);
         }
 
         /* An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest. */
-        array<PlayerCpInfo_V2@>@ get_SortedPlayers_Race() {
+        const array<PlayerCpInfo_V2@>@ get_SortedPlayers_Race() const {
             return v2_sortedPlayers_Race;
         }
 
         /* An array of `PlayerCpInfo_V2`s sorted by best time to worst time. */
-        array<PlayerCpInfo_V2@>@ get_SortedPlayers_TimeAttack() {
+        const array<PlayerCpInfo_V2@>@ get_SortedPlayers_TimeAttack() const {
             return v2_sortedPlayers_TimeAttack;
         }
 
         /* An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest, accounting for player respawns. */
-        array<PlayerCpInfo_V2@>@ get_SortedPlayers_Race_Respawns() {
+        const array<PlayerCpInfo_V2@>@ get_SortedPlayers_Race_Respawns() const {
+            return v2_sortedPlayers_Race_Respawns;
+        }
+
+        array<PlayerCpInfo_V2@>@ get__SortedPlayers_Race() {
+            return v2_sortedPlayers_Race;
+        }
+
+        array<PlayerCpInfo_V2@>@ get__SortedPlayers_TimeAttack() {
+            return v2_sortedPlayers_TimeAttack;
+        }
+
+        array<PlayerCpInfo_V2@>@ get__SortedPlayers_Race_Respawns() {
             return v2_sortedPlayers_Race_Respawns;
         }
 
