@@ -230,13 +230,14 @@ namespace RaceFeedUI {
         void DrawInner() override {
             auto @players = Players;
             UI::Text("Players ("+players.Length+") Best Times.");
-            uint nCols = 2 + Math::Min(theHook.CPsToFinish, 62); // max 64 cols
+            uint nCols = 3 + Math::Min(theHook.CPsToFinish, 61); // max 64 cols
             if (UI::BeginTable("players debug " + mode, nCols, UI::TableFlags::SizingStretchProp)) {
 
                 UI::TableSetupColumn("Name");
-                for (uint i = 0; i < Math::Min(theHook.CPsToFinish, 62); i++) {
+                for (uint i = 0; i < Math::Min(theHook.CPsToFinish, 61); i++) {
                     UI::TableSetupColumn("CP " + (i+1));
                 }
+                UI::TableSetupColumn("");
 
                 UI::TableHeadersRow();
 
@@ -251,7 +252,7 @@ namespace RaceFeedUI {
                         UI::AlignTextToFramePadding();
                         UI::Text(ps.Name);
 
-                        for (uint cp = 0; cp <= Math::Min(theHook.CPsToFinish, 62); cp++) {
+                        for (uint cp = 0; cp <= Math::Min(theHook.CPsToFinish, 61); cp++) {
                             UI::TableNextColumn();
                             if (ps.BestRaceTimes is null || ps.BestRaceTimes.Length <= cp) continue;
                             UI::Text(Time::Format(ps.BestRaceTimes[cp]));

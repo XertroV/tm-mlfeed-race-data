@@ -153,7 +153,72 @@ namespace RaceFeed {
         return Cmp::Gt;
     }
 
-    // todo: add past list that tracks last known time of player?
+    class _PlayerCpInfo_V2 : MLFeed::PlayerCpInfo_V2 {
+        _PlayerCpInfo_V2(MLHook::PendingEvent@ event, uint _spawnIndex) {
+            super(event, _spawnIndex);
+        }
+        _PlayerCpInfo_V2(_PlayerCpInfo_V2@ _from, int cpOffset) {
+            super(_from, cpOffset);
+        }
+
+        void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex) override {
+            UpdateFrom(event, _spawnIndex, true);
+        }
+
+        void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex, bool callSuper) override {
+            auto priorCpCount = CpCount;
+            auto priorNbRespawns = NbRespawnsRequested;
+            uint priorStartTime = StartTime;
+
+            if (callSuper) MLFeed::PlayerCpInfo_V2::UpdateFrom(event, _spawnIndex);
+
+            auto parts = string(event.data[5]).Split(",");
+            // sometimes on respawn, a few frames later the respawn count decreases by 1 then increases again shortly after
+            // so just take the max b/c when it resets to zero we'll reset it differently.
+            NbRespawnsRequested = Math::Max(NbRespawnsRequested, Text::ParseUInt(parts[0]));
+            StartTime = Text::ParseUInt(parts[1]);
+
+            bool raceReset = StartTime > priorStartTime;
+            bool didRespawn = NbRespawnsRequested > priorNbRespawns;
+            bool cpsChanged = CpCount != priorCpCount;
+            // bool isFinished = BestRaceTimes !is null && BestRaceTimes.Length > 0 && CpCount == BestRaceTimes.Length;
+
+            if (raceReset) {
+                NbRespawnsRequested = 0;
+                LastRespawnCheckpoint = 0;
+                LastRespawnRaceTime = 0;
+                TimeLostToRespawns = 0;
+                for (uint i = 0; i < timeLostToRespawnsByCp.Length; i++) {
+                    timeLostToRespawnsByCp[i] = 0;
+                }
+                timeLostToRespawnsByCp.Resize(1);
+            } else {
+                timeLostToRespawnsByCp.Resize(cpTimes.Length);
+                if (cpsChanged) {
+                    timeLostToRespawnsByCp[CpCount] = 0;
+                    if (CpCount > 0) {
+                        // update latency estimate
+                        float lag = float(CurrentRaceTimeRaw - LastCpTime); // should be 0 if instant, or like 1 frame
+                        auto n = Math::Min(9., lagDataPoints);
+                        latencyEstimate = (latencyEstimate * n + lag) / (n + 1.); // simple exp/moving average type thing
+                        lagDataPoints += 1;
+                    }
+                }
+                if (didRespawn) {
+                    // if we respawn at the start of the race (and it isn't a restart) then the car moves instantly
+                    int respawnOverhead = CpCount == 0 ? 0 : 1000;
+                    // lag is accounted for in CurrentRaceTime
+                    int newTimeLost = respawnOverhead + Math::Max(0, CurrentRaceTime - LastCpTime);
+                    LastRespawnRaceTime = respawnOverhead + CurrentRaceTime;
+                    LastRespawnCheckpoint = CpCount;
+                    TimeLostToRespawns -= timeLostToRespawnsByCp[CpCount];
+                    timeLostToRespawnsByCp[CpCount] = newTimeLost;
+                    TimeLostToRespawns += newTimeLost;
+                }
+            }
+        }
+    }
+
 
     class HookRaceStatsEvents : MLFeed::HookRaceStatsEventsBase_V2 {
         // props defined in HookRaceStatsEventsBase
@@ -210,7 +275,7 @@ namespace RaceFeed {
             if (hadPlayer) {
                 player.UpdateFrom(event, spawnIx);
             } else {
-                @player = MLFeed::PlayerCpInfo_V2(event, spawnIx);
+                @player = _PlayerCpInfo_V2(event, spawnIx);
                 @latestPlayerStats[name] = player;
                 _SortedPlayers_Race.InsertLast(player);
                 _SortedPlayers_TimeAttack.InsertLast(player);
