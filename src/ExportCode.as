@@ -31,18 +31,4 @@ namespace MLFeed {
     const SharedGhostDataHook@ GetGhostData() {
         return ghostHook;
     }
-
-    // returns the name of the local player, or an empty string if this is not yet known
-    const string get_LocalPlayersName() {
-        try {
-            return cast<CTrackMania>(GetApp()).MenuManager.ManialinkScriptHandlerMenus.LocalUser.Name;
-        } catch {}
-        return "";
-    }
-
-    // The current server's GameTime
-    uint get_GameTime() {
-        if (GetApp().Network.PlaygroundClientScriptAPI is null) return 0;
-        return uint(GetApp().Network.PlaygroundClientScriptAPI.GameTime);
-    }
 }
