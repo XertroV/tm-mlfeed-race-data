@@ -341,6 +341,7 @@ namespace MLFeed {
     shared class HookRaceStatsEventsBase_V2 : HookRaceStatsEventsBase {
         protected array<PlayerCpInfo_V2@> v2_sortedPlayers_Race;
         protected array<PlayerCpInfo_V2@> v2_sortedPlayers_TimeAttack;
+        protected array<PlayerCpInfo_V2@> v2_sortedPlayers_Race_Respawns;
 
         HookRaceStatsEventsBase_V2(const string &in type) {
             super(type);
@@ -358,6 +359,11 @@ namespace MLFeed {
         /* An array of `PlayerCpInfo_V2`s sorted by best time to worst time. */
         array<PlayerCpInfo_V2@>@ get_SortedPlayers_TimeAttack() {
             return v2_sortedPlayers_TimeAttack;
+        }
+
+        /* An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest, accounting for player respawns. */
+        array<PlayerCpInfo_V2@>@ get_SortedPlayers_Race_Respawns() {
+            return v2_sortedPlayers_Race_Respawns;
         }
 
         /* The number of checkpoints each lap.
@@ -455,6 +461,12 @@ namespace MLFeed {
         uint get_NbGhosts() const { return 0; };
         // Array of GhostInfos
         const array<const MLFeed::GhostInfo@> get_Ghosts() const { return {}; };
+    }
+
+    shared class SharedGhostDataHook_V2 : SharedGhostDataHook {
+        SharedGhostDataHook_V2(const string &in type) { super(type); }
+        // Array of GhostInfo_V2s
+        const array<const MLFeed::GhostInfo_V2@> get_Ghosts_V2() const { return {}; };
     }
 
     /** Information about a currently loaded ghost.

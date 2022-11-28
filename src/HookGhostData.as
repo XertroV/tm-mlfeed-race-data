@@ -1,8 +1,9 @@
 const string GD_PageUID = "GhostData";
 
 // class HookGhostData : MLHook::HookMLEventsByType {
-class HookGhostData : MLFeed::SharedGhostDataHook {
-    private array<const MLFeed::GhostInfo@> _ghosts;
+class HookGhostData : MLFeed::SharedGhostDataHook_V2 {
+    private array<const MLFeed::GhostInfo_V2@> _ghosts;
+    private array<const MLFeed::GhostInfo@> _ghosts_copy;
     private string lastMap;
     private dictionary seenGhosts;
 
@@ -63,6 +64,7 @@ class HookGhostData : MLFeed::SharedGhostDataHook {
     void OnMapChange(bool askForRefresh = true) {
         lastMap = CurrentMap;
         _ghosts.RemoveRange(0, _ghosts.Length);
+        _ghosts_copy.RemoveRange(0, _ghosts_copy.Length);
         last_PGS_DFM_NbGhosts = 0;
         seenGhosts.DeleteAll();
         if (askForRefresh)
@@ -94,8 +96,9 @@ class HookGhostData : MLFeed::SharedGhostDataHook {
         if (nn.EndsWith("Personal best")) {
             event.data[1] = wstring("Personal best");
         }
-        auto g = MLFeed::GhostInfo(event);
+        auto g = MLFeed::GhostInfo_V2(event);
         _ghosts.InsertLast(g);
+        _ghosts_copy.InsertLast(cast<MLFeed::GhostInfo>(g));
     }
 
     uint get_NbGhosts() const override {
@@ -103,6 +106,10 @@ class HookGhostData : MLFeed::SharedGhostDataHook {
     }
 
     const array<const MLFeed::GhostInfo@> get_Ghosts() const override {
+        return _ghosts_copy;
+    }
+
+    const array<const MLFeed::GhostInfo_V2@> get_Ghosts_V2() const override {
         return _ghosts;
     }
 }
@@ -112,7 +119,7 @@ namespace GhostDataUI {
 
     void Render() {
         if (!g_windowVisible) return;
-        const MLFeed::SharedGhostDataHook@ ghostData = MLFeed::GetGhostData();
+        const MLFeed::SharedGhostDataHook_V2@ ghostData = MLFeed::GetGhostData();
 
         if (UI::Begin("Ghost Data Demo UI", g_windowVisible)) {
             if (ghostData is null) {
@@ -120,8 +127,8 @@ namespace GhostDataUI {
             } else {
                 UI::Text("NbGhosts: " + ghostData.NbGhosts);
                 UI::Separator();
-                for (uint i = 0; i < ghostData.Ghosts.Length; i++) {
-                    auto ghost = ghostData.Ghosts[i];
+                for (uint i = 0; i < ghostData.Ghosts_V2.Length; i++) {
+                    auto ghost = ghostData.Ghosts_V2[i];
                     DrawGhost(i, ghost);
                 }
             }
@@ -129,7 +136,7 @@ namespace GhostDataUI {
         }
     }
 
-    void DrawGhost(uint i, const MLFeed::GhostInfo@ ghost) {
+    void DrawGhost(uint i, const MLFeed::GhostInfo_V2@ ghost) {
         if (UI::CollapsingHeader("" + i + ". " + ghost.Nickname + " (" + ghost.IdName + ")")) {
             UI::Text("IdName: " + ghost.IdName);
             AddSimpleTooltip("Equivalent to Ghost.IdName");

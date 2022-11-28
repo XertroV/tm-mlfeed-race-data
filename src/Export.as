@@ -28,5 +28,5 @@ namespace MLFeed {
         When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
         Therefore, duplicate ghost infos may be recorded.
         The list is cleared on map change. */
-    import const SharedGhostDataHook@ GetGhostData() from "MLFeed";
+    import const SharedGhostDataHook_V2@ GetGhostData() from "MLFeed";
 }
