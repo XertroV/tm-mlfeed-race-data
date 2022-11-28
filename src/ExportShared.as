@@ -372,10 +372,12 @@ namespace MLFeed {
 
         /* Get a player's info */
         const PlayerCpInfo_V2@ GetPlayer_V2(const string &in name) const {
+            if (not latestPlayerStats.Exists(name)) return null;
             return cast<PlayerCpInfo_V2>(latestPlayerStats[name]);
         }
 
         PlayerCpInfo_V2@ _GetPlayer_V2(const string &in name) {
+            if (not latestPlayerStats.Exists(name)) return null;
             return cast<PlayerCpInfo_V2>(latestPlayerStats[name]);
         }
 
