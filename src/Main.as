@@ -53,15 +53,12 @@ void InitCoro() {
 }
 
 #if SIG_DEVELOPER
-void Render() {
+void RenderInterface() {
     KoFeedUI::Render();
     RaceFeedUI::Render();
     GhostDataUI::Render();
 }
 #endif
-
-void RenderInterface() {
-}
 
 #if SIG_DEVELOPER
 void RenderMenu() {
