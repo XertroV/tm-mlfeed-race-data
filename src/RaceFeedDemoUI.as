@@ -282,10 +282,11 @@ namespace RaceFeedUI {
         void DrawInner() override {
             auto @players = Players;
             UI::Text("Players ("+players.Length+") Respawns Info.");
-            uint nCols = 7;
+            uint nCols = 8;
             if (UI::BeginTable("players debug " + mode, nCols, UI::TableFlags::SizingStretchProp)) {
 
                 UI::TableSetupColumn("Name", UI::TableColumnFlags::WidthStretch);
+                UI::TableSetupColumn("Spawned");
                 UI::TableSetupColumn("Nb");
                 UI::TableSetupColumn("Last Cp/Respawn Time");
                 UI::TableSetupColumn("Last Respawn");
@@ -305,6 +306,9 @@ namespace RaceFeedUI {
                         UI::TableNextColumn();
                         UI::AlignTextToFramePadding();
                         UI::Text(ps.Name);
+
+                        UI::TableNextColumn();
+                        UI::Text(ps.IsSpawned ? Icons::Check : Icons::Times);
 
                         UI::TableNextColumn();
                         UI::Text(tostring(ps.NbRespawnsRequested));
@@ -340,7 +344,6 @@ namespace RaceFeedUI {
         }
 
         const string get_mode() override { return "Time Loss by CP"; }
-
 
         void DrawInner() override {
             auto @players = Players;

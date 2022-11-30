@@ -10,8 +10,11 @@ This plugin provides other plugins with data about the current race. You might n
 
 Currently exposed data:
 * Sorted Player data
-  * For each player: LatestCPTime, CPCount, Cached Previous CP Times, Spawn Status, Best Time, Best CP Times
-  * Sort methods: TimeAttack (sort by best time), Race (sorted by race leader)
+  * For each player: LatestCPTime, CPCount, Cached Previous CP Times, Spawn Status, Best Time, Best CP Times, Time Lost to Respawns (in total and per CP), NbRespawns
+  * Sort methods
+    * `TimeAttack`: sort by best time
+    * `Race`: sorted by race leader
+    * `Race_Respawns`: sorted by race leader, but updates ranking immediately when a player respawns to account for time-loss
 * Knockout data (for COTD / KO)
   * Per-Player Alive and DNF status
   * Total Rounds, Current Round, Alive Players, Number of KOs This Round, Next KO Milestone, Number of Players (originally)
@@ -41,6 +44,20 @@ dependencies = ["MLHook", "MLFeedRaceData"] # need both
 see also: [https://openplanet.dev/docs/reference/info-toml](https://openplanet.dev/docs/reference/info-toml)
 
 #### Usage: Getting started
+
+##### Main Entry Points
+
+Several 'feeds' are available that provide different information. The functions that provide the feeds are:
+
+* `MLFeed::GetRaceData_V2()`
+* `MLFeed::GetKoData()`
+* `MLFeed::GetGhostData()`
+
+##### Race Data
+
+Main type: `HookRaceStatsEventsBase_V2`
+
+
 
 ```angelscript
 void Main() {

@@ -5,15 +5,15 @@ Void MLHookLog(Text msg) {
     SendCustomEvent("MLHook_LogMe_MLFeedKOs", [msg]);
 }
 
-Void MLHookUpdatePlayerStatus(Text UserId, Boolean IsAlive, Boolean IsDNF) {
-    declare Payload = [UserId, ""^IsAlive, ""^IsDNF];
-    SendCustomEvent("MLHook_Event_MLFeedKOs_PlayerStatus", Payload);
-    MLHookLog("PlayerStatus: " ^ Payload);
-}
+// Void MLHookUpdatePlayerStatus(Text UserId, Boolean IsAlive, Boolean IsDNF) {
+//     declare Payload = [UserId, ""^IsAlive, ""^IsDNF];
+//     SendCustomEvent("MLHook_Event_MLFeedKOs_PlayerStatus", Payload);
+//     // MLHookLog("PlayerStatus: " ^ Payload);
+// }
 
 Void MLHookUpdateKP(Text Key, Text Value) {
     SendCustomEvent("MLHook_Event_MLFeedKOs_MatchKeyPair", [Key, Value]);
-    MLHookLog("MatchKeyPair: " ^ [Key, Value]);
+    // MLHookLog("MatchKeyPair: " ^ [Key, Value]);
 }
 
 /**
@@ -28,6 +28,7 @@ declare Boolean[Text] ScoreLastAlive;
 declare Boolean[Text] ScoreLastDNF;
 
 Void UpdatePlayerStatus() {
+    // tuningstart();
     foreach (Score in Scores) {
         declare netread Boolean Net_Knockout_PlayerIsAlive for Score;
         declare netread Boolean Net_Knockout_DNF for Score;
@@ -37,12 +38,14 @@ Void UpdatePlayerStatus() {
             || !ScoreLastDNF.existskey(UserId)
             || ScoreLastAlive[UserId] != Net_Knockout_PlayerIsAlive
             || ScoreLastDNF[UserId] != Net_Knockout_DNF) {
-                MLHookUpdatePlayerStatus(UserId, Net_Knockout_PlayerIsAlive, Net_Knockout_DNF);
+                // MLHookUpdatePlayerStatus(UserId, Net_Knockout_PlayerIsAlive, Net_Knockout_DNF);
+                SendCustomEvent("MLHook_Event_MLFeedKOs_PlayerStatus", [UserId, ""^Net_Knockout_PlayerIsAlive, ""^Net_Knockout_DNF]);
                 ScoreLastAlive[UserId] = Net_Knockout_PlayerIsAlive;
                 ScoreLastDNF[UserId] = Net_Knockout_DNF;
                 yield;
             }
     }
+    // tuningend();
 }
 
 declare Integer Last_KOI_MapRoundNb;
@@ -56,6 +59,7 @@ declare Integer Last_KOI_RankingUpdate;
 declare Integer Last_KOI_ServerNumber;
 
 Void CheckRoundUpdates() {
+    // tuningstart();
     declare netread Integer Net_Knockout_KnockoutInfo_MapRoundNb for Teams[0];
     declare netread Integer Net_Knockout_KnockoutInfo_MapRoundTotal for Teams[0];
     declare netread Integer Net_Knockout_KnockoutInfo_RoundNb for Teams[0];
@@ -65,6 +69,7 @@ Void CheckRoundUpdates() {
     declare netread Integer Net_Knockout_KnockoutInfo_KOsMilestone for Teams[0];
     declare netread Integer Net_Knockout_KnockoutInfo_RankingUpdate for Teams[0];
     declare netread Integer Net_Knockout_KnockoutInfo_ServerNumber for Teams[0];
+    // tuningend();
     if (Last_KOI_MapRoundNb != Net_Knockout_KnockoutInfo_MapRoundNb) {
         Last_KOI_MapRoundNb = Net_Knockout_KnockoutInfo_MapRoundNb;
         MLHookUpdateKP("MapRoundNb", ""^Net_Knockout_KnockoutInfo_MapRoundNb);
@@ -93,10 +98,10 @@ Void CheckRoundUpdates() {
         Last_KOI_KOsMilestone = Net_Knockout_KnockoutInfo_KOsMilestone;
         MLHookUpdateKP("KOsMilestone", ""^Net_Knockout_KnockoutInfo_KOsMilestone);
     }
-    // if (Last_KOI_RankingUpdate != Net_Knockout_KnockoutInfo_RankingUpdate) {
-    //     Last_KOI_RankingUpdate = Net_Knockout_KnockoutInfo_RankingUpdate;
-    //     MLHookUpdateKP("RankingUpdate", ""^Net_Knockout_KnockoutInfo_RankingUpdate);
-    // }
+    if (Last_KOI_RankingUpdate != Net_Knockout_KnockoutInfo_RankingUpdate) {
+        Last_KOI_RankingUpdate = Net_Knockout_KnockoutInfo_RankingUpdate;
+        MLHookUpdateKP("RankingUpdate", ""^Net_Knockout_KnockoutInfo_RankingUpdate);
+    }
     if (Last_KOI_ServerNumber != Net_Knockout_KnockoutInfo_ServerNumber) {
         Last_KOI_ServerNumber = Net_Knockout_KnockoutInfo_ServerNumber;
         MLHookUpdateKP("ServerNumber", ""^Net_Knockout_KnockoutInfo_ServerNumber);
@@ -117,27 +122,35 @@ Void ResetAllTrackedState() {
     ScoreLastDNF = [];
 }
 
+declare Text CurrentGameMode;
+declare Boolean IsKOGameMode;
+
+Void CheckGM() {
+    CurrentGameMode = Playground.ServerInfo.ModeName;
+    IsKOGameMode = CurrentGameMode == "TM_KnockoutDaily_Online"
+                || CurrentGameMode == "TM_Knockout_Debug"
+                || CurrentGameMode == "TM_Knockout_Online";
+}
+
 declare Text G_PreviousMapUid;
 
 Void CheckMapChange() {
     if (Map != Null && Map.MapInfo.MapUid != G_PreviousMapUid) {
         G_PreviousMapUid = Map.MapInfo.MapUid;
         ResetAllTrackedState();
+        CheckGM();
     }
 }
 
-declare Text CurrentGameMode;
-declare Boolean IsKOGameMode;
-
-Void CheckGMChange() {
+Void CheckIncoming() {
     declare Text[][] MLHook_Inbound_MLFeedKOs for ClientUI;
     foreach (Event in MLHook_Inbound_MLFeedKOs) {
         if (Event[0] == "SetGameMode") {
-            CurrentGameMode = Event[1];
-            MLHookLog("Set new GameMode: "^CurrentGameMode);
-            IsKOGameMode = CurrentGameMode == "TM_KnockoutDaily_Online"
-                        || CurrentGameMode == "TM_Knockout_Debug"
-                        || CurrentGameMode == "TM_Knockout_Online";
+            MLHookLog("Set new GameMode from AS: "^CurrentGameMode);
+            // CurrentGameMode = Event[1];
+            // IsKOGameMode = CurrentGameMode == "TM_KnockoutDaily_Online"
+            //             || CurrentGameMode == "TM_Knockout_Debug"
+            //             || CurrentGameMode == "TM_Knockout_Online";
         } else if (Event[0] == "SendAllMatchKeyPairs") {
             ResetAllTrackedState();
         } else if (Event[0] == "SendAllPlayerStates") {
@@ -149,13 +162,23 @@ Void CheckGMChange() {
 }
 
 main() {
+    // tuningstart();
+    // tuningmark(_("main loop"));
+    CheckGM();
+    // note that we yield in the main inner loop (60 frames)
     while (True) {
-        yield;
+        // these will trigger once every 60 frames
         CheckMapChange();
-        CheckGMChange();
-        if (IsKOGameMode) {
-            CheckRoundUpdates();
-            UpdatePlayerStatus();
+        CheckGM();
+        // main loop, for 60 frames
+        for (I, 0, 60) {
+            yield;
+            CheckIncoming();
+            if (IsKOGameMode) {
+                CheckRoundUpdates();
+                UpdatePlayerStatus();
+            }
         }
     }
+    // tuningend();
 }

@@ -101,6 +101,7 @@ declare CSmPlayer::ESpawnStatus[Text] LastSpawn;
 declare Integer MostCPsSeen;
 
 Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
+    // tuningstart();
     declare Text Name = Player.User.Name;
     declare CPCount = Player.RaceWaypointTimes.count;
     declare RespawnsCount = Player.Score.NbRespawnsRequested;
@@ -133,6 +134,7 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
     LastRespawnsCount[Name] = RespawnsCount;
     LastBestTimes[Name] = BestTime;
     return WillSendEvent;
+    // tuningend();
 }
 
 // to start with we want to send all data.
@@ -141,8 +143,8 @@ Void InitialSend() {
         _SendPlayerStats(Player, True);
     }
     foreach (Player in Players) {
-        _SendPlayerTimes(Player);
         yield;
+        _SendPlayerTimes(Player);
     }
     MLHookLog("Completed: InitialSend");
 }
@@ -187,6 +189,8 @@ Void CheckIncoming() {
 }
 
 main() {
+    // tuningstart();
+    // declare Boolean EndedTuning = False;
     declare Integer LoopCounter = 0;
     MLHookLog("Starting RaceStatsFeed");
     while (Players.count == 0) {
@@ -200,7 +204,6 @@ main() {
     declare Integer Delta = 0;
     while (True) {
         yield;
-        StartTime = Now;
         CheckPlayers();
         LoopCounter += 1;
         if (LoopCounter % 60 == 0) {
@@ -210,10 +213,11 @@ main() {
         if (LoopCounter % 60 == 20) {
             CheckIncoming();
         }
-        Delta = Now - StartTime;
-        if (Delta >= 1) {
-            MLHookLog("Race Stats loop execution time: " ^ Delta ^ " ms");
-        }
+        // if (!EndedTuning && LoopCounter > 3000) {
+        //     MLHookLog("Calling tuning end.");
+        //     tuningend();
+        //     EndedTuning = True;
+        // }
     }
 }
 """;

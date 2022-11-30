@@ -39,6 +39,8 @@ void InitCoro() {
     MLHook::InjectManialinkToPlayground("MLFeedGhostData", GHOSTDATA_SCRIPT_TXT, true);
     yield(); // wait 2 frames for ML to load
     yield();
+    yield();
+    yield();
     // start coros
     startnew(CoroutineFunc(theHook.MainCoro));
     startnew(CoroutineFunc(koFeedHook.MainCoro));
@@ -320,13 +322,6 @@ namespace RaceFeed {
                 ix--;
                 player.ModifyRank(MLFeed::Dir::Down, rt);
                 tmp.ModifyRank(MLFeed::Dir::Up, rt);
-                // if (isRace) {
-                //     player.raceRank--;
-                //     tmp.raceRank++;
-                // } else {
-                //     player.taRank--;
-                //     tmp.taRank++;
-                // }
             }
             // necessary when race sorted but not everyone gets reset at the same time
             while (ix < sorted.Length - 1 && lessFunc(sorted[ix + 1], player)) {
@@ -337,13 +332,6 @@ namespace RaceFeed {
                 ix++;
                 player.ModifyRank(MLFeed::Dir::Up, rt);
                 tmp.ModifyRank(MLFeed::Dir::Down, rt);
-                // if (isRace) {
-                //     player.raceRank++;
-                //     tmp.raceRank--;
-                // } else {
-                //     player.taRank++;
-                //     tmp.taRank--;
-                // }
             }
         }
 

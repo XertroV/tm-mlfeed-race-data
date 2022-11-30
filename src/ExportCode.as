@@ -28,7 +28,11 @@ namespace MLFeed {
         return ret;
     }
 
-    const SharedGhostDataHook_V2@ GetGhostData() {
+    const SharedGhostDataHook@ GetGhostData() {
+        return ghostHook;
+    }
+
+    const SharedGhostDataHook_V2@ GetGhostData_V2() {
         return ghostHook;
     }
 }

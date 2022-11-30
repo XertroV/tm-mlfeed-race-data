@@ -118,15 +118,12 @@ namespace KoFeed {
             else if (key == "RoundTotal") roundTotal = value;
             else if (key == "PlayersNb") playersNb = value;
             else if (key == "KOsMilestone") kosMilestone = value;
+            else if (key == "RankingUpdate") { /* nothing */ }
             else if (key == "KOsNumber") kosNumber = value;
             else {
                 warn('got match key pair for unknown key: ' + key + ' w/ value: ' + value);
             }
         }
-
-        // MLFeed::KoPlayerState@ GetPlayerState(const string &in name) {
-        //     return cast<MLFeed::KoPlayerState>(playerStates[name]);
-        // }
 
         void UpdatePlayerState(MLHook::PendingEvent@ evt) {
             if (evt.data.Length < 3) {
