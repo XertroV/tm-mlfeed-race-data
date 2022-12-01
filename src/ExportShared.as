@@ -452,6 +452,12 @@ namespace MLFeed {
         const array<const MLFeed::GhostInfo@> get_Ghosts() const { return {}; };
     }
 
+    /* Provides access to ghost info.
+        This includes record ghosts loaded through the UI, and personal best ghosts.
+        When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
+        Therefore, duplicate ghost infos may be recorded.
+        V2 adds .IsLocalPlayer and .IsPersonalBest properties to GhostInfo objects.
+    */
     shared class SharedGhostDataHook_V2 : SharedGhostDataHook {
         SharedGhostDataHook_V2(const string &in type) { super(type); }
         // Array of GhostInfo_V2s

@@ -45,18 +45,44 @@ see also: [https://openplanet.dev/docs/reference/info-toml](https://openplanet.d
 
 #### Usage: Getting started
 
+*Note: it is recommended that you use the Openplanet VSCode extension which will provide autocompletion and documentation for you when using _MLFeed_.*
+
 ##### Main Entry Points
 
-Several 'feeds' are available that provide different information. The functions that provide the feeds are:
+Several feeds are available that provide different information. The functions that provide the feeds are:
 
-* `MLFeed::GetRaceData_V2()`
-* `MLFeed::GetKoData()`
-* `MLFeed::GetGhostData()`
+* `auto RaceData = MLFeed::GetRaceData_V2()`
+* `auto KoData = MLFeed::GetKoData()`
+* `auto GhostData = MLFeed::GetGhostData()`
 
-##### Race Data
+##### `RaceData`
 
 Main type: `HookRaceStatsEventsBase_V2`
 
+Example usage: doing something on player respawn.
+
+```AngelScript
+uint lastRespawnCount = 0;
+
+void Update(float dt) {
+    if (GetApp().CurrentPlayground is null) return;
+    // Get race data and the local player
+    auto RaceData = MLFeed::GetRaceData_V2();
+    auto player = RaceData.GetPlayer_V2(MLFeed::LocalPlayersName);
+    if (player is null) return;
+    // check for respawns
+    if (player.NbRespawnsRequested != lastRespawnCount) {
+        lastRespawnCount = player.NbRespawnsRequested;
+        if (lastRespawnCount != 0) {
+            startnew(OnPlayerRespawn);
+        }
+    }
+}
+
+void OnPlayerRespawn() {
+    // do stuff
+}
+```
 
 
 ```angelscript
