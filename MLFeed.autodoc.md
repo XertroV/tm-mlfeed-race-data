@@ -8,13 +8,13 @@
 
 Object exposing GhostInfos for each loaded ghost.
 This includes record ghosts loaded through the UI, and personal best ghosts.
-When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
-Therefore, duplicate ghost infos may be recorded.
+When a ghost is *unloaded* from a map, its info is not removed (it remains cached).
+Therefore, duplicate ghost infos may be recorded (though measures are taken to prevent this).
 The list is cleared on map change.
 
 ### GetKoData -- `const KoDataProxy@ GetKoData()`
 
-Your plugin's `KoDataProxy@` that exposes KO round information, and each player's , spawn info, and lists of players for each sorting method.
+Your plugin's `KoDataProxy@` that exposes KO round information, and each player's spawn info, and lists of players for each sorting method.
 You can call this function as often as you like -- it will always return the same proxy instance based on plugin ID.
 
 ### GetPlayersBestTimes -- `const array<uint>@ GetPlayersBestTimes(const string &in playerName)`
@@ -93,15 +93,15 @@ It is a proxy for the internal type `RaceFeed::HookRaceStatsEvents`.
 
 Provides access to ghost info.
 This includes record ghosts loaded through the UI, and personal best ghosts.
-When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
-Therefore, duplicate ghost infos may be recorded.
+When a ghost is *unloaded* from a map, its info is not removed (it remains cached).
+Therefore, duplicate ghost infos may be recorded (though measures are taken to prevent this).
 
 ### SharedGhostDataHook_V2 -- `SharedGhostDataHook_V2@ SharedGhostDataHook_V2(const string &in type)`
 
 Provides access to ghost info.
 This includes record ghosts loaded through the UI, and personal best ghosts.
-When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
-Therefore, duplicate ghost infos may be recorded.
+When a ghost is *unloaded* from a map, its info is not removed (it remains cached).
+Therefore, duplicate ghost infos may be recorded (though measures are taken to prevent this).
 V2 adds .IsLocalPlayer and .IsPersonalBest properties to GhostInfo objects.
 
 ## Properties
@@ -809,8 +809,8 @@ sort method for players
 
 Provides access to ghost info.
 This includes record ghosts loaded through the UI, and personal best ghosts.
-When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
-Therefore, duplicate ghost infos may be recorded.
+When a ghost is *unloaded* from a map, its info is not removed (it remains cached).
+Therefore, duplicate ghost infos may be recorded (though measures are taken to prevent this).
 
 ### Functions
 
@@ -838,8 +838,8 @@ Number of currently loaded ghosts
 
 Provides access to ghost info.
 This includes record ghosts loaded through the UI, and personal best ghosts.
-When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
-Therefore, duplicate ghost infos may be recorded.
+When a ghost is *unloaded* from a map, its info is not removed (it remains cached).
+Therefore, duplicate ghost infos may be recorded (though measures are taken to prevent this).
 V2 adds .IsLocalPlayer and .IsPersonalBest properties to GhostInfo objects.
 
 ### Functions

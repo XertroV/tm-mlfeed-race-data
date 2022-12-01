@@ -487,8 +487,8 @@ namespace MLFeed {
 
     /* Provides access to ghost info.
         This includes record ghosts loaded through the UI, and personal best ghosts.
-        When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
-        Therefore, duplicate ghost infos may be recorded.
+        When a ghost is *unloaded* from a map, its info is not removed (it remains cached).
+        Therefore, duplicate ghost infos may be recorded (though measures are taken to prevent this).
     */
     shared class SharedGhostDataHook : MLHook::HookMLEventsByType {
         SharedGhostDataHook(const string &in type) { super(type); }
@@ -500,8 +500,8 @@ namespace MLFeed {
 
     /* Provides access to ghost info.
         This includes record ghosts loaded through the UI, and personal best ghosts.
-        When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
-        Therefore, duplicate ghost infos may be recorded.
+        When a ghost is *unloaded* from a map, its info is not removed (it remains cached).
+        Therefore, duplicate ghost infos may be recorded (though measures are taken to prevent this).
         V2 adds .IsLocalPlayer and .IsPersonalBest properties to GhostInfo objects.
     */
     shared class SharedGhostDataHook_V2 : SharedGhostDataHook {

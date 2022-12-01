@@ -31,7 +31,7 @@ namespace MLFeed {
     }
 
     /**
-     * Your plugin's `KoDataProxy@` that exposes KO round information, and each player's , spawn info, and lists of players for each sorting method.
+     * Your plugin's `KoDataProxy@` that exposes KO round information, and each player's spawn info, and lists of players for each sorting method.
      * You can call this function as often as you like -- it will always return the same proxy instance based on plugin ID.
      */
     const KoDataProxy@ GetKoData() {
@@ -46,8 +46,8 @@ namespace MLFeed {
 
     /** Object exposing GhostInfos for each loaded ghost.
         This includes record ghosts loaded through the UI, and personal best ghosts.
-        When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
-        Therefore, duplicate ghost infos may be recorded.
+        When a ghost is *unloaded* from a map, its info is not removed (it remains cached).
+        Therefore, duplicate ghost infos may be recorded (though measures are taken to prevent this).
         The list is cleared on map change. */
     const SharedGhostDataHook_V2@ GetGhostData() {
         return ghostHook;
