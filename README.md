@@ -157,55 +157,6 @@ returns the name of the local player, or an empty string if this is not yet know
 
 
 
-## MLFeed::GhostInfo_V2 (class)
-
-Information about a currently loaded ghost.
-Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
-
-### Functions
-
-#### opEquals -- `bool opEquals(const GhostInfo@ &in other) const`
-
-### Properties
-
-#### Checkpoints -- `const array<uint>@ Checkpoints`
-
-Ghost.Result.Checkpoints
-
-#### IdName -- `const string IdName`
-
-Ghost.IdName
-
-#### IdUint -- `uint IdUint`
-
-Should be equiv to Ghost.Id.Value (experimental)
-
-#### IsLocalPlayer -- `bool IsLocalPlayer`
-
-Whether this is the local player (sitting at this computer)
-
-#### IsPersonalBest -- `bool IsPersonalBest`
-
-Whether this is a PB ghost (named: 'Personal best')
-
-#### Nickname -- `const string Nickname`
-
-Ghost.Nickname
-
-#### Result_Score -- `int Result_Score`
-
-Ghost.Result.Score
-
-#### Result_Time -- `int Result_Time`
-
-Ghost.Result.Time
-
-
-
-
-
-
-
 
 
 
@@ -270,97 +221,6 @@ This increments by 1 each frame a player spawns.
 When players spawn simultaneously, their PlayerCpInfo.spawnIndex values are the same.
 This is useful for some sorting methods.
 This value is set to 0 on plugin load and never reset.
-
-
-
-
-
-
-
-## MLFeed::KoDataProxy (class)
-
-Main source of information about KO rounds.
-Proxy for the internal type `KoFeed::HookKoStatsEvents`.
-
-### Functions
-
-#### GetPlayerState -- `const KoPlayerState@ GetPlayerState(const string &in name) const`
-
-Get a player's MLFeed::KoPlayerState.
-It has only 3 properties: `name`, `isAlive`, and `isDNF`.
-
-### Properties
-
-#### Division -- `int Division`
-
-The current division number. *(Note: possibly inaccurate. Use with caution.)*
-
-#### GameMode -- `const string GameMode`
-
-The current game mode, e.g., `TM_KnockoutDaily_Online`, or `TM_TimeAttack_Online`, etc.
-
-#### KOsMilestone -- `int KOsMilestone`
-
-KOs per round will change when the number of players is <= KOsMilestone.
-
-#### KOsNumber -- `int KOsNumber`
-
-KOs per round.
-
-#### Map -- `const string Map`
-
-The current map UID
-
-#### MapRoundNb -- `int MapRoundNb`
-
-The current round number for this map.
-
-#### MapRoundTotal -- `int MapRoundTotal`
-
-The total number of rounds for this map.
-
-#### Players -- `const array<string> Players`
-
-A `string[]` of player names. It includes all players in the KO round, even if they've left.
-
-#### PlayersNb -- `int PlayersNb`
-
-The number of players participating.
-
-#### RoundNb -- `int RoundNb`
-
-The round number over all maps. (I think)
-
-#### RoundTotal -- `int RoundTotal`
-
-The total number of rounds over all maps. (I think)
-
-
-
-## MLFeed::KoPlayerState (class)
-
-A player's state in a KO match
-
-
-### Properties
-
-#### isAlive -- `bool isAlive`
-
-Whether the player is still 'in'; `false` implies they have been knocked out.
-
-#### isDNF -- `bool isDNF`
-
-Whether the player DNF'd or not. This is set to false the round after that player DNFs.
-
-#### name -- `string name`
-
-The player's name.
-
-
-
-
-
-
 
 
 
@@ -490,6 +350,102 @@ The player's name
 
 
 
+## MLFeed::SpawnStatus (enum)
+
+The spawn status of a player.
+
+- `NotSpawned`
+- `Spawning`
+- `Spawned`
+
+
+
+
+
+
+
+## MLFeed::KoDataProxy (class)
+
+Main source of information about KO rounds.
+Proxy for the internal type `KoFeed::HookKoStatsEvents`.
+
+### Functions
+
+#### GetPlayerState -- `const KoPlayerState@ GetPlayerState(const string &in name) const`
+
+Get a player's MLFeed::KoPlayerState.
+It has only 3 properties: `name`, `isAlive`, and `isDNF`.
+
+### Properties
+
+#### Division -- `int Division`
+
+The current division number. *(Note: possibly inaccurate. Use with caution.)*
+
+#### GameMode -- `const string GameMode`
+
+The current game mode, e.g., `TM_KnockoutDaily_Online`, or `TM_TimeAttack_Online`, etc.
+
+#### KOsMilestone -- `int KOsMilestone`
+
+KOs per round will change when the number of players is <= KOsMilestone.
+
+#### KOsNumber -- `int KOsNumber`
+
+KOs per round.
+
+#### Map -- `const string Map`
+
+The current map UID
+
+#### MapRoundNb -- `int MapRoundNb`
+
+The current round number for this map.
+
+#### MapRoundTotal -- `int MapRoundTotal`
+
+The total number of rounds for this map.
+
+#### Players -- `const array<string> Players`
+
+A `string[]` of player names. It includes all players in the KO round, even if they've left.
+
+#### PlayersNb -- `int PlayersNb`
+
+The number of players participating.
+
+#### RoundNb -- `int RoundNb`
+
+The round number over all maps. (I think)
+
+#### RoundTotal -- `int RoundTotal`
+
+The total number of rounds over all maps. (I think)
+
+
+
+## MLFeed::KoPlayerState (class)
+
+A player's state in a KO match
+
+
+### Properties
+
+#### isAlive -- `bool isAlive`
+
+Whether the player is still 'in'; `false` implies they have been knocked out.
+
+#### isDNF -- `bool isDNF`
+
+Whether the player DNF'd or not. This is set to false the round after that player DNFs.
+
+#### name -- `string name`
+
+The player's name.
+
+
+
+
 
 
 
@@ -515,10 +471,46 @@ Array of GhostInfo_V2s
 Number of currently loaded ghosts
 
 
-## MLFeed::SpawnStatus (enum)
 
-The spawn status of a player.
+## MLFeed::GhostInfo_V2 (class)
 
-- `NotSpawned`
-- `Spawning`
-- `Spawned`
+Information about a currently loaded ghost.
+Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
+
+### Functions
+
+#### opEquals -- `bool opEquals(const GhostInfo@ &in other) const`
+
+### Properties
+
+#### Checkpoints -- `const array<uint>@ Checkpoints`
+
+Ghost.Result.Checkpoints
+
+#### IdName -- `const string IdName`
+
+Ghost.IdName
+
+#### IdUint -- `uint IdUint`
+
+Should be equiv to Ghost.Id.Value (experimental)
+
+#### IsLocalPlayer -- `bool IsLocalPlayer`
+
+Whether this is the local player (sitting at this computer)
+
+#### IsPersonalBest -- `bool IsPersonalBest`
+
+Whether this is a PB ghost (named: 'Personal best')
+
+#### Nickname -- `const string Nickname`
+
+Ghost.Nickname
+
+#### Result_Score -- `int Result_Score`
+
+Ghost.Result.Score
+
+#### Result_Time -- `int Result_Time`
+
+Ghost.Result.Time
