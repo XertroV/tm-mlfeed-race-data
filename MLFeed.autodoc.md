@@ -151,18 +151,6 @@ Ghost.Result.Score
 
 Ghost.Result.Time
 
-#### `private array<uint> _Checkpoints`
-
-#### `private string _IdName`
-
-#### `private uint _IdUint`
-
-#### `private string _Nickname`
-
-#### `private int _Result_Score`
-
-#### `private int _Result_Time`
-
 
 
 ## `class GhostInfo_V2`
@@ -170,10 +158,6 @@ Ghost.Result.Time
 ### Functions
 
 #### opEquals -- `bool opEquals(const GhostInfo@ &in other) const`
-
-#### super -- `void super(const MLHook::PendingEvent&in event)`
-
-Call constructor of parent class: GhostInfo
 
 ### Properties
 
@@ -205,18 +189,6 @@ Ghost.Result.Score
 
 Ghost.Result.Time
 
-#### `private array<uint> _Checkpoints`
-
-#### `private string _IdName`
-
-#### `private uint _IdUint`
-
-#### `private string _Nickname`
-
-#### `private int _Result_Score`
-
-#### `private int _Result_Time`
-
 
 
 ## `class HookKoStatsEventsBase`
@@ -229,19 +201,9 @@ Ghost.Result.Time
 
 #### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
-}
-
-#### super -- `void super()`
-
-Call constructor of parent class: MLHook::HookMLEventsByType
-
 ### Properties
 
 #### `Meta::Plugin SourcePlugin`
-
-#### `private Meta::Plugin _sourcePlugin`
-
-#### `private string _type`
 
 #### `int division`
 
@@ -283,12 +245,6 @@ ServerNumber
 
 #### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
-}
-
-#### super -- `void super()`
-
-Call constructor of parent class: MLHook::HookMLEventsByType
-
 ### Properties
 
 #### `uint CPsToFinish`
@@ -300,10 +256,6 @@ Call constructor of parent class: MLHook::HookMLEventsByType
 #### `Meta::Plugin SourcePlugin`
 
 #### `uint SpawnCounter`
-
-#### `private Meta::Plugin _sourcePlugin`
-
-#### `private string _type`
 
 #### `string lastMap`
 
@@ -331,17 +283,7 @@ Get a player's info
 
 #### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
-}
-
 #### _GetPlayer_V2 -- `PlayerCpInfo_V2 _GetPlayer_V2(const string &in name)`
-
-#### super -- `void super(const string&in type)`
-
-Call constructor of parent class: HookRaceStatsEventsBase
-
-#### super -- `void super()`
-
-Call constructor of parent class: MLHook::HookMLEventsByType
 
 ### Properties
 
@@ -382,10 +324,6 @@ An array of `PlayerCpInfo_V2`s sorted by best time to worst time.
 
 #### `array<PlayerCpInfo_V2>@ _SortedPlayers_TimeAttack`
 
-#### `private Meta::Plugin _sourcePlugin`
-
-#### `private string _type`
-
 #### `string lastMap`
 
 #### `dictionary latestPlayerStats`
@@ -395,12 +333,6 @@ An array of `PlayerCpInfo_V2`s sorted by best time to worst time.
 #### `array<PlayerCpInfo> sortedPlayers_TimeAttack`
 
 #### `const string type`
-
-#### `protected array<PlayerCpInfo_V2> v2_sortedPlayers_Race`
-
-#### `protected array<PlayerCpInfo_V2> v2_sortedPlayers_Race_Respawns`
-
-#### `protected array<PlayerCpInfo_V2> v2_sortedPlayers_TimeAttack`
 
 
 
@@ -412,23 +344,11 @@ An array of `PlayerCpInfo_V2`s sorted by best time to worst time.
 
 #### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
-}
-
-#### super -- `void super()`
-
-Call constructor of parent class: MLHook::HookMLEventsByType
-
 ### Properties
 
 #### `int LastRecordTime`
 
 #### `Meta::Plugin SourcePlugin`
-
-#### `protected int _lastRecordTime`
-
-#### `private Meta::Plugin _sourcePlugin`
-
-#### `private string _type`
 
 #### `const string type`
 
@@ -491,8 +411,6 @@ The round number over all maps. (I think)
 #### `int RoundTotal`
 
 The total number of rounds over all maps. (I think)
-
-#### `private HookKoStatsEventsBase hook`
 
 
 
@@ -591,14 +509,6 @@ Formatted as: "PlayerCpInfo(name, cpCount, lastCpTime, spawnStatus, raceRank, ta
 #### UpdateFrom -- `void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex, bool callSuper)`
 
 #### UpdateFrom -- `void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex)`
-
-#### super -- `void super(PlayerCpInfo@ _from, int cpOffset)`
-
-Call constructor of parent class: PlayerCpInfo
-
-#### super -- `void super(MLHook::PendingEvent@ event, uint _spawnIndex)`
-
-Call constructor of parent class: PlayerCpInfo
 
 ### Properties
 
@@ -708,17 +618,11 @@ How many CPs that player currently has
 
 The times of each of their CPs since respawning
 
-#### `protected array<int> cpTimesRaw`
-
-protected int LastCpOrRespawnTime;
-
 #### `float lagDataPoints`
 
 #### `int lastCpTime`
 
 Their last CP time as on their chronometer
-
-#### `protected int lastCpTimeRaw`
 
 #### `float latencyEstimate`
 
@@ -743,8 +647,6 @@ The players's spawn status: NotSpawned, Spawning, or Spawned
 #### `uint taRank`
 
 The player's rank as measured in Time Attack (one more than their index in `RaceData.SortedPlayers_TimeAttack`)
-
-#### `protected array<int> timeLostToRespawnsByCp`
 
 
 
@@ -800,10 +702,6 @@ When players spawn simultaneously, their PlayerCpInfo.spawnIndex values are the 
 This is useful for some sorting methods.
 This value is set to 0 on plugin load and never reset.
 
-#### `private HookRaceStatsEventsBase hook`
-
-#### `private HookRecordEventsBase recHook`
-
 
 
 ## `enum RankType`
@@ -826,12 +724,6 @@ Therefore, duplicate ghost infos may be recorded.
 
 #### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
-}
-
-#### super -- `void super()`
-
-Call constructor of parent class: MLHook::HookMLEventsByType
-
 ### Properties
 
 #### `const array<MLFeed::GhostInfo> Ghosts`
@@ -843,10 +735,6 @@ Array of GhostInfos
 Number of currently loaded ghosts
 
 #### `Meta::Plugin SourcePlugin`
-
-#### `private Meta::Plugin _sourcePlugin`
-
-#### `private string _type`
 
 #### `const string type`
 
@@ -866,16 +754,6 @@ V2 adds .IsLocalPlayer and .IsPersonalBest properties to GhostInfo objects.
 
 #### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
-}
-
-#### super -- `void super(const string&in type)`
-
-Call constructor of parent class: SharedGhostDataHook
-
-#### super -- `void super()`
-
-Call constructor of parent class: MLHook::HookMLEventsByType
-
 ### Properties
 
 #### `const array<MLFeed::GhostInfo> Ghosts`
@@ -891,10 +769,6 @@ Array of GhostInfo_V2s
 Number of currently loaded ghosts
 
 #### `Meta::Plugin SourcePlugin`
-
-#### `private Meta::Plugin _sourcePlugin`
-
-#### `private string _type`
 
 #### `const string type`
 
@@ -932,11 +806,7 @@ The spawn status of a player.
 
 
 
-## Functions
 
-### super -- `void super()`
-
-Call constructor of parent class: MLHook::HookMLEventsByType
 
 
 
@@ -981,15 +851,7 @@ Call constructor of parent class: MLHook::HookMLEventsByType
 
 
 
-## Functions
 
-### super -- `void super(PlayerCpInfo@ _from, int cpOffset)`
-
-Call constructor of parent class: PlayerCpInfo
-
-### super -- `void super(MLHook::PendingEvent@ event, uint _spawnIndex)`
-
-Call constructor of parent class: PlayerCpInfo
 
 
 
@@ -1004,11 +866,7 @@ Call constructor of parent class: PlayerCpInfo
 
 
 
-## Functions
 
-### super -- `void super()`
-
-Call constructor of parent class: MLHook::HookMLEventsByType
 
 
 
@@ -1023,11 +881,7 @@ Call constructor of parent class: MLHook::HookMLEventsByType
 
 
 
-## Functions
 
-### super -- `void super(const string&in type)`
-
-Call constructor of parent class: HookRaceStatsEventsBase
 
 
 
@@ -1042,11 +896,7 @@ Call constructor of parent class: HookRaceStatsEventsBase
 
 
 
-## Functions
 
-### super -- `void super()`
-
-Call constructor of parent class: MLHook::HookMLEventsByType
 
 
 
@@ -1076,11 +926,7 @@ Call constructor of parent class: MLHook::HookMLEventsByType
 
 
 
-## Functions
 
-### super -- `void super()`
-
-Call constructor of parent class: MLHook::HookMLEventsByType
 
 
 
@@ -1095,11 +941,7 @@ Call constructor of parent class: MLHook::HookMLEventsByType
 
 
 
-## Functions
 
-### super -- `void super(const string&in type)`
-
-Call constructor of parent class: SharedGhostDataHook
 
 
 
@@ -1126,11 +968,3 @@ Call constructor of parent class: SharedGhostDataHook
 ----------
 
 # NS: MLFeed::GhostInfo_V2
-
-
-
-## Functions
-
-### super -- `void super(const MLHook::PendingEvent&in event)`
-
-Call constructor of parent class: GhostInfo
