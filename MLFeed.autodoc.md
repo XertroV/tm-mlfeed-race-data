@@ -108,746 +108,746 @@ returns the name of the local player, or an empty string if this is not yet know
 
 
 
-## Types/Classes
+# Types/Classes
 
-### `enum Dir`
+## `enum Dir`
 
 
 
-### `class GhostInfo`
+## `class GhostInfo`
 
 Information about a currently loaded ghost.
 Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
 
-#### Functions
+### Functions
 
-##### get_Checkpoints -- `const array<uint>@ get_Checkpoints() const property`
-
-Ghost.Result.Checkpoints
-
-##### get_IdName -- `const string get_IdName() const property`
-
-Ghost.IdName
-
-##### get_IdUint -- `uint get_IdUint() const property`
-
-Should be equiv to Ghost.Id.Value (experimental)
-
-##### get_Nickname -- `const string get_Nickname() const property`
-
-Ghost.Nickname
-
-##### get_Result_Score -- `int get_Result_Score() const property`
-
-Ghost.Result.Score
-
-##### get_Result_Time -- `int get_Result_Time() const property`
-
-Ghost.Result.Time
-
-##### opEquals -- `bool opEquals(const GhostInfo@ &in other) const`
-
-#### Properties
-
-##### `private array<uint> _Checkpoints`
-
-##### `private string _IdName`
-
-##### `private uint _IdUint`
-
-##### `private string _Nickname`
-
-##### `private int _Result_Score`
-
-##### `private int _Result_Time`
-
-
-
-### `class GhostInfo_V2`
-
-#### Functions
-
-##### get_Checkpoints -- `const array<uint>@ get_Checkpoints() const property`
+#### get_Checkpoints -- `const array<uint>@ get_Checkpoints() const property`
 
 Ghost.Result.Checkpoints
 
-##### get_IdName -- `const string get_IdName() const property`
+#### get_IdName -- `const string get_IdName() const property`
 
 Ghost.IdName
 
-##### get_IdUint -- `uint get_IdUint() const property`
+#### get_IdUint -- `uint get_IdUint() const property`
 
 Should be equiv to Ghost.Id.Value (experimental)
 
-##### get_Nickname -- `const string get_Nickname() const property`
+#### get_Nickname -- `const string get_Nickname() const property`
 
 Ghost.Nickname
 
-##### get_Result_Score -- `int get_Result_Score() const property`
+#### get_Result_Score -- `int get_Result_Score() const property`
 
 Ghost.Result.Score
 
-##### get_Result_Time -- `int get_Result_Time() const property`
+#### get_Result_Time -- `int get_Result_Time() const property`
 
 Ghost.Result.Time
 
-##### opEquals -- `bool opEquals(const GhostInfo@ &in other) const`
+#### opEquals -- `bool opEquals(const GhostInfo@ &in other) const`
 
-##### super -- `void super(const MLHook::PendingEvent&in event)`
+### Properties
+
+#### `private array<uint> _Checkpoints`
+
+#### `private string _IdName`
+
+#### `private uint _IdUint`
+
+#### `private string _Nickname`
+
+#### `private int _Result_Score`
+
+#### `private int _Result_Time`
+
+
+
+## `class GhostInfo_V2`
+
+### Functions
+
+#### get_Checkpoints -- `const array<uint>@ get_Checkpoints() const property`
+
+Ghost.Result.Checkpoints
+
+#### get_IdName -- `const string get_IdName() const property`
+
+Ghost.IdName
+
+#### get_IdUint -- `uint get_IdUint() const property`
+
+Should be equiv to Ghost.Id.Value (experimental)
+
+#### get_Nickname -- `const string get_Nickname() const property`
+
+Ghost.Nickname
+
+#### get_Result_Score -- `int get_Result_Score() const property`
+
+Ghost.Result.Score
+
+#### get_Result_Time -- `int get_Result_Time() const property`
+
+Ghost.Result.Time
+
+#### opEquals -- `bool opEquals(const GhostInfo@ &in other) const`
+
+#### super -- `void super(const MLHook::PendingEvent&in event)`
 
 Call constructor of parent class: GhostInfo
 
-#### Properties
+### Properties
 
-##### `bool IsLocalPlayer`
+#### `bool IsLocalPlayer`
 
-##### `bool IsPersonalBest`
+#### `bool IsPersonalBest`
 
-##### `private array<uint> _Checkpoints`
+#### `private array<uint> _Checkpoints`
 
-##### `private string _IdName`
+#### `private string _IdName`
 
-##### `private uint _IdUint`
+#### `private uint _IdUint`
 
-##### `private string _Nickname`
+#### `private string _Nickname`
 
-##### `private int _Result_Score`
+#### `private int _Result_Score`
 
-##### `private int _Result_Time`
+#### `private int _Result_Time`
 
 
 
-### `class HookKoStatsEventsBase`
+## `class HookKoStatsEventsBase`
 
-#### Functions
+### Functions
 
-##### GetPlayerState -- `KoPlayerState GetPlayerState(const string &in name)`
+#### GetPlayerState -- `KoPlayerState GetPlayerState(const string &in name)`
 
-##### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
+#### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
 
-##### OnEvent -- `void OnEvent(PendingEvent@ event)`
+#### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
 }
 
-##### get_SourcePlugin -- `Meta::Plugin get_SourcePlugin() property`
+#### get_SourcePlugin -- `Meta::Plugin get_SourcePlugin() property`
 
-##### get_type -- `const string get_type() property`
+#### get_type -- `const string get_type() property`
 
-##### super -- `void super()`
+#### super -- `void super()`
 
 Call constructor of parent class: MLHook::HookMLEventsByType
 
-#### Properties
+### Properties
 
-##### `private Meta::Plugin _sourcePlugin`
+#### `private Meta::Plugin _sourcePlugin`
 
-##### `private string _type`
+#### `private string _type`
 
-##### `int division`
+#### `int division`
 
-##### `int kosMilestone`
+#### `int kosMilestone`
 
-##### `int kosNumber`
+#### `int kosNumber`
 
-##### `string lastGM`
+#### `string lastGM`
 
-##### `string lastMap`
+#### `string lastMap`
 
-##### `int mapRoundNb`
+#### `int mapRoundNb`
 
 ServerNumber
 
-##### `int mapRoundTotal`
+#### `int mapRoundTotal`
 
-##### `dictionary playerStates`
+#### `dictionary playerStates`
 
-##### `array<string> players`
+#### `array<string> players`
 
-##### `int playersNb`
+#### `int playersNb`
 
-##### `int roundNb`
+#### `int roundNb`
 
-##### `int roundTotal`
+#### `int roundTotal`
 
 
 
-### `class HookRaceStatsEventsBase`
+## `class HookRaceStatsEventsBase`
 
-#### Functions
+### Functions
 
-##### GetPlayer -- `PlayerCpInfo GetPlayer(const string &in name)`
+#### GetPlayer -- `PlayerCpInfo GetPlayer(const string &in name)`
 
-##### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
+#### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
 
-##### OnEvent -- `void OnEvent(PendingEvent@ event)`
+#### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
 }
 
-##### get_CPsToFinish -- `uint get_CPsToFinish() const property`
+#### get_CPsToFinish -- `uint get_CPsToFinish() const property`
 
-##### get_SourcePlugin -- `Meta::Plugin get_SourcePlugin() property`
+#### get_SourcePlugin -- `Meta::Plugin get_SourcePlugin() property`
 
-##### get_type -- `const string get_type() property`
+#### get_type -- `const string get_type() property`
 
-##### super -- `void super()`
+#### super -- `void super()`
 
 Call constructor of parent class: MLHook::HookMLEventsByType
 
-#### Properties
+### Properties
 
-##### `uint CpCount`
+#### `uint CpCount`
 
-##### `uint LapCount`
+#### `uint LapCount`
 
-##### `uint SpawnCounter`
+#### `uint SpawnCounter`
 
-##### `private Meta::Plugin _sourcePlugin`
+#### `private Meta::Plugin _sourcePlugin`
 
-##### `private string _type`
+#### `private string _type`
 
-##### `string lastMap`
+#### `string lastMap`
 
-##### `dictionary latestPlayerStats`
+#### `dictionary latestPlayerStats`
 
-##### `array<PlayerCpInfo> sortedPlayers_Race`
+#### `array<PlayerCpInfo> sortedPlayers_Race`
 
-##### `array<PlayerCpInfo> sortedPlayers_TimeAttack`
+#### `array<PlayerCpInfo> sortedPlayers_TimeAttack`
 
 
 
-### `class HookRaceStatsEventsBase_V2`
+## `class HookRaceStatsEventsBase_V2`
 
-#### Functions
+### Functions
 
-##### GetPlayer -- `PlayerCpInfo GetPlayer(const string &in name)`
+#### GetPlayer -- `PlayerCpInfo GetPlayer(const string &in name)`
 
-##### GetPlayer_V2 -- `const PlayerCpInfo_V2 GetPlayer_V2(const string &in name) const`
+#### GetPlayer_V2 -- `const PlayerCpInfo_V2 GetPlayer_V2(const string &in name) const`
 
 Get a player's info
 
-##### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
+#### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
 
-##### OnEvent -- `void OnEvent(PendingEvent@ event)`
+#### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
 }
 
-##### _GetPlayer_V2 -- `PlayerCpInfo_V2 _GetPlayer_V2(const string &in name)`
+#### _GetPlayer_V2 -- `PlayerCpInfo_V2 _GetPlayer_V2(const string &in name)`
 
-##### get_CPCount -- `uint get_CPCount() const property`
+#### get_CPCount -- `uint get_CPCount() const property`
 
 The number of checkpoints each lap.
 Linked checkpoints are counted as 1 checkpoint, and goal waypoints are not counted.
 
-##### get_CPsToFinish -- `uint get_CPsToFinish() const property`
+#### get_CPsToFinish -- `uint get_CPsToFinish() const property`
 
-##### get_Map -- `const string get_Map() property`
+#### get_Map -- `const string get_Map() property`
 
 The map UID
 
-##### get_SortedPlayers_Race -- `const array<PlayerCpInfo_V2>@ get_SortedPlayers_Race() const property`
+#### get_SortedPlayers_Race -- `const array<PlayerCpInfo_V2>@ get_SortedPlayers_Race() const property`
 
 An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest.
 
-##### get_SortedPlayers_Race_Respawns -- `const array<PlayerCpInfo_V2>@ get_SortedPlayers_Race_Respawns() const property`
+#### get_SortedPlayers_Race_Respawns -- `const array<PlayerCpInfo_V2>@ get_SortedPlayers_Race_Respawns() const property`
 
 An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest, accounting for player respawns.
 
-##### get_SortedPlayers_TimeAttack -- `const array<PlayerCpInfo_V2>@ get_SortedPlayers_TimeAttack() const property`
+#### get_SortedPlayers_TimeAttack -- `const array<PlayerCpInfo_V2>@ get_SortedPlayers_TimeAttack() const property`
 
 An array of `PlayerCpInfo_V2`s sorted by best time to worst time.
 
-##### get_SourcePlugin -- `Meta::Plugin get_SourcePlugin() property`
+#### get_SourcePlugin -- `Meta::Plugin get_SourcePlugin() property`
 
-##### get__SortedPlayers_Race -- `array<PlayerCpInfo_V2>@ get__SortedPlayers_Race() property`
+#### get__SortedPlayers_Race -- `array<PlayerCpInfo_V2>@ get__SortedPlayers_Race() property`
 
-##### get__SortedPlayers_Race_Respawns -- `array<PlayerCpInfo_V2>@ get__SortedPlayers_Race_Respawns() property`
+#### get__SortedPlayers_Race_Respawns -- `array<PlayerCpInfo_V2>@ get__SortedPlayers_Race_Respawns() property`
 
-##### get__SortedPlayers_TimeAttack -- `array<PlayerCpInfo_V2>@ get__SortedPlayers_TimeAttack() property`
+#### get__SortedPlayers_TimeAttack -- `array<PlayerCpInfo_V2>@ get__SortedPlayers_TimeAttack() property`
 
-##### get_type -- `const string get_type() property`
+#### get_type -- `const string get_type() property`
 
-##### super -- `void super(const string&in type)`
+#### super -- `void super(const string&in type)`
 
 Call constructor of parent class: HookRaceStatsEventsBase
 
-##### super -- `void super()`
+#### super -- `void super()`
 
 Call constructor of parent class: MLHook::HookMLEventsByType
 
-#### Properties
+### Properties
 
-##### `uint CpCount`
+#### `uint CpCount`
 
-##### `uint LapCount`
+#### `uint LapCount`
 
-##### `uint SpawnCounter`
+#### `uint SpawnCounter`
 
-##### `private Meta::Plugin _sourcePlugin`
+#### `private Meta::Plugin _sourcePlugin`
 
-##### `private string _type`
+#### `private string _type`
 
-##### `string lastMap`
+#### `string lastMap`
 
-##### `dictionary latestPlayerStats`
+#### `dictionary latestPlayerStats`
 
-##### `array<PlayerCpInfo> sortedPlayers_Race`
+#### `array<PlayerCpInfo> sortedPlayers_Race`
 
-##### `array<PlayerCpInfo> sortedPlayers_TimeAttack`
+#### `array<PlayerCpInfo> sortedPlayers_TimeAttack`
 
-##### `protected array<PlayerCpInfo_V2> v2_sortedPlayers_Race`
+#### `protected array<PlayerCpInfo_V2> v2_sortedPlayers_Race`
 
-##### `protected array<PlayerCpInfo_V2> v2_sortedPlayers_Race_Respawns`
+#### `protected array<PlayerCpInfo_V2> v2_sortedPlayers_Race_Respawns`
 
-##### `protected array<PlayerCpInfo_V2> v2_sortedPlayers_TimeAttack`
+#### `protected array<PlayerCpInfo_V2> v2_sortedPlayers_TimeAttack`
 
 
 
-### `class HookRecordEventsBase`
+## `class HookRecordEventsBase`
 
-#### Functions
+### Functions
 
-##### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
+#### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
 
-##### OnEvent -- `void OnEvent(PendingEvent@ event)`
+#### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
 }
 
-##### get_LastRecordTime -- `int get_LastRecordTime() const property`
+#### get_LastRecordTime -- `int get_LastRecordTime() const property`
 
-##### get_SourcePlugin -- `Meta::Plugin get_SourcePlugin() property`
+#### get_SourcePlugin -- `Meta::Plugin get_SourcePlugin() property`
 
-##### get_type -- `const string get_type() property`
+#### get_type -- `const string get_type() property`
 
-##### super -- `void super()`
+#### super -- `void super()`
 
 Call constructor of parent class: MLHook::HookMLEventsByType
 
-#### Properties
+### Properties
 
-##### `protected int _lastRecordTime`
+#### `protected int _lastRecordTime`
 
-##### `private Meta::Plugin _sourcePlugin`
+#### `private Meta::Plugin _sourcePlugin`
 
-##### `private string _type`
+#### `private string _type`
 
 
 
-### `class KoDataProxy`
+## `class KoDataProxy`
 
 Main source of information about KO rounds.
 Proxy for the internal type `KoFeed::HookKoStatsEvents`.
 
-#### Functions
+### Functions
 
-##### GetPlayerState -- `const KoPlayerState GetPlayerState(const string &in name) const`
+#### GetPlayerState -- `const KoPlayerState GetPlayerState(const string &in name) const`
 
 Get a player's MLFeed::KoPlayerState.
 It has only 3 properties: `name`, `isAlive`, and `isDNF`.
 
-##### get_Division -- `int get_Division() const property`
+#### get_Division -- `int get_Division() const property`
 
 The current division number. *(Note: possibly inaccurate. Use with caution.)*
 
-##### get_GameMode -- `const string get_GameMode() const property`
+#### get_GameMode -- `const string get_GameMode() const property`
 
 The current game mode, e.g., `TM_KnockoutDaily_Online`, or `TM_TimeAttack_Online`, etc.
 
-##### get_KOsMilestone -- `int get_KOsMilestone() const property`
+#### get_KOsMilestone -- `int get_KOsMilestone() const property`
 
 KOs per round will change when the number of players is <= KOsMilestone.
 
-##### get_KOsNumber -- `int get_KOsNumber() const property`
+#### get_KOsNumber -- `int get_KOsNumber() const property`
 
 KOs per round.
 
-##### get_Map -- `const string get_Map() const property`
+#### get_Map -- `const string get_Map() const property`
 
 The current map UID
 
-##### get_MapRoundNb -- `int get_MapRoundNb() const property`
+#### get_MapRoundNb -- `int get_MapRoundNb() const property`
 
 The current round number for this map.
 
-##### get_MapRoundTotal -- `int get_MapRoundTotal() const property`
+#### get_MapRoundTotal -- `int get_MapRoundTotal() const property`
 
 The total number of rounds for this map.
 
-##### get_Players -- `const array<string> get_Players() const property`
+#### get_Players -- `const array<string> get_Players() const property`
 
 A `string[]` of player names. It includes all players in the KO round, even if they've left.
 
-##### get_PlayersNb -- `int get_PlayersNb() const property`
+#### get_PlayersNb -- `int get_PlayersNb() const property`
 
 The number of players participating.
 
-##### get_RoundNb -- `int get_RoundNb() const property`
+#### get_RoundNb -- `int get_RoundNb() const property`
 
 The round number over all maps. (I think)
 
-##### get_RoundTotal -- `int get_RoundTotal() const property`
+#### get_RoundTotal -- `int get_RoundTotal() const property`
 
 The total number of rounds over all maps. (I think)
 
-#### Properties
+### Properties
 
-##### `private HookKoStatsEventsBase hook`
+#### `private HookKoStatsEventsBase hook`
 
 
 
-### `class KoPlayerState`
+## `class KoPlayerState`
 
 A player's state in a KO match
 
 
 
-#### Properties
+### Properties
 
-##### `bool isAlive`
+#### `bool isAlive`
 
 Whether the player is still 'in'; `false` implies they have been knocked out.
 
-##### `bool isDNF`
+#### `bool isDNF`
 
 Whether the player DNF'd or not. This is set to false the round after that player DNFs.
 
-##### `string name`
+#### `string name`
 
 The player's name.
 
 
 
-### `class PlayerCpInfo`
+## `class PlayerCpInfo`
 
 Each's players status in the race, with a focus on CP related info.
 
-#### Functions
+### Functions
 
-##### ToString -- `string ToString() const`
+#### ToString -- `string ToString() const`
 
 Formatted as: "PlayerCpInfo(name, cpCount, lastCpTime, spawnStatus, raceRank, taRank, bestTime)"
 
-##### UpdateFrom -- `void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex)`
+#### UpdateFrom -- `void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex)`
 
-##### get_IsSpawned -- `bool get_IsSpawned() property`
+#### get_IsSpawned -- `bool get_IsSpawned() property`
 
 Whether the player is spawned
 
-#### Properties
+### Properties
 
-##### `int bestTime`
+#### `int bestTime`
 
 The player's best time this session
 
-##### `int cpCount`
+#### `int cpCount`
 
 How many CPs that player currently has
 
-##### `array<int> cpTimes`
+#### `array<int> cpTimes`
 
 The times of each of their CPs since respawning
 
-##### `int lastCpTime`
+#### `int lastCpTime`
 
 Their last CP time as on their chronometer
 
-##### `string name`
+#### `string name`
 
 The player's name
 
-##### `uint raceRank`
+#### `uint raceRank`
 
 The player's rank as measured in a race (when all players would spawn at the same time).
 
-##### `uint spawnIndex`
+#### `uint spawnIndex`
 
 The spawn index when the player spawned
 
-##### `SpawnStatus spawnStatus`
+#### `SpawnStatus spawnStatus`
 
 The players's spawn status: NotSpawned, Spawning, or Spawned
 
-##### `uint taRank`
+#### `uint taRank`
 
 The player's rank as measured in Time Attack (one more than their index in `RaceData.SortedPlayers_TimeAttack`)
 
 
 
-### `class PlayerCpInfo_V2`
+## `class PlayerCpInfo_V2`
 
-#### Functions
+### Functions
 
-##### ModifyRank -- `void ModifyRank(Dir dir, RankType rt)`
+#### ModifyRank -- `void ModifyRank(Dir dir, RankType rt)`
 
-##### ToString -- `string ToString() const`
+#### ToString -- `string ToString() const`
 
 Formatted as: "PlayerCpInfo(name, rr: 17, tr: 3, cp: 5 (0:43.231), Spawned, bt: 0:55.992)"
 
-##### ToString -- `string ToString() const`
+#### ToString -- `string ToString() const`
 
 Formatted as: "PlayerCpInfo(name, cpCount, lastCpTime, spawnStatus, raceRank, taRank, bestTime)"
 
-##### UpdateFrom -- `void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex, bool callSuper)`
+#### UpdateFrom -- `void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex, bool callSuper)`
 
-##### UpdateFrom -- `void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex)`
+#### UpdateFrom -- `void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex)`
 
-##### get_BestTime -- `int get_BestTime() const property`
+#### get_BestTime -- `int get_BestTime() const property`
 
 The player's best time this session
 
-##### get_CpCount -- `int get_CpCount() const property`
+#### get_CpCount -- `int get_CpCount() const property`
 
 How many CPs that player currently has
 
-##### get_CpTimes -- `const array<int>@ get_CpTimes() const property`
+#### get_CpTimes -- `const array<int>@ get_CpTimes() const property`
 
 The times of each of their CPs since respawning
 
-##### get_CurrentRaceTime -- `int get_CurrentRaceTime() const property`
+#### get_CurrentRaceTime -- `int get_CurrentRaceTime() const property`
 
 This player's CurrentRaceTime with latency taken into account
 
-##### get_CurrentRaceTimeRaw -- `int get_CurrentRaceTimeRaw() const property`
+#### get_CurrentRaceTimeRaw -- `int get_CurrentRaceTimeRaw() const property`
 
 This player's CurrentRaceTime without accounting for latency
 
-##### get_IsSpawned -- `bool get_IsSpawned() property`
+#### get_IsSpawned -- `bool get_IsSpawned() property`
 
 Whether the player is spawned
 
-##### get_LastCpOrRespawnTime -- `int get_LastCpOrRespawnTime() const property`
+#### get_LastCpOrRespawnTime -- `int get_LastCpOrRespawnTime() const property`
 
 Player's last CP time _OR_ their last respawn time if it is greater
 
-##### get_LastCpTime -- `int get_LastCpTime() const property`
+#### get_LastCpTime -- `int get_LastCpTime() const property`
 
 Player's last CP time
 
-##### get_LastTheoreticalCpTime -- `int get_LastTheoreticalCpTime() const property`
+#### get_LastTheoreticalCpTime -- `int get_LastTheoreticalCpTime() const property`
 
 get the last CP time of the player minus time lost to respawns
 
-##### get_Name -- `const string get_Name() const property`
+#### get_Name -- `const string get_Name() const property`
 
 The player's name
 
-##### get_RaceRank -- `uint get_RaceRank() const property`
+#### get_RaceRank -- `uint get_RaceRank() const property`
 
 The player's rank as measured in a race (when all players would spawn at the same time).
 
-##### get_RaceRespawnRank -- `uint get_RaceRespawnRank() const property`
+#### get_RaceRespawnRank -- `uint get_RaceRespawnRank() const property`
 
 The player's rank as measured in a race (when all players would spawn at the same time), accounting for respawns.
 
-##### get_SpawnIndex -- `uint get_SpawnIndex() const property`
+#### get_SpawnIndex -- `uint get_SpawnIndex() const property`
 
 The spawn index when the player spawned
 
-##### get_SpawnStatus -- `SpawnStatus get_SpawnStatus() const property`
+#### get_SpawnStatus -- `SpawnStatus get_SpawnStatus() const property`
 
 The players's spawn status: NotSpawned, Spawning, or Spawned
 
-##### get_TaRank -- `uint get_TaRank() const property`
+#### get_TaRank -- `uint get_TaRank() const property`
 
 The player's rank as measured in Time Attack (one more than their index in `RaceData.SortedPlayers_TimeAttack`)
 
-##### get_TheoreticalRaceTime -- `int get_TheoreticalRaceTime() const property`
+#### get_TheoreticalRaceTime -- `int get_TheoreticalRaceTime() const property`
 
-##### get_TimeLostToRespawnByCp -- `const array<int>@ get_TimeLostToRespawnByCp() const property`
+#### get_TimeLostToRespawnByCp -- `const array<int>@ get_TimeLostToRespawnByCp() const property`
 
 The times of each of their CPs since respawning
 
-##### super -- `void super(PlayerCpInfo@ _from, int cpOffset)`
+#### super -- `void super(PlayerCpInfo@ _from, int cpOffset)`
 
 Call constructor of parent class: PlayerCpInfo
 
-##### super -- `void super(MLHook::PendingEvent@ event, uint _spawnIndex)`
+#### super -- `void super(MLHook::PendingEvent@ event, uint _spawnIndex)`
 
 Call constructor of parent class: PlayerCpInfo
 
-#### Properties
+### Properties
 
-##### `const array<uint>@ BestRaceTimes`
+#### `const array<uint>@ BestRaceTimes`
 
 this player's CP times for their best performance this session (since the map loaded)
 
-##### `bool IsLocalPlayer`
+#### `bool IsLocalPlayer`
 
 whether this player corresponds to the physical player playing the game
 
-##### `uint LastRespawnCheckpoint`
+#### `uint LastRespawnCheckpoint`
 
 the last checkpoint that the player respawned at
 
-##### `uint LastRespawnRaceTime`
+#### `uint LastRespawnRaceTime`
 
 the last time this player respawned (measure against CurrentRaceTime)
 
-##### `uint NbRespawnsRequested`
+#### `uint NbRespawnsRequested`
 
 number of times the player has respawned
 
-##### `uint StartTime`
+#### `uint StartTime`
 
 when the player spawned (measured against GameTime)
 
-##### `uint TimeLostToRespawns`
+#### `uint TimeLostToRespawns`
 
 the amount of time the player has lost due to respawns
 
-##### `int bestTime`
+#### `int bestTime`
 
 The player's best time this session
 
-##### `int cpCount`
+#### `int cpCount`
 
 How many CPs that player currently has
 
-##### `array<int> cpTimes`
+#### `array<int> cpTimes`
 
 The times of each of their CPs since respawning
 
-##### `protected array<int> cpTimesRaw`
+#### `protected array<int> cpTimesRaw`
 
 protected int LastCpOrRespawnTime;
 
-##### `float lagDataPoints`
+#### `float lagDataPoints`
 
-##### `int lastCpTime`
+#### `int lastCpTime`
 
 Their last CP time as on their chronometer
 
-##### `protected int lastCpTimeRaw`
+#### `protected int lastCpTimeRaw`
 
-##### `float latencyEstimate`
+#### `float latencyEstimate`
 
-##### `string name`
+#### `string name`
 
 The player's name
 
-##### `uint raceRank`
+#### `uint raceRank`
 
 The player's rank as measured in a race (when all players would spawn at the same time).
 
-##### `int raceRespawnRank`
+#### `int raceRespawnRank`
 
-##### `uint spawnIndex`
+#### `uint spawnIndex`
 
 The spawn index when the player spawned
 
-##### `SpawnStatus spawnStatus`
+#### `SpawnStatus spawnStatus`
 
 The players's spawn status: NotSpawned, Spawning, or Spawned
 
-##### `uint taRank`
+#### `uint taRank`
 
 The player's rank as measured in Time Attack (one more than their index in `RaceData.SortedPlayers_TimeAttack`)
 
-##### `protected array<int> timeLostToRespawnsByCp`
+#### `protected array<int> timeLostToRespawnsByCp`
 
 
 
-### `class RaceDataProxy`
+## `class RaceDataProxy`
 
 Provides race data.
 It is a proxy for the internal type `RaceFeed::HookRaceStatsEvents`.
 
-#### Functions
+### Functions
 
-##### GetPlayer -- `const PlayerCpInfo GetPlayer(const string &in name) const`
+#### GetPlayer -- `const PlayerCpInfo GetPlayer(const string &in name) const`
 
 Get a player by name (see `.SortedPlayers_Race/TimeAttack` for players)
 
-##### get_CPCount -- `uint get_CPCount() const property`
+#### get_CPCount -- `uint get_CPCount() const property`
 
 The number of checkpoints each lap.
 Linked checkpoints are counted as 1 checkpoint, and goal waypoints are not counted.
 
-##### get_CPsToFinish -- `uint get_CPsToFinish() const property`
+#### get_CPsToFinish -- `uint get_CPsToFinish() const property`
 
 The number of waypoints a player needs to hit to finish the race.
 In single lap races, this is 1 more than `.CPCount`.
 
-##### get_LapCount -- `uint get_LapCount() const property`
+#### get_LapCount -- `uint get_LapCount() const property`
 
 The number of laps for this map.
 
-##### get_LastRecordTime -- `int get_LastRecordTime() const property`
+#### get_LastRecordTime -- `int get_LastRecordTime() const property`
 
 When the player sets a new personal best, this is set to that time.
 Reset to -1 at the start of each map.
 Usage: `if (lastRecordTime != RaceData.LastRecordTime) OnNewRecord();`
 
-##### get_Map -- `const string get_Map() const property`
+#### get_Map -- `const string get_Map() const property`
 
 The map UID
 
-##### get_SortedPlayers_Race -- `const array<PlayerCpInfo> get_SortedPlayers_Race() const property`
+#### get_SortedPlayers_Race -- `const array<PlayerCpInfo> get_SortedPlayers_Race() const property`
 
 An array of `PlayerCpInfo`s sorted by most checkpoints to fewest.
 
-##### get_SortedPlayers_TimeAttack -- `const array<PlayerCpInfo> get_SortedPlayers_TimeAttack() const property`
+#### get_SortedPlayers_TimeAttack -- `const array<PlayerCpInfo> get_SortedPlayers_TimeAttack() const property`
 
 An array of `PlayerCpInfo`s sorted by best time to worst time.
 
-##### get_SpawnCounter -- `uint get_SpawnCounter() const property`
+#### get_SpawnCounter -- `uint get_SpawnCounter() const property`
 
 This increments by 1 each frame a player spawns.
 When players spawn simultaneously, their PlayerCpInfo.spawnIndex values are the same.
 This is useful for some sorting methods.
 This value is set to 0 on plugin load and never reset.
 
-#### Properties
+### Properties
 
-##### `private HookRaceStatsEventsBase hook`
+#### `private HookRaceStatsEventsBase hook`
 
-##### `private HookRecordEventsBase recHook`
-
-
-
-### `enum RankType`
+#### `private HookRecordEventsBase recHook`
 
 
 
-### `class SharedGhostDataHook`
+## `enum RankType`
+
+
+
+## `class SharedGhostDataHook`
 
 Provides access to ghost info.
 This includes record ghosts loaded through the UI, and personal best ghosts.
 When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
 Therefore, duplicate ghost infos may be recorded.
 
-#### Functions
+### Functions
 
-##### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
+#### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
 
-##### OnEvent -- `void OnEvent(PendingEvent@ event)`
+#### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
 }
 
-##### get_Ghosts -- `const array<MLFeed::GhostInfo> get_Ghosts() const property`
+#### get_Ghosts -- `const array<MLFeed::GhostInfo> get_Ghosts() const property`
 
 Array of GhostInfos
 
-##### get_NbGhosts -- `uint get_NbGhosts() const property`
+#### get_NbGhosts -- `uint get_NbGhosts() const property`
 
 Number of currently loaded ghosts
 
-##### get_SourcePlugin -- `Meta::Plugin get_SourcePlugin() property`
+#### get_SourcePlugin -- `Meta::Plugin get_SourcePlugin() property`
 
-##### get_type -- `const string get_type() property`
+#### get_type -- `const string get_type() property`
 
-##### super -- `void super()`
+#### super -- `void super()`
 
 Call constructor of parent class: MLHook::HookMLEventsByType
 
-#### Properties
+### Properties
 
-##### `private Meta::Plugin _sourcePlugin`
+#### `private Meta::Plugin _sourcePlugin`
 
-##### `private string _type`
+#### `private string _type`
 
 
 
-### `class SharedGhostDataHook_V2`
+## `class SharedGhostDataHook_V2`
 
 Provides access to ghost info.
 This includes record ghosts loaded through the UI, and personal best ghosts.
@@ -855,47 +855,47 @@ When a ghost is *unloaded* from a map, it's info is not removed (it remains cach
 Therefore, duplicate ghost infos may be recorded.
 V2 adds .IsLocalPlayer and .IsPersonalBest properties to GhostInfo objects.
 
-#### Functions
+### Functions
 
-##### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
+#### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
 
-##### OnEvent -- `void OnEvent(PendingEvent@ event)`
+#### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
 }
 
-##### get_Ghosts -- `const array<MLFeed::GhostInfo> get_Ghosts() const property`
+#### get_Ghosts -- `const array<MLFeed::GhostInfo> get_Ghosts() const property`
 
 Array of GhostInfos
 
-##### get_Ghosts_V2 -- `const array<MLFeed::GhostInfo_V2> get_Ghosts_V2() const property`
+#### get_Ghosts_V2 -- `const array<MLFeed::GhostInfo_V2> get_Ghosts_V2() const property`
 
 Array of GhostInfo_V2s
 
-##### get_NbGhosts -- `uint get_NbGhosts() const property`
+#### get_NbGhosts -- `uint get_NbGhosts() const property`
 
 Number of currently loaded ghosts
 
-##### get_SourcePlugin -- `Meta::Plugin get_SourcePlugin() property`
+#### get_SourcePlugin -- `Meta::Plugin get_SourcePlugin() property`
 
-##### get_type -- `const string get_type() property`
+#### get_type -- `const string get_type() property`
 
-##### super -- `void super(const string&in type)`
+#### super -- `void super(const string&in type)`
 
 Call constructor of parent class: SharedGhostDataHook
 
-##### super -- `void super()`
+#### super -- `void super()`
 
 Call constructor of parent class: MLHook::HookMLEventsByType
 
-#### Properties
+### Properties
 
-##### `private Meta::Plugin _sourcePlugin`
+#### `private Meta::Plugin _sourcePlugin`
 
-##### `private string _type`
+#### `private string _type`
 
 
 
-### `enum SpawnStatus`
+## `enum SpawnStatus`
 
 The spawn status of a player.
 
