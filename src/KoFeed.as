@@ -86,7 +86,6 @@ namespace KoFeed {
             MLHook::Queue_MessageManialinkPlayground(this.type, {"SendAllMatchKeyPairs"});
         }
 
-        // void OnEvent(const string &in type, MwFastBuffer<wstring> &in data) override {
         void OnEvent(MLHook::PendingEvent@ event) override {
             incoming_msgs.InsertLast(event);
         }
