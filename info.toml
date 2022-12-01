@@ -2,7 +2,7 @@
 name     = "MLFeed: Race Data"
 author   = "XertroV"
 category = "MLHook"
-version  = "0.3.8"
+version  = "0.4.0"
 
 [script]
 #__DEFINES__
