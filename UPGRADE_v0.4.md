@@ -2,12 +2,9 @@
 
 All types and functions should be prefixed with `MLFeed::`.
 
-todo:
-- refactor update logic out into different class to avoid having to change shared code in future
-
 ## Features in v0.4
 
-* Race_Respawns
+* Race_Respawns sort method
 * add respawn data for all players
   * note: for non-local players these figures are an estimate; times are exact for the local player
   * last respawn time

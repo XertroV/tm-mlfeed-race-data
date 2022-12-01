@@ -26,7 +26,8 @@ namespace MLFeed {
         string lastMap;
         string[] players;
 
-        int division = -1; // ServerNumber
+        // ServerNumber
+        int division = -1;
         int mapRoundNb = -1;
         int mapRoundTotal = -1;
         int roundNb = -1;
@@ -115,7 +116,7 @@ namespace MLFeed {
         int cpCount;
         // Their last CP time as on their chronometer
         int lastCpTime;
-        // The times of each of their CPs since respawning
+        // The CP times of that player (including the 0th cp at the 0th index; which will always be 0)
         int[] cpTimes;
         // The player's best time this session
         int bestTime;
@@ -199,13 +200,13 @@ namespace MLFeed {
         const string get_Name() const { return name; }
         // How many CPs that player currently has
         int get_CpCount() const { return cpCount; }
-        // Player's last CP time
+        // Player's last CP time as on their chronometer
         int get_LastCpTime() const { return lastCpTime; }
         // Player's last CP time _OR_ their last respawn time if it is greater
         int get_LastCpOrRespawnTime() const { return Math::Max(lastCpTime, LastRespawnRaceTime); }
-        // The times of each of their CPs since respawning
+        // The CP times of that player (including the 0th cp at the 0th index; which will always be 0)
         const int[]@ get_CpTimes() const { return cpTimes; }
-        // The times of each of their CPs since respawning
+        // The time lost due to respawning at each CP
         const int[]@ get_TimeLostToRespawnByCp() const { return timeLostToRespawnsByCp; }
         // get the last CP time of the player minus time lost to respawns
         int get_LastTheoreticalCpTime() const {
@@ -253,7 +254,7 @@ namespace MLFeed {
         uint LastRespawnRaceTime;
         // the last checkpoint that the player respawned at
         uint LastRespawnCheckpoint;
-        // the amount of time the player has lost due to respawns
+        // the amount of time the player has lost due to respawns in total since the start of their current race/attempt
         uint TimeLostToRespawns;
 
         // an estimate of the latency in ms between when a player passes a checkpoint and when we learn about it
@@ -398,6 +399,15 @@ namespace MLFeed {
         const string get_Map() {
             return lastMap;
         }
+
+	    /* When the player sets a new personal best, this is set to that time.
+           Reset to -1 at the start of each map.
+           Usage: `if (lastRecordTime != RaceData.LastRecordTime) OnNewRecord();`
+        */
+        int get_LastRecordTime() const {
+            // return recHook.LastRecordTime;
+            throw("implemented elsewhere");
+        }
     }
 
     shared class HookRecordEventsBase : MLHook::HookMLEventsByType {
@@ -484,7 +494,7 @@ namespace MLFeed {
         SharedGhostDataHook(const string &in type) { super(type); }
         // Number of currently loaded ghosts
         uint get_NbGhosts() const { return 0; };
-        // Array of GhostInfos
+        // *Deprecated, prefer .Ghosts_V2*; Array of GhostInfos
         const array<const MLFeed::GhostInfo@> get_Ghosts() const { return {}; };
     }
 
@@ -565,7 +575,9 @@ namespace MLFeed {
      * Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
      */
     shared class GhostInfo_V2 : GhostInfo {
+        // Whether this is the local player (sitting at this computer)
         bool IsLocalPlayer;
+        // Whether this is a PB ghost (named: 'Personal best')
         bool IsPersonalBest;
 
         GhostInfo_V2(const MLHook::PendingEvent@ &in event) {
@@ -583,7 +595,7 @@ namespace MLFeed {
         return "";
     }
 
-    // The current server's GameTime
+    // The current server's GameTime, or 0 if not in a server
     shared uint get_GameTime() {
         if (GetApp().Network.PlaygroundClientScriptAPI is null) return 0;
         return uint(GetApp().Network.PlaygroundClientScriptAPI.GameTime);

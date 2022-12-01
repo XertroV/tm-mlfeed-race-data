@@ -469,6 +469,11 @@ namespace RaceFeed {
                 @sortedPlayers_TimeAttack[i] = SortedPlayers_TimeAttack[i];
             }
         }
+
+        int get_LastRecordTime() const override {
+            if (recordHook is null) return -1;
+            return recordHook.LastRecordTime;
+        }
     }
 }
 

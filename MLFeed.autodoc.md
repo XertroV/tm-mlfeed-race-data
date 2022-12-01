@@ -1,5 +1,7 @@
 # NS: MLFeed
 
+
+
 ## Functions
 
 ### GetGhostData -- `const SharedGhostDataHook_V2@ GetGhostData()`
@@ -104,17 +106,17 @@ V2 adds .IsLocalPlayer and .IsPersonalBest properties to GhostInfo objects.
 
 ## Properties
 
-### `uint GameTime`
+### GameTime -- `uint GameTime`
 
-The current server's GameTime
+The current server's GameTime, or 0 if not in a server
 
-### `const string LocalPlayersName`
+### LocalPlayersName -- `const string LocalPlayersName`
 
 returns the name of the local player, or an empty string if this is not yet known
 
 # Types/Classes
 
-## `enum Dir`
+## MLFeed::Dir (enum)
 
 direction to move; down=-1, up=1
 
@@ -122,7 +124,7 @@ direction to move; down=-1, up=1
 - `Up`
 
 
-## `class GhostInfo`
+## MLFeed::GhostInfo (class)
 
 Information about a currently loaded ghost.
 Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
@@ -133,33 +135,33 @@ Constructor expects a pending event with data: `{IdName, Nickname, Result_Score,
 
 ### Properties
 
-#### `const array<uint>@ Checkpoints`
+#### Checkpoints -- `const array<uint>@ Checkpoints`
 
 Ghost.Result.Checkpoints
 
-#### `const string IdName`
+#### IdName -- `const string IdName`
 
 Ghost.IdName
 
-#### `uint IdUint`
+#### IdUint -- `uint IdUint`
 
 Should be equiv to Ghost.Id.Value (experimental)
 
-#### `const string Nickname`
+#### Nickname -- `const string Nickname`
 
 Ghost.Nickname
 
-#### `int Result_Score`
+#### Result_Score -- `int Result_Score`
 
 Ghost.Result.Score
 
-#### `int Result_Time`
+#### Result_Time -- `int Result_Time`
 
 Ghost.Result.Time
 
 
 
-## `class GhostInfo_V2`
+## MLFeed::GhostInfo_V2 (class)
 
 Information about a currently loaded ghost.
 Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
@@ -170,37 +172,41 @@ Constructor expects a pending event with data: `{IdName, Nickname, Result_Score,
 
 ### Properties
 
-#### `const array<uint>@ Checkpoints`
+#### Checkpoints -- `const array<uint>@ Checkpoints`
 
 Ghost.Result.Checkpoints
 
-#### `const string IdName`
+#### IdName -- `const string IdName`
 
 Ghost.IdName
 
-#### `uint IdUint`
+#### IdUint -- `uint IdUint`
 
 Should be equiv to Ghost.Id.Value (experimental)
 
-#### `bool IsLocalPlayer`
+#### IsLocalPlayer -- `bool IsLocalPlayer`
 
-#### `bool IsPersonalBest`
+Whether this is the local player (sitting at this computer)
 
-#### `const string Nickname`
+#### IsPersonalBest -- `bool IsPersonalBest`
+
+Whether this is a PB ghost (named: 'Personal best')
+
+#### Nickname -- `const string Nickname`
 
 Ghost.Nickname
 
-#### `int Result_Score`
+#### Result_Score -- `int Result_Score`
 
 Ghost.Result.Score
 
-#### `int Result_Time`
+#### Result_Time -- `int Result_Time`
 
 Ghost.Result.Time
 
 
 
-## `class HookKoStatsEventsBase`
+## MLFeed::HookKoStatsEventsBase (class)
 
 ### Functions
 
@@ -212,39 +218,39 @@ Ghost.Result.Time
 
 ### Properties
 
-#### `Meta::Plugin@ SourcePlugin`
+#### SourcePlugin -- `Meta::Plugin@ SourcePlugin`
 
-#### `int division`
-
-#### `int kosMilestone`
-
-#### `int kosNumber`
-
-#### `string lastGM`
-
-#### `string lastMap`
-
-#### `int mapRoundNb`
+#### division -- `int division`
 
 ServerNumber
 
-#### `int mapRoundTotal`
+#### kosMilestone -- `int kosMilestone`
 
-#### `dictionary playerStates`
+#### kosNumber -- `int kosNumber`
 
-#### `array<string> players`
+#### lastGM -- `string lastGM`
 
-#### `int playersNb`
+#### lastMap -- `string lastMap`
 
-#### `int roundNb`
+#### mapRoundNb -- `int mapRoundNb`
 
-#### `int roundTotal`
+#### mapRoundTotal -- `int mapRoundTotal`
 
-#### `const string type`
+#### playerStates -- `dictionary playerStates`
+
+#### players -- `array<string> players`
+
+#### playersNb -- `int playersNb`
+
+#### roundNb -- `int roundNb`
+
+#### roundTotal -- `int roundTotal`
+
+#### type -- `const string type`
 
 
 
-## `class HookRaceStatsEventsBase`
+## MLFeed::HookRaceStatsEventsBase (class)
 
 ### Functions
 
@@ -258,50 +264,50 @@ ServerNumber
 
 ### Properties
 
-#### `uint CPsToFinish`
+#### CPsToFinish -- `uint CPsToFinish`
 
 The number of waypoints a player needs to hit to finish the race.
 In single lap races, this is 1 more than `.CPCount`.
 
-#### `uint CpCount`
+#### CpCount -- `uint CpCount`
 
 The number of checkpoints each lap.
 Linked checkpoints are counted as 1 checkpoint, and goal waypoints are not counted.
 
-#### `uint LapCount`
+#### LapCount -- `uint LapCount`
 
 The number of laps for this map.
 
-#### `Meta::Plugin@ SourcePlugin`
+#### SourcePlugin -- `Meta::Plugin@ SourcePlugin`
 
-#### `uint SpawnCounter`
+#### SpawnCounter -- `uint SpawnCounter`
 
 This increments by 1 each frame a player spawns.
 When players spawn simultaneously, their PlayerCpInfo.spawnIndex values are the same.
 This is useful for some sorting methods.
 This value is set to 0 on plugin load and never reset.
 
-#### `string lastMap`
+#### lastMap -- `string lastMap`
 
 the prior map, prefer .Map
 
-#### `dictionary latestPlayerStats`
+#### latestPlayerStats -- `dictionary latestPlayerStats`
 
 internal... but it's a map of player name => player object
 
-#### `array<PlayerCpInfo> sortedPlayers_Race`
+#### sortedPlayers_Race -- `array<PlayerCpInfo> sortedPlayers_Race`
 
 internal, deprecated
 
-#### `array<PlayerCpInfo> sortedPlayers_TimeAttack`
+#### sortedPlayers_TimeAttack -- `array<PlayerCpInfo> sortedPlayers_TimeAttack`
 
 internal, deprecated
 
-#### `const string type`
+#### type -- `const string type`
 
 
 
-## `class HookRaceStatsEventsBase_V2`
+## MLFeed::HookRaceStatsEventsBase_V2 (class)
 
 The main class used to access race data.
 It exposes 3 sorted lists of players, and general information about the map/race.
@@ -326,83 +332,89 @@ internal
 
 ### Properties
 
-#### `uint CPCount`
+#### CPCount -- `uint CPCount`
 
 The number of checkpoints each lap.
 Linked checkpoints are counted as 1 checkpoint, and goal waypoints are not counted.
 
-#### `uint CPsToFinish`
+#### CPsToFinish -- `uint CPsToFinish`
 
 The number of waypoints a player needs to hit to finish the race.
 In single lap races, this is 1 more than `.CPCount`.
 
-#### `uint CpCount`
+#### CpCount -- `uint CpCount`
 
 The number of checkpoints each lap.
 Linked checkpoints are counted as 1 checkpoint, and goal waypoints are not counted.
 
-#### `uint LapCount`
+#### LapCount -- `uint LapCount`
 
 The number of laps for this map.
 
-#### `const string Map`
+#### LastRecordTime -- `int LastRecordTime`
+
+When the player sets a new personal best, this is set to that time.
+Reset to -1 at the start of each map.
+Usage: `if (lastRecordTime != RaceData.LastRecordTime) OnNewRecord();`
+
+#### Map -- `const string Map`
 
 The map UID
 
-#### `const array<PlayerCpInfo_V2>@ SortedPlayers_Race`
+#### SortedPlayers_Race -- `const array<PlayerCpInfo_V2>@ SortedPlayers_Race`
 
 An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest.
 
-#### `const array<PlayerCpInfo_V2>@ SortedPlayers_Race_Respawns`
+#### SortedPlayers_Race_Respawns -- `const array<PlayerCpInfo_V2>@ SortedPlayers_Race_Respawns`
 
 An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest, accounting for player respawns.
 
-#### `const array<PlayerCpInfo_V2>@ SortedPlayers_TimeAttack`
+#### SortedPlayers_TimeAttack -- `const array<PlayerCpInfo_V2>@ SortedPlayers_TimeAttack`
 
 An array of `PlayerCpInfo_V2`s sorted by best time to worst time.
 
-#### `Meta::Plugin@ SourcePlugin`
+#### SourcePlugin -- `Meta::Plugin@ SourcePlugin`
 
-#### `uint SpawnCounter`
+#### SpawnCounter -- `uint SpawnCounter`
 
 This increments by 1 each frame a player spawns.
 When players spawn simultaneously, their PlayerCpInfo.spawnIndex values are the same.
 This is useful for some sorting methods.
 This value is set to 0 on plugin load and never reset.
 
-#### `array<PlayerCpInfo_V2>@ _SortedPlayers_Race`
+#### _SortedPlayers_Race -- `array<PlayerCpInfo_V2>@ _SortedPlayers_Race`
 
 internal
 
-#### `array<PlayerCpInfo_V2>@ _SortedPlayers_Race_Respawns`
+#### _SortedPlayers_Race_Respawns -- `array<PlayerCpInfo_V2>@ _SortedPlayers_Race_Respawns`
 
 internal
 
-#### `array<PlayerCpInfo_V2>@ _SortedPlayers_TimeAttack`
+#### _SortedPlayers_TimeAttack -- `array<PlayerCpInfo_V2>@ _SortedPlayers_TimeAttack`
 
 internal
 
-#### `string lastMap`
+#### lastMap -- `string lastMap`
 
 the prior map, prefer .Map
 
-#### `dictionary latestPlayerStats`
+#### latestPlayerStats -- `dictionary latestPlayerStats`
 
 internal... but it's a map of player name => player object
 
-#### `array<PlayerCpInfo> sortedPlayers_Race`
+#### sortedPlayers_Race -- `array<PlayerCpInfo> sortedPlayers_Race`
 
 internal, deprecated
 
-#### `array<PlayerCpInfo> sortedPlayers_TimeAttack`
+#### sortedPlayers_TimeAttack -- `array<PlayerCpInfo> sortedPlayers_TimeAttack`
 
 internal, deprecated
 
-#### `const string type`
+#### type -- `const string type`
 
 
 
-## `class HookRecordEventsBase`
+## MLFeed::HookRecordEventsBase (class)
 
 ### Functions
 
@@ -412,19 +424,19 @@ internal, deprecated
 
 ### Properties
 
-#### `int LastRecordTime`
+#### LastRecordTime -- `int LastRecordTime`
 
 When the player sets a new personal best, this is set to that time.
 Reset to -1 at the start of each map.
 Usage: `if (lastRecordTime != RaceData.LastRecordTime) OnNewRecord();`
 
-#### `Meta::Plugin@ SourcePlugin`
+#### SourcePlugin -- `Meta::Plugin@ SourcePlugin`
 
-#### `const string type`
+#### type -- `const string type`
 
 
 
-## `class KoDataProxy`
+## MLFeed::KoDataProxy (class)
 
 Main source of information about KO rounds.
 Proxy for the internal type `KoFeed::HookKoStatsEvents`.
@@ -438,53 +450,53 @@ It has only 3 properties: `name`, `isAlive`, and `isDNF`.
 
 ### Properties
 
-#### `int Division`
+#### Division -- `int Division`
 
 The current division number. *(Note: possibly inaccurate. Use with caution.)*
 
-#### `const string GameMode`
+#### GameMode -- `const string GameMode`
 
 The current game mode, e.g., `TM_KnockoutDaily_Online`, or `TM_TimeAttack_Online`, etc.
 
-#### `int KOsMilestone`
+#### KOsMilestone -- `int KOsMilestone`
 
 KOs per round will change when the number of players is <= KOsMilestone.
 
-#### `int KOsNumber`
+#### KOsNumber -- `int KOsNumber`
 
 KOs per round.
 
-#### `const string Map`
+#### Map -- `const string Map`
 
 The current map UID
 
-#### `int MapRoundNb`
+#### MapRoundNb -- `int MapRoundNb`
 
 The current round number for this map.
 
-#### `int MapRoundTotal`
+#### MapRoundTotal -- `int MapRoundTotal`
 
 The total number of rounds for this map.
 
-#### `const array<string> Players`
+#### Players -- `const array<string> Players`
 
 A `string[]` of player names. It includes all players in the KO round, even if they've left.
 
-#### `int PlayersNb`
+#### PlayersNb -- `int PlayersNb`
 
 The number of players participating.
 
-#### `int RoundNb`
+#### RoundNb -- `int RoundNb`
 
 The round number over all maps. (I think)
 
-#### `int RoundTotal`
+#### RoundTotal -- `int RoundTotal`
 
 The total number of rounds over all maps. (I think)
 
 
 
-## `class KoPlayerState`
+## MLFeed::KoPlayerState (class)
 
 A player's state in a KO match
 
@@ -492,21 +504,21 @@ A player's state in a KO match
 
 ### Properties
 
-#### `bool isAlive`
+#### isAlive -- `bool isAlive`
 
 Whether the player is still 'in'; `false` implies they have been knocked out.
 
-#### `bool isDNF`
+#### isDNF -- `bool isDNF`
 
 Whether the player DNF'd or not. This is set to false the round after that player DNFs.
 
-#### `string name`
+#### name -- `string name`
 
 The player's name.
 
 
 
-## `class PlayerCpInfo`
+## MLFeed::PlayerCpInfo (class)
 
 Each's players status in the race, with a focus on CP related info.
 
@@ -520,49 +532,49 @@ Formatted as: "PlayerCpInfo(name, cpCount, lastCpTime, spawnStatus, raceRank, ta
 
 ### Properties
 
-#### `bool IsSpawned`
+#### IsSpawned -- `bool IsSpawned`
 
 Whether the player is spawned
 
-#### `int bestTime`
+#### bestTime -- `int bestTime`
 
 The player's best time this session
 
-#### `int cpCount`
+#### cpCount -- `int cpCount`
 
 How many CPs that player currently has
 
-#### `array<int> cpTimes`
+#### cpTimes -- `array<int> cpTimes`
 
-The times of each of their CPs since respawning
+The CP times of that player (including the 0th cp at the 0th index; which will always be 0)
 
-#### `int lastCpTime`
+#### lastCpTime -- `int lastCpTime`
 
 Their last CP time as on their chronometer
 
-#### `string name`
+#### name -- `string name`
 
 The player's name
 
-#### `uint raceRank`
+#### raceRank -- `uint raceRank`
 
 The player's rank as measured in a race (when all players would spawn at the same time).
 
-#### `uint spawnIndex`
+#### spawnIndex -- `uint spawnIndex`
 
 The spawn index when the player spawned
 
-#### `SpawnStatus spawnStatus`
+#### spawnStatus -- `SpawnStatus spawnStatus`
 
 The players's spawn status: NotSpawned, Spawning, or Spawned
 
-#### `uint taRank`
+#### taRank -- `uint taRank`
 
 The player's rank as measured in Time Attack (one more than their index in `RaceData.SortedPlayers_TimeAttack`)
 
 
 
-## `class PlayerCpInfo_V2`
+## MLFeed::PlayerCpInfo_V2 (class)
 
 Each's players status in the race, with a focus on CP related info.
 
@@ -588,149 +600,149 @@ internal use
 
 ### Properties
 
-#### `const array<uint>@ BestRaceTimes`
+#### BestRaceTimes -- `const array<uint>@ BestRaceTimes`
 
 this player's CP times for their best performance this session (since the map loaded)
 
-#### `int BestTime`
+#### BestTime -- `int BestTime`
 
 The player's best time this session
 
-#### `int CpCount`
+#### CpCount -- `int CpCount`
 
 How many CPs that player currently has
 
-#### `const array<int>@ CpTimes`
+#### CpTimes -- `const array<int>@ CpTimes`
 
-The times of each of their CPs since respawning
+The CP times of that player (including the 0th cp at the 0th index; which will always be 0)
 
-#### `int CurrentRaceTime`
+#### CurrentRaceTime -- `int CurrentRaceTime`
 
 This player's CurrentRaceTime with latency taken into account
 
-#### `int CurrentRaceTimeRaw`
+#### CurrentRaceTimeRaw -- `int CurrentRaceTimeRaw`
 
 This player's CurrentRaceTime without accounting for latency
 
-#### `bool IsLocalPlayer`
+#### IsLocalPlayer -- `bool IsLocalPlayer`
 
 whether this player corresponds to the physical player playing the game
 
-#### `bool IsSpawned`
+#### IsSpawned -- `bool IsSpawned`
 
 Whether the player is spawned
 
-#### `int LastCpOrRespawnTime`
+#### LastCpOrRespawnTime -- `int LastCpOrRespawnTime`
 
 Player's last CP time _OR_ their last respawn time if it is greater
 
-#### `int LastCpTime`
+#### LastCpTime -- `int LastCpTime`
 
-Player's last CP time
+Player's last CP time as on their chronometer
 
-#### `uint LastRespawnCheckpoint`
+#### LastRespawnCheckpoint -- `uint LastRespawnCheckpoint`
 
 the last checkpoint that the player respawned at
 
-#### `uint LastRespawnRaceTime`
+#### LastRespawnRaceTime -- `uint LastRespawnRaceTime`
 
 the last time this player respawned (measure against CurrentRaceTime)
 
-#### `int LastTheoreticalCpTime`
+#### LastTheoreticalCpTime -- `int LastTheoreticalCpTime`
 
 get the last CP time of the player minus time lost to respawns
 
-#### `const string Name`
+#### Name -- `const string Name`
 
 The player's name
 
-#### `uint NbRespawnsRequested`
+#### NbRespawnsRequested -- `uint NbRespawnsRequested`
 
 number of times the player has respawned
 
-#### `uint RaceRank`
+#### RaceRank -- `uint RaceRank`
 
 The player's rank as measured in a race (when all players would spawn at the same time).
 
-#### `uint RaceRespawnRank`
+#### RaceRespawnRank -- `uint RaceRespawnRank`
 
 The player's rank as measured in a race (when all players would spawn at the same time), accounting for respawns.
 
-#### `uint SpawnIndex`
+#### SpawnIndex -- `uint SpawnIndex`
 
 The spawn index when the player spawned
 
-#### `SpawnStatus SpawnStatus`
+#### SpawnStatus -- `SpawnStatus SpawnStatus`
 
 The players's spawn status: NotSpawned, Spawning, or Spawned
 
-#### `uint StartTime`
+#### StartTime -- `uint StartTime`
 
 when the player spawned (measured against GameTime)
 
-#### `uint TaRank`
+#### TaRank -- `uint TaRank`
 
 The player's rank as measured in Time Attack (one more than their index in `RaceData.SortedPlayers_TimeAttack`)
 
-#### `int TheoreticalRaceTime`
+#### TheoreticalRaceTime -- `int TheoreticalRaceTime`
 
 get the current race time of this player minus time lost to respawns
 
-#### `const array<int>@ TimeLostToRespawnByCp`
+#### TimeLostToRespawnByCp -- `const array<int>@ TimeLostToRespawnByCp`
 
-The times of each of their CPs since respawning
+The time lost due to respawning at each CP
 
-#### `uint TimeLostToRespawns`
+#### TimeLostToRespawns -- `uint TimeLostToRespawns`
 
-the amount of time the player has lost due to respawns
+the amount of time the player has lost due to respawns in total since the start of their current race/attempt
 
-#### `int bestTime`
+#### bestTime -- `int bestTime`
 
 The player's best time this session
 
-#### `int cpCount`
+#### cpCount -- `int cpCount`
 
 How many CPs that player currently has
 
-#### `array<int> cpTimes`
+#### cpTimes -- `array<int> cpTimes`
 
-The times of each of their CPs since respawning
+The CP times of that player (including the 0th cp at the 0th index; which will always be 0)
 
-#### `float lagDataPoints`
+#### lagDataPoints -- `float lagDataPoints`
 
-#### `int lastCpTime`
+#### lastCpTime -- `int lastCpTime`
 
 Their last CP time as on their chronometer
 
-#### `float latencyEstimate`
+#### latencyEstimate -- `float latencyEstimate`
 
 an estimate of the latency in ms between when a player passes a checkpoint and when we learn about it
 
-#### `string name`
+#### name -- `string name`
 
 The player's name
 
-#### `uint raceRank`
+#### raceRank -- `uint raceRank`
 
 The player's rank as measured in a race (when all players would spawn at the same time).
 
-#### `int raceRespawnRank`
+#### raceRespawnRank -- `int raceRespawnRank`
 
-#### `uint spawnIndex`
+#### spawnIndex -- `uint spawnIndex`
 
 The spawn index when the player spawned
 
-#### `SpawnStatus spawnStatus`
+#### spawnStatus -- `SpawnStatus spawnStatus`
 
 The players's spawn status: NotSpawned, Spawning, or Spawned
 
-#### `uint taRank`
+#### taRank -- `uint taRank`
 
 The player's rank as measured in Time Attack (one more than their index in `RaceData.SortedPlayers_TimeAttack`)
 
 
 
-## `class RaceDataProxy`
+## MLFeed::RaceDataProxy (class)
 
 Provides race data.
 It is a proxy for the internal type `RaceFeed::HookRaceStatsEvents`.
@@ -743,39 +755,39 @@ Get a player by name (see `.SortedPlayers_Race/TimeAttack` for players)
 
 ### Properties
 
-#### `uint CPCount`
+#### CPCount -- `uint CPCount`
 
 The number of checkpoints each lap.
 Linked checkpoints are counted as 1 checkpoint, and goal waypoints are not counted.
 
-#### `uint CPsToFinish`
+#### CPsToFinish -- `uint CPsToFinish`
 
 The number of waypoints a player needs to hit to finish the race.
 In single lap races, this is 1 more than `.CPCount`.
 
-#### `uint LapCount`
+#### LapCount -- `uint LapCount`
 
 The number of laps for this map.
 
-#### `int LastRecordTime`
+#### LastRecordTime -- `int LastRecordTime`
 
 When the player sets a new personal best, this is set to that time.
 Reset to -1 at the start of each map.
 Usage: `if (lastRecordTime != RaceData.LastRecordTime) OnNewRecord();`
 
-#### `const string Map`
+#### Map -- `const string Map`
 
 The map UID
 
-#### `const array<PlayerCpInfo> SortedPlayers_Race`
+#### SortedPlayers_Race -- `const array<PlayerCpInfo> SortedPlayers_Race`
 
 An array of `PlayerCpInfo`s sorted by most checkpoints to fewest.
 
-#### `const array<PlayerCpInfo> SortedPlayers_TimeAttack`
+#### SortedPlayers_TimeAttack -- `const array<PlayerCpInfo> SortedPlayers_TimeAttack`
 
 An array of `PlayerCpInfo`s sorted by best time to worst time.
 
-#### `uint SpawnCounter`
+#### SpawnCounter -- `uint SpawnCounter`
 
 This increments by 1 each frame a player spawns.
 When players spawn simultaneously, their PlayerCpInfo.spawnIndex values are the same.
@@ -784,7 +796,7 @@ This value is set to 0 on plugin load and never reset.
 
 
 
-## `enum RankType`
+## MLFeed::RankType (enum)
 
 sort method for players
 
@@ -793,7 +805,7 @@ sort method for players
 - `TimeAttack`
 
 
-## `class SharedGhostDataHook`
+## MLFeed::SharedGhostDataHook (class)
 
 Provides access to ghost info.
 This includes record ghosts loaded through the UI, and personal best ghosts.
@@ -808,21 +820,21 @@ Therefore, duplicate ghost infos may be recorded.
 
 ### Properties
 
-#### `const array<MLFeed::GhostInfo> Ghosts`
+#### Ghosts -- `const array<MLFeed::GhostInfo> Ghosts`
 
-Array of GhostInfos
+*Deprecated, prefer .Ghosts_V2*; Array of GhostInfos
 
-#### `uint NbGhosts`
+#### NbGhosts -- `uint NbGhosts`
 
 Number of currently loaded ghosts
 
-#### `Meta::Plugin@ SourcePlugin`
+#### SourcePlugin -- `Meta::Plugin@ SourcePlugin`
 
-#### `const string type`
+#### type -- `const string type`
 
 
 
-## `class SharedGhostDataHook_V2`
+## MLFeed::SharedGhostDataHook_V2 (class)
 
 Provides access to ghost info.
 This includes record ghosts loaded through the UI, and personal best ghosts.
@@ -838,25 +850,25 @@ V2 adds .IsLocalPlayer and .IsPersonalBest properties to GhostInfo objects.
 
 ### Properties
 
-#### `const array<MLFeed::GhostInfo> Ghosts`
+#### Ghosts -- `const array<MLFeed::GhostInfo> Ghosts`
 
-Array of GhostInfos
+*Deprecated, prefer .Ghosts_V2*; Array of GhostInfos
 
-#### `const array<MLFeed::GhostInfo_V2> Ghosts_V2`
+#### Ghosts_V2 -- `const array<MLFeed::GhostInfo_V2> Ghosts_V2`
 
 Array of GhostInfo_V2s
 
-#### `uint NbGhosts`
+#### NbGhosts -- `uint NbGhosts`
 
 Number of currently loaded ghosts
 
-#### `Meta::Plugin@ SourcePlugin`
+#### SourcePlugin -- `Meta::Plugin@ SourcePlugin`
 
-#### `const string type`
+#### type -- `const string type`
 
 
 
-## `enum SpawnStatus`
+## MLFeed::SpawnStatus (enum)
 
 The spawn status of a player.
 
