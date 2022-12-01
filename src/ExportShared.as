@@ -561,6 +561,9 @@ namespace MLFeed {
         const uint[]@ get_Checkpoints() const { return _Checkpoints; }
     }
 
+    /** Information about a currently loaded ghost.
+     * Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
+     */
     shared class GhostInfo_V2 : GhostInfo {
         bool IsLocalPlayer;
         bool IsPersonalBest;

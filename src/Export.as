@@ -13,7 +13,7 @@ namespace MLFeed {
 
     /**
      * Get a player's best CP times since the map loaded.
-     * Deprecated: prefer .
+     * Deprecated: prefer PlayerCpInfo_V2.BestRaceTimes.
      */
     import const array<uint>@ GetPlayersBestTimes(const string &in playerName) from "MLFeed";
 

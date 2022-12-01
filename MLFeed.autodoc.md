@@ -1,28 +1,36 @@
 # NS: MLFeed
 
-
-
 ## Functions
 
 ### GetGhostData -- `const SharedGhostDataHook_V2@ GetGhostData()`
 
-### GetGhostData -- `const SharedGhostDataHook_V2@ GetGhostData()`
+Object exposing GhostInfos for each loaded ghost.
+This includes record ghosts loaded through the UI, and personal best ghosts.
+When a ghost is *unloaded* from a map, it's info is not removed (it remains cached).
+Therefore, duplicate ghost infos may be recorded.
+The list is cleared on map change.
 
 ### GetKoData -- `const KoDataProxy@ GetKoData()`
 
-### GetKoData -- `const KoDataProxy@ GetKoData()`
+Your plugin's `KoDataProxy@` that exposes KO round information, and each player's , spawn info, and lists of players for each sorting method.
+You can call this function as often as you like -- it will always return the same proxy instance based on plugin ID.
 
 ### GetPlayersBestTimes -- `const array<uint>@ GetPlayersBestTimes(const string &in playerName)`
 
-### GetPlayersBestTimes -- `const array<uint>@ GetPlayersBestTimes(const string &in playerName)`
+Get a player's best CP times since the map loaded.
+Deprecated: prefer PlayerCpInfo_V2.BestRaceTimes.
 
 ### GetRaceData -- `const RaceDataProxy@ GetRaceData()`
 
-### GetRaceData -- `const RaceDataProxy@ GetRaceData()`
+deprecated: prefer `MLFeed::GetRaceData_V2()`
+Your plugin's `RaceDataProxy@` that exposes checkpoint data, spawn info, and lists of players for each sorting method.
+You can call this function as often as you like -- it will always return the same proxy instance based on plugin ID.
 
 ### GetRaceData_V2 -- `const HookRaceStatsEventsBase_V2@ GetRaceData_V2()`
 
-### GetRaceData_V2 -- `const HookRaceStatsEventsBase_V2@ GetRaceData_V2()`
+Exposes checkpoint data, spawn info, and lists of players for each sorting method.
+You can call this function as often as you like.
+Backwards compatible with RaceDataProxy (except that it's a different type; properties/methods are the same, though.)
 
 ### GhostInfo -- `GhostInfo@ GhostInfo(const MLHook::PendingEvent@ &in event)`
 
@@ -30,6 +38,9 @@ Information about a currently loaded ghost.
 Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
 
 ### GhostInfo_V2 -- `GhostInfo_V2@ GhostInfo_V2(const MLHook::PendingEvent@ &in event)`
+
+Information about a currently loaded ghost.
+Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
 
 ### HookKoStatsEventsBase -- `HookKoStatsEventsBase@ HookKoStatsEventsBase(const string &in type)`
 
@@ -111,18 +122,6 @@ direction to move; down=-1, up=1
 - `Up`
 
 
-## `class GetPlayersBestTimes`
-
-```angelscript_snippet
-funcdef const array<uint>@ GetPlayersBestTimes(const string &in playerName);
-```
-
-
-
-
-
-
-
 ## `class GhostInfo`
 
 Information about a currently loaded ghost.
@@ -161,6 +160,9 @@ Ghost.Result.Time
 
 
 ## `class GhostInfo_V2`
+
+Information about a currently loaded ghost.
+Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
 
 ### Functions
 
