@@ -1,42 +1,28 @@
 # NS: MLFeed
 
-## Child Namespaces
 
-* MLFeed::KoPlayerState
-* MLFeed::HookKoStatsEventsBase
-* MLFeed::KoDataProxy
-* MLFeed::PlayerCpInfo
-* MLFeed::PlayerCpInfo_V2
-* MLFeed::HookRaceStatsEventsBase
-* MLFeed::HookRaceStatsEventsBase_V2
-* MLFeed::HookRecordEventsBase
-* MLFeed::RaceDataProxy
-* MLFeed::SharedGhostDataHook
-* MLFeed::SharedGhostDataHook_V2
-* MLFeed::GhostInfo
-* MLFeed::GhostInfo_V2
 
 ## Functions
 
-### GetGhostData -- `const SharedGhostDataHook_V2 GetGhostData()`
+### GetGhostData -- `const SharedGhostDataHook_V2@ GetGhostData()`
 
-### GetGhostData -- `const SharedGhostDataHook_V2 GetGhostData()`
+### GetGhostData -- `const SharedGhostDataHook_V2@ GetGhostData()`
 
-### GetKoData -- `const KoDataProxy GetKoData()`
+### GetKoData -- `const KoDataProxy@ GetKoData()`
 
-### GetKoData -- `const KoDataProxy GetKoData()`
-
-### GetPlayersBestTimes -- `const array<uint>@ GetPlayersBestTimes(const string &in playerName)`
+### GetKoData -- `const KoDataProxy@ GetKoData()`
 
 ### GetPlayersBestTimes -- `const array<uint>@ GetPlayersBestTimes(const string &in playerName)`
 
-### GetRaceData -- `const RaceDataProxy GetRaceData()`
+### GetPlayersBestTimes -- `const array<uint>@ GetPlayersBestTimes(const string &in playerName)`
 
-### GetRaceData -- `const RaceDataProxy GetRaceData()`
+### GetRaceData -- `const RaceDataProxy@ GetRaceData()`
 
-### GetRaceData_V2 -- `const HookRaceStatsEventsBase_V2 GetRaceData_V2()`
+### GetRaceData -- `const RaceDataProxy@ GetRaceData()`
 
-### GetRaceData_V2 -- `const HookRaceStatsEventsBase_V2 GetRaceData_V2()`
+### GetRaceData_V2 -- `const HookRaceStatsEventsBase_V2@ GetRaceData_V2()`
+
+### GetRaceData_V2 -- `const HookRaceStatsEventsBase_V2@ GetRaceData_V2()`
 
 ### GhostInfo -- `GhostInfo@ GhostInfo(const MLHook::PendingEvent@ &in event)`
 
@@ -50,6 +36,9 @@ Constructor expects a pending event with data: `{IdName, Nickname, Result_Score,
 ### HookRaceStatsEventsBase -- `HookRaceStatsEventsBase@ HookRaceStatsEventsBase(const string &in type)`
 
 ### HookRaceStatsEventsBase_V2 -- `HookRaceStatsEventsBase_V2@ HookRaceStatsEventsBase_V2(const string &in type)`
+
+The main class used to access race data.
+It exposes 3 sorted lists of players, and general information about the map/race.
 
 ### HookRecordEventsBase -- `HookRecordEventsBase@ HookRecordEventsBase(const string &in type)`
 
@@ -76,7 +65,11 @@ Each's players status in the race, with a focus on CP related info.
 
 ### PlayerCpInfo_V2 -- `PlayerCpInfo_V2@ PlayerCpInfo_V2(MLHook::PendingEvent@ event, uint _spawnIndex)`
 
+Each's players status in the race, with a focus on CP related info.
+
 ### PlayerCpInfo_V2 -- `PlayerCpInfo_V2@ PlayerCpInfo_V2(PlayerCpInfo_V2@ _from, int cpOffset)`
+
+Each's players status in the race, with a focus on CP related info.
 
 ### RaceDataProxy -- `RaceDataProxy@ RaceDataProxy(HookRaceStatsEventsBase@ h, HookRecordEventsBase@ rh)`
 
@@ -112,8 +105,22 @@ returns the name of the local player, or an empty string if this is not yet know
 
 ## `enum Dir`
 
+direction to move; down=-1, up=1
+
 - `Down`
 - `Up`
+
+
+## `class GetPlayersBestTimes`
+
+```angelscript_snippet
+funcdef const array<uint>@ GetPlayersBestTimes(const string &in playerName);
+```
+
+
+
+
+
 
 
 ## `class GhostInfo`
@@ -195,7 +202,7 @@ Ghost.Result.Time
 
 ### Functions
 
-#### GetPlayerState -- `KoPlayerState GetPlayerState(const string &in name)`
+#### GetPlayerState -- `KoPlayerState@ GetPlayerState(const string &in name)`
 
 #### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
 
@@ -203,7 +210,7 @@ Ghost.Result.Time
 
 ### Properties
 
-#### `Meta::Plugin SourcePlugin`
+#### `Meta::Plugin@ SourcePlugin`
 
 #### `int division`
 
@@ -239,7 +246,9 @@ ServerNumber
 
 ### Functions
 
-#### GetPlayer -- `PlayerCpInfo GetPlayer(const string &in name)`
+#### GetPlayer -- `PlayerCpInfo@ GetPlayer(const string &in name)`
+
+*deprecated; use GetPlayer_V2* get a player's cp info
 
 #### NotifyMLHookError -- `void NotifyMLHookError(const string &in msg)`
 
@@ -249,21 +258,42 @@ ServerNumber
 
 #### `uint CPsToFinish`
 
+The number of waypoints a player needs to hit to finish the race.
+In single lap races, this is 1 more than `.CPCount`.
+
 #### `uint CpCount`
+
+The number of checkpoints each lap.
+Linked checkpoints are counted as 1 checkpoint, and goal waypoints are not counted.
 
 #### `uint LapCount`
 
-#### `Meta::Plugin SourcePlugin`
+The number of laps for this map.
+
+#### `Meta::Plugin@ SourcePlugin`
 
 #### `uint SpawnCounter`
 
+This increments by 1 each frame a player spawns.
+When players spawn simultaneously, their PlayerCpInfo.spawnIndex values are the same.
+This is useful for some sorting methods.
+This value is set to 0 on plugin load and never reset.
+
 #### `string lastMap`
+
+the prior map, prefer .Map
 
 #### `dictionary latestPlayerStats`
 
+internal... but it's a map of player name => player object
+
 #### `array<PlayerCpInfo> sortedPlayers_Race`
 
+internal, deprecated
+
 #### `array<PlayerCpInfo> sortedPlayers_TimeAttack`
+
+internal, deprecated
 
 #### `const string type`
 
@@ -271,11 +301,16 @@ ServerNumber
 
 ## `class HookRaceStatsEventsBase_V2`
 
+The main class used to access race data.
+It exposes 3 sorted lists of players, and general information about the map/race.
+
 ### Functions
 
-#### GetPlayer -- `PlayerCpInfo GetPlayer(const string &in name)`
+#### GetPlayer -- `PlayerCpInfo@ GetPlayer(const string &in name)`
 
-#### GetPlayer_V2 -- `const PlayerCpInfo_V2 GetPlayer_V2(const string &in name) const`
+*deprecated; use GetPlayer_V2* get a player's cp info
+
+#### GetPlayer_V2 -- `const PlayerCpInfo_V2@ GetPlayer_V2(const string &in name) const`
 
 Get a player's info
 
@@ -283,7 +318,9 @@ Get a player's info
 
 #### OnEvent -- `void OnEvent(PendingEvent@ event)`
 
-#### _GetPlayer_V2 -- `PlayerCpInfo_V2 _GetPlayer_V2(const string &in name)`
+#### _GetPlayer_V2 -- `PlayerCpInfo_V2@ _GetPlayer_V2(const string &in name)`
+
+internal
 
 ### Properties
 
@@ -294,9 +331,17 @@ Linked checkpoints are counted as 1 checkpoint, and goal waypoints are not count
 
 #### `uint CPsToFinish`
 
+The number of waypoints a player needs to hit to finish the race.
+In single lap races, this is 1 more than `.CPCount`.
+
 #### `uint CpCount`
 
+The number of checkpoints each lap.
+Linked checkpoints are counted as 1 checkpoint, and goal waypoints are not counted.
+
 #### `uint LapCount`
+
+The number of laps for this map.
 
 #### `const string Map`
 
@@ -314,23 +359,42 @@ An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest, accounting 
 
 An array of `PlayerCpInfo_V2`s sorted by best time to worst time.
 
-#### `Meta::Plugin SourcePlugin`
+#### `Meta::Plugin@ SourcePlugin`
 
 #### `uint SpawnCounter`
 
+This increments by 1 each frame a player spawns.
+When players spawn simultaneously, their PlayerCpInfo.spawnIndex values are the same.
+This is useful for some sorting methods.
+This value is set to 0 on plugin load and never reset.
+
 #### `array<PlayerCpInfo_V2>@ _SortedPlayers_Race`
+
+internal
 
 #### `array<PlayerCpInfo_V2>@ _SortedPlayers_Race_Respawns`
 
+internal
+
 #### `array<PlayerCpInfo_V2>@ _SortedPlayers_TimeAttack`
+
+internal
 
 #### `string lastMap`
 
+the prior map, prefer .Map
+
 #### `dictionary latestPlayerStats`
+
+internal... but it's a map of player name => player object
 
 #### `array<PlayerCpInfo> sortedPlayers_Race`
 
+internal, deprecated
+
 #### `array<PlayerCpInfo> sortedPlayers_TimeAttack`
+
+internal, deprecated
 
 #### `const string type`
 
@@ -348,7 +412,11 @@ An array of `PlayerCpInfo_V2`s sorted by best time to worst time.
 
 #### `int LastRecordTime`
 
-#### `Meta::Plugin SourcePlugin`
+When the player sets a new personal best, this is set to that time.
+Reset to -1 at the start of each map.
+Usage: `if (lastRecordTime != RaceData.LastRecordTime) OnNewRecord();`
+
+#### `Meta::Plugin@ SourcePlugin`
 
 #### `const string type`
 
@@ -361,7 +429,7 @@ Proxy for the internal type `KoFeed::HookKoStatsEvents`.
 
 ### Functions
 
-#### GetPlayerState -- `const KoPlayerState GetPlayerState(const string &in name) const`
+#### GetPlayerState -- `const KoPlayerState@ GetPlayerState(const string &in name) const`
 
 Get a player's MLFeed::KoPlayerState.
 It has only 3 properties: `name`, `isAlive`, and `isDNF`.
@@ -494,9 +562,13 @@ The player's rank as measured in Time Attack (one more than their index in `Race
 
 ## `class PlayerCpInfo_V2`
 
+Each's players status in the race, with a focus on CP related info.
+
 ### Functions
 
 #### ModifyRank -- `void ModifyRank(Dir dir, RankType rt)`
+
+internal use
 
 #### ToString -- `string ToString() const`
 
@@ -507,6 +579,8 @@ Formatted as: "PlayerCpInfo(name, rr: 17, tr: 3, cp: 5 (0:43.231), Spawned, bt: 
 Formatted as: "PlayerCpInfo(name, cpCount, lastCpTime, spawnStatus, raceRank, taRank, bestTime)"
 
 #### UpdateFrom -- `void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex, bool callSuper)`
+
+internal use
 
 #### UpdateFrom -- `void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex)`
 
@@ -598,6 +672,8 @@ The player's rank as measured in Time Attack (one more than their index in `Race
 
 #### `int TheoreticalRaceTime`
 
+get the current race time of this player minus time lost to respawns
+
 #### `const array<int>@ TimeLostToRespawnByCp`
 
 The times of each of their CPs since respawning
@@ -625,6 +701,8 @@ The times of each of their CPs since respawning
 Their last CP time as on their chronometer
 
 #### `float latencyEstimate`
+
+an estimate of the latency in ms between when a player passes a checkpoint and when we learn about it
 
 #### `string name`
 
@@ -657,7 +735,7 @@ It is a proxy for the internal type `RaceFeed::HookRaceStatsEvents`.
 
 ### Functions
 
-#### GetPlayer -- `const PlayerCpInfo GetPlayer(const string &in name) const`
+#### GetPlayer -- `const PlayerCpInfo@ GetPlayer(const string &in name) const`
 
 Get a player by name (see `.SortedPlayers_Race/TimeAttack` for players)
 
@@ -706,6 +784,8 @@ This value is set to 0 on plugin load and never reset.
 
 ## `enum RankType`
 
+sort method for players
+
 - `Race`
 - `RaceRespawns`
 - `TimeAttack`
@@ -734,7 +814,7 @@ Array of GhostInfos
 
 Number of currently loaded ghosts
 
-#### `Meta::Plugin SourcePlugin`
+#### `Meta::Plugin@ SourcePlugin`
 
 #### `const string type`
 
@@ -768,7 +848,7 @@ Array of GhostInfo_V2s
 
 Number of currently loaded ghosts
 
-#### `Meta::Plugin SourcePlugin`
+#### `Meta::Plugin@ SourcePlugin`
 
 #### `const string type`
 
@@ -781,190 +861,3 @@ The spawn status of a player.
 - `NotSpawned`
 - `Spawning`
 - `Spawned`
-
-
-
-
-----------
-
-# NS: MLFeed::KoPlayerState
-
-
-
-
-
-
-
-
-
-
-
-
-----------
-
-# NS: MLFeed::HookKoStatsEventsBase
-
-
-
-
-
-
-
-
-
-
-
-
-----------
-
-# NS: MLFeed::KoDataProxy
-
-
-
-
-
-
-
-
-
-
-
-
-----------
-
-# NS: MLFeed::PlayerCpInfo
-
-
-
-
-
-
-
-
-
-
-
-
-----------
-
-# NS: MLFeed::PlayerCpInfo_V2
-
-
-
-
-
-
-
-
-
-
-
-
-----------
-
-# NS: MLFeed::HookRaceStatsEventsBase
-
-
-
-
-
-
-
-
-
-
-
-
-----------
-
-# NS: MLFeed::HookRaceStatsEventsBase_V2
-
-
-
-
-
-
-
-
-
-
-
-
-----------
-
-# NS: MLFeed::HookRecordEventsBase
-
-
-
-
-
-
-
-
-
-
-
-
-----------
-
-# NS: MLFeed::RaceDataProxy
-
-
-
-
-
-
-
-
-
-
-
-
-----------
-
-# NS: MLFeed::SharedGhostDataHook
-
-
-
-
-
-
-
-
-
-
-
-
-----------
-
-# NS: MLFeed::SharedGhostDataHook_V2
-
-
-
-
-
-
-
-
-
-
-
-
-----------
-
-# NS: MLFeed::GhostInfo
-
-
-
-
-
-
-
-
-
-
-
-
-----------
-
-# NS: MLFeed::GhostInfo_V2

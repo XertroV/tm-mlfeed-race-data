@@ -174,6 +174,7 @@ namespace MLFeed {
         }
     }
 
+    /* Each's players status in the race, with a focus on CP related info. */
     shared class PlayerCpInfo_V2 : PlayerCpInfo {
         protected int lastCpTimeRaw;
         // protected int LastCpOrRespawnTime;
@@ -214,6 +215,7 @@ namespace MLFeed {
             }
             return LastCpTime - tl;
         }
+        // get the current race time of this player minus time lost to respawns
         int get_TheoreticalRaceTime() const {
             return CurrentRaceTime - TimeLostToRespawns;
         }
@@ -254,13 +256,16 @@ namespace MLFeed {
         // the amount of time the player has lost due to respawns
         uint TimeLostToRespawns;
 
+        // an estimate of the latency in ms between when a player passes a checkpoint and when we learn about it
         float latencyEstimate = 0.;
         float lagDataPoints = 0;
 
+        // internal use
         void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex, bool callSuper) {
             throw("Implemented in RaceFeed::_PlayerCpInfo_V2");
         }
 
+        // internal use
         void ModifyRank(Dir dir, RankType rt) {
             if (rt == RankType::Race) {
                 raceRank += int(dir);
@@ -278,36 +283,59 @@ namespace MLFeed {
         }
     }
 
+    // direction to move; down=-1, up=1
     shared enum Dir {
         Down = -1, Up = 1
     }
 
+    // sort method for players
     shared enum RankType {
         Race, RaceRespawns, TimeAttack
     }
 
     shared class HookRaceStatsEventsBase : MLHook::HookMLEventsByType {
+        // the prior map, prefer .Map
         string lastMap;
+        // internal... but it's a map of player name => player object
         dictionary latestPlayerStats;
+        // internal, deprecated
         array<PlayerCpInfo@> sortedPlayers_Race;
+        // internal, deprecated
         array<PlayerCpInfo@> sortedPlayers_TimeAttack;
+        /* The number of checkpoints each lap.
+           Linked checkpoints are counted as 1 checkpoint, and goal waypoints are not counted.
+        */
         uint CpCount;
+        /* The number of laps for this map. */
         uint LapCount;
+        /** This increments by 1 each frame a player spawns.
+         * When players spawn simultaneously, their PlayerCpInfo.spawnIndex values are the same.
+         * This is useful for some sorting methods.
+         * This value is set to 0 on plugin load and never reset.
+        */
         uint SpawnCounter = 0;
 
         HookRaceStatsEventsBase(const string &in type) {
             super(type);
         }
 
+        // *deprecated; use GetPlayer_V2* get a player's cp info
         PlayerCpInfo@ GetPlayer(const string &in name) {
             return cast<PlayerCpInfo>(latestPlayerStats[name]);
         }
 
+        /* The number of waypoints a player needs to hit to finish the race.
+           In single lap races, this is 1 more than `.CPCount`.
+        */
         uint get_CPsToFinish() const final {
             return (CpCount + 1) * LapCount;
         }
     }
 
+    /**
+     * The main class used to access race data.
+     * It exposes 3 sorted lists of players, and general information about the map/race.
+     */
     shared class HookRaceStatsEventsBase_V2 : HookRaceStatsEventsBase {
         protected array<PlayerCpInfo_V2@> v2_sortedPlayers_Race;
         protected array<PlayerCpInfo_V2@> v2_sortedPlayers_TimeAttack;
@@ -323,6 +351,7 @@ namespace MLFeed {
             return cast<PlayerCpInfo_V2>(latestPlayerStats[name]);
         }
 
+        // internal
         PlayerCpInfo_V2@ _GetPlayer_V2(const string &in name) {
             if (not latestPlayerStats.Exists(name)) return null;
             return cast<PlayerCpInfo_V2>(latestPlayerStats[name]);
@@ -343,14 +372,17 @@ namespace MLFeed {
             return v2_sortedPlayers_Race_Respawns;
         }
 
+        // internal
         array<PlayerCpInfo_V2@>@ get__SortedPlayers_Race() {
             return v2_sortedPlayers_Race;
         }
 
+        // internal
         array<PlayerCpInfo_V2@>@ get__SortedPlayers_TimeAttack() {
             return v2_sortedPlayers_TimeAttack;
         }
 
+        // internal
         array<PlayerCpInfo_V2@>@ get__SortedPlayers_Race_Respawns() {
             return v2_sortedPlayers_Race_Respawns;
         }
@@ -375,6 +407,10 @@ namespace MLFeed {
             super(type);
         }
 
+	    /** When the player sets a new personal best, this is set to that time.
+        * Reset to -1 at the start of each map.
+        * Usage: `if (lastRecordTime != RaceData.LastRecordTime) OnNewRecord();`
+        */
         int get_LastRecordTime() const final {
             return _lastRecordTime;
         }
