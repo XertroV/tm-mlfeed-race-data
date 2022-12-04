@@ -407,6 +407,7 @@ namespace MLFeed {
         int get_LastRecordTime() const {
             // return recHook.LastRecordTime;
             throw("implemented elsewhere");
+            return 0;
         }
     }
 
