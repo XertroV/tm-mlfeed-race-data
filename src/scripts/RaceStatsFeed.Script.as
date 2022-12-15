@@ -101,6 +101,9 @@ declare CSmPlayer::ESpawnStatus[Text] LastSpawn;
 declare Integer MostCPsSeen;
 
 Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
+    while (Player.Score == Null) {
+        yield;
+    }
     // tuningstart();
     declare Text Name = Player.User.Name;
     declare CPCount = Player.RaceWaypointTimes.count;
@@ -197,6 +200,9 @@ main() {
         yield;
     }
     MLHookLog("RaceStatsFeed got init players");
+    yield;
+    yield;
+    yield;
     yield;
     InitialSend();
     MLHookLog("RaceStatsFeed did init send");
