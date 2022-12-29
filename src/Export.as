@@ -10,6 +10,7 @@ namespace MLFeed {
      * Backwards compatible with RaceDataProxy (except that it's a different type; properties/methods are the same, though.)
      */
     import const HookRaceStatsEventsBase_V2@ GetRaceData_V2() from "MLFeed";
+    import const HookRaceStatsEventsBase_V3@ GetRaceData_V3() from "MLFeed";
 
     /**
      * Get a player's best CP times since the map loaded.

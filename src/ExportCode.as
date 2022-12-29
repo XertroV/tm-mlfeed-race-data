@@ -13,6 +13,7 @@ namespace MLFeed {
         }
         return ret;
     }
+
     /**
      * Exposes checkpoint data, spawn info, and lists of players for each sorting method.
      * You can call this function as often as you like.
@@ -21,6 +22,16 @@ namespace MLFeed {
     const HookRaceStatsEventsBase_V2@ GetRaceData_V2() {
         return theHook;
     };
+
+    /**
+     * Exposes checkpoint data, spawn info, and lists of players for each sorting method.
+     * You can call this function as often as you like.
+     * Backwards compatible with RaceDataProxy (except that it's a different type; properties/methods are the same, though.)
+     */
+    const HookRaceStatsEventsBase_V3@ GetRaceData_V3() {
+        return theHook;
+    };
+
 
     /**
      * Get a player's best CP times since the map loaded.
