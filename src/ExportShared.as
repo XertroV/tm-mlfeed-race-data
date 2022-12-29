@@ -284,6 +284,18 @@ namespace MLFeed {
         }
     }
 
+    //shared
+    class PlayerCpInfo_V3 : PlayerCpInfo_V2 {
+        // this player's CP times for their best lap this session, measured from the start of the lap.
+        const array<uint>@ BestLapTimes;
+        PlayerCpInfo_V3(MLHook::PendingEvent@ event, uint _spawnIndex) {
+            super(event, _spawnIndex);
+        }
+        PlayerCpInfo_V3(PlayerCpInfo_V3@ _from, int cpOffset) {
+            super(_from, cpOffset);
+        }
+    }
+
     // direction to move; down=-1, up=1
     shared enum Dir {
         Down = -1, Up = 1

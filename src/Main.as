@@ -155,11 +155,11 @@ namespace RaceFeed {
         return Cmp::Gt;
     }
 
-    class _PlayerCpInfo_V2 : MLFeed::PlayerCpInfo_V2 {
-        _PlayerCpInfo_V2(MLHook::PendingEvent@ event, uint _spawnIndex) {
+    class _PlayerCpInfo_V3 : MLFeed::PlayerCpInfo_V3 {
+        _PlayerCpInfo_V3(MLHook::PendingEvent@ event, uint _spawnIndex) {
             super(event, _spawnIndex);
         }
-        _PlayerCpInfo_V2(_PlayerCpInfo_V2@ _from, int cpOffset) {
+        _PlayerCpInfo_V3(_PlayerCpInfo_V3@ _from, int cpOffset) {
             super(_from, cpOffset);
         }
 
@@ -276,7 +276,7 @@ namespace RaceFeed {
             if (hadPlayer) {
                 player.UpdateFrom(event, spawnIx);
             } else {
-                @player = _PlayerCpInfo_V2(event, spawnIx);
+                @player = _PlayerCpInfo_V3(event, spawnIx);
                 @latestPlayerStats[name] = player;
                 _SortedPlayers_Race.InsertLast(player);
                 _SortedPlayers_TimeAttack.InsertLast(player);
@@ -372,21 +372,39 @@ namespace RaceFeed {
             DuplicateArraysForVersion1();
         }
 
+        // internal
+        // todo: move to exported class later
+        MLFeed::PlayerCpInfo_V3@ _GetPlayer_V3(const string &in name) {
+            if (not latestPlayerStats.Exists(name)) return null;
+            return cast<MLFeed::PlayerCpInfo_V3>(latestPlayerStats[name]);
+        }
+
         // got best times for a player
         void UpdatePlayerRaceTimes(MLHook::PendingEvent@ event) {
-            // [name, current cp times, best cp times]
+            // [name, current cp times, best cp times, best lap times]
             string name = event.data[0];
-            // if (!bestPlayerTimes.Exists(name)) {}
+
+            auto currentCpsParts = string(event.data[1]).Split(",");
+            auto bestTimesParts = string(event.data[2]).Split(",");
+            auto bestLapTimesParts = string(event.data[3]).Split(",");
             bestPlayerTimes[name] = array<uint>();  // re-init this always so that we don't auto update if someone has a reference to old times
             uint[]@ playersTimes = cast<uint[]>(bestPlayerTimes[name]);
-            auto parts = string(event.data[2]).Split(",");
-            playersTimes.Resize(parts.Length);
-            for (uint i = 0; i < parts.Length; i++) {
-                playersTimes[i] = Text::ParseUInt(parts[i]);
+            uint[] bestLapTimes = array<uint>(bestLapTimesParts.Length);
+            playersTimes.Resize(bestTimesParts.Length);
+            for (uint i = 0; i < bestTimesParts.Length; i++) {
+                playersTimes[i] = Text::ParseUInt(bestTimesParts[i]);
             }
-            auto player = _GetPlayer_V2(name);
+            for (uint i = 0; i < bestLapTimesParts.Length; i++) {
+                bestLapTimes[i] = Text::ParseUInt(bestLapTimesParts[i]);
+            }
+            auto player = _GetPlayer_V3(name);
             if (player !is null) {
                 @player.BestRaceTimes = playersTimes;
+                @player.BestLapTimes = bestLapTimes;
+                for (uint i = 0; i < currentCpsParts.Length; i++) {
+                    if (i >= player.cpTimes.Length) break;
+                    player.cpTimes[i] = Text::ParseInt(currentCpsParts[i]);
+                }
             }
         }
 

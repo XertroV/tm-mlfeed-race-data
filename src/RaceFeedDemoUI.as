@@ -15,6 +15,7 @@ namespace RaceFeedUI {
             tabs.InsertLast(RaceRespawnsTab());
             tabs.InsertLast(TaTab());
             tabs.InsertLast(BestTimesTab());
+            tabs.InsertLast(BestLapTimesTab());
             tabs.InsertLast(CPTimes());
             tabs.InsertLast(RespawnsTab());
             tabs.InsertLast(RespawnsTimesTab());
@@ -256,6 +257,58 @@ namespace RaceFeedUI {
                             UI::TableNextColumn();
                             if (ps.BestRaceTimes is null || ps.BestRaceTimes.Length <= cp) continue;
                             UI::Text(Time::Format(ps.BestRaceTimes[cp]));
+                        }
+
+                        UI::TableNextColumn();
+                        if (UI::Button("View##"+ps.Name)) {
+                            tabs.InsertLast(PlayerTab(ps.Name));
+                            tabs[tabs.Length - 1].windowOpen = true;
+                        }
+                    }
+                }
+
+                UI::EndTable();
+            }
+        }
+    }
+
+    class BestLapTimesTab : TaTab {
+        BestLapTimesTab() {
+            super();
+        }
+
+        const string get_mode() override { return "Best Lap Times"; }
+
+        void DrawInner() override {
+            auto @players = Players;
+            UI::Text("Players ("+players.Length+") Best Lap Times.");
+            auto cpsPerLap = theHook.CPCount + 1;
+            uint nCols = 3 + Math::Min(cpsPerLap, 61); // max 64 cols
+            if (UI::BeginTable("players debug " + mode, nCols, UI::TableFlags::SizingStretchProp)) {
+
+                UI::TableSetupColumn("Name");
+                for (int i = 0; i < Math::Min(cpsPerLap, 61); i++) {
+                    UI::TableSetupColumn("CP " + (i+1));
+                }
+                UI::TableSetupColumn("");
+
+                UI::TableHeadersRow();
+
+                UI::ListClipper clipper(players.Length);
+                while (clipper.Step()) {
+                    for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+                        auto ps = cast<MLFeed::PlayerCpInfo_V3>(players[i]);
+                        UI::TableNextRow();
+                        if (ps is null) { continue; }
+
+                        UI::TableNextColumn();
+                        UI::AlignTextToFramePadding();
+                        UI::Text(ps.Name);
+
+                        for (uint cp = 0; int(cp) <= Math::Min(cpsPerLap, 61); cp++) {
+                            UI::TableNextColumn();
+                            if (ps.BestLapTimes is null || ps.BestLapTimes.Length <= cp) continue;
+                            UI::Text(Time::Format(ps.BestLapTimes[cp]));
                         }
 
                         UI::TableNextColumn();
