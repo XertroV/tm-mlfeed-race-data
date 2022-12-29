@@ -395,8 +395,10 @@ namespace RaceFeed {
                 @player.BestRaceTimes = playersTimes;
                 @player.BestLapTimes = bestLapTimes;
                 for (uint i = 0; i < currentCpsParts.Length; i++) {
-                    if (i >= player.cpTimes.Length) break;
-                    player.cpTimes[i] = Text::ParseInt(currentCpsParts[i]);
+                    // offset by 1 b/c there's no 0th cp included.
+                    auto i2 = i + 1;
+                    if (i2 >= player.cpTimes.Length) break;
+                    player.cpTimes[i2] = Text::ParseInt(currentCpsParts[i]);
                 }
             }
         }

@@ -10,7 +10,7 @@ This plugin provides other plugins with data about the current race. You might n
 
 Currently exposed data:
 * Sorted Player data
-  * For each player: LatestCPTime, CPCount, Cached Previous CP Times, Spawn Status, Best Time, Best CP Times, Time Lost to Respawns (in total and per CP), NbRespawns
+  * For each player: LatestCPTime, CPCount, Cached Previous CP Times, Spawn Status, Best Time, Best CP Times, Best Lap Times, Time Lost to Respawns (in total and per CP), NbRespawns
   * Sort methods
     * `TimeAttack`: sort by best time
     * `Race`: sorted by race leader
@@ -51,7 +51,7 @@ see also: [https://openplanet.dev/docs/reference/info-toml](https://openplanet.d
 
 Several feeds are available that provide different information. The functions that provide the feeds are:
 
-* `auto RaceData = MLFeed::GetRaceData_V2()`
+* `auto RaceData = MLFeed::GetRaceData_V3()`
 * `auto KoData = MLFeed::GetKoData()`
 * `auto GhostData = MLFeed::GetGhostData()`
 
@@ -63,7 +63,7 @@ See the upgrade guide: (https://github.com/XertroV/tm-mlfeed-race-data/blob/mast
 
 ##### Race Data Example
 
-Main type: `HookRaceStatsEventsBase_V2`
+Main type: `HookRaceStatsEventsBase_V3`
 
 Example usage: doing something on player respawn.
 
@@ -73,8 +73,8 @@ uint lastRespawnCount = 0;
 void Update(float dt) {
     if (GetApp().CurrentPlayground is null) return;
     // Get race data and the local player
-    auto RaceData = MLFeed::GetRaceData_V2();
-    auto player = RaceData.GetPlayer_V2(MLFeed::LocalPlayersName);
+    auto RaceData = MLFeed::GetRaceData_V3();
+    auto player = RaceData.GetPlayer_V3(MLFeed::LocalPlayersName);
     if (player is null) return;
     // check for respawns
     if (player.NbRespawnsRequested != lastRespawnCount) {
@@ -146,6 +146,7 @@ Your plugin's `KoDataProxy@` that exposes KO round information, and each player'
 You can call this function as often as you like -- it will always return the same proxy instance based on plugin ID.
 
 ### GetRaceData_V2 -- `const HookRaceStatsEventsBase_V2@ GetRaceData_V2()`
+### GetRaceData_V3 -- `const HookRaceStatsEventsBase_V3@ GetRaceData_V3()`
 
 Exposes checkpoint data, spawn info, and lists of players for each sorting method.
 You can call this function as often as you like.
@@ -167,7 +168,7 @@ returns the name of the local player, or an empty string if this is not yet know
 
 
 
-## MLFeed::HookRaceStatsEventsBase_V2 (class)
+## MLFeed::HookRaceStatsEventsBase_V3 (class)
 
 The main class used to access race data.
 It exposes 3 sorted lists of players, and general information about the map/race.
@@ -175,6 +176,8 @@ It exposes 3 sorted lists of players, and general information about the map/race
 ### Functions
 
 #### GetPlayer_V2 -- `const PlayerCpInfo_V2@ GetPlayer_V2(const string &in name) const`
+
+#### GetPlayer_V3 -- `const PlayerCpInfo_V3@ GetPlayer_V3(const string &in name) const`
 
 Get a player's info
 
@@ -213,13 +216,19 @@ The map UID
 
 An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest.
 
+**Note:** cast to `PlayerCpInfo_V3` to access `BestLapTimes`.
+
 #### SortedPlayers_Race_Respawns -- `const array<PlayerCpInfo_V2>@ SortedPlayers_Race_Respawns`
 
 An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest, accounting for player respawns.
 
+**Note:** cast to `PlayerCpInfo_V3` to access `BestLapTimes`.
+
 #### SortedPlayers_TimeAttack -- `const array<PlayerCpInfo_V2>@ SortedPlayers_TimeAttack`
 
 An array of `PlayerCpInfo_V2`s sorted by best time to worst time.
+
+**Note:** cast to `PlayerCpInfo_V3` to access `BestLapTimes`.
 
 #### SpawnCounter -- `uint SpawnCounter`
 
@@ -236,7 +245,7 @@ This value is set to 0 on plugin load and never reset.
 
 
 
-## MLFeed::PlayerCpInfo_V2 (class)
+## MLFeed::PlayerCpInfo_V3 (class)
 
 Each's players status in the race, with a focus on CP related info.
 
@@ -247,6 +256,10 @@ Each's players status in the race, with a focus on CP related info.
 Formatted as: "PlayerCpInfo(name, rr: 17, tr: 3, cp: 5 (0:43.231), Spawned, bt: 0:55.992)"
 
 ### Properties
+
+#### BestLapTimes -- `const array<uint>@ BestLapTimes`
+
+this player's CP times for their best lap this session
 
 #### BestRaceTimes -- `const array<uint>@ BestRaceTimes`
 
