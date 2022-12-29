@@ -222,7 +222,7 @@ namespace RaceFeed {
     }
 
 
-    class HookRaceStatsEvents : MLFeed::HookRaceStatsEventsBase_V2 {
+    class HookRaceStatsEvents : MLFeed::HookRaceStatsEventsBase_V3 {
         // props defined in HookRaceStatsEventsBase
 
         // expanded props
@@ -370,13 +370,6 @@ namespace RaceFeed {
                 latestPlayerStats.Delete(name);
             }
             DuplicateArraysForVersion1();
-        }
-
-        // internal
-        // todo: move to exported class later
-        MLFeed::PlayerCpInfo_V3@ _GetPlayer_V3(const string &in name) {
-            if (not latestPlayerStats.Exists(name)) return null;
-            return cast<MLFeed::PlayerCpInfo_V3>(latestPlayerStats[name]);
         }
 
         // got best times for a player

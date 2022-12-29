@@ -284,10 +284,11 @@ namespace MLFeed {
         }
     }
 
-    //shared
-    class PlayerCpInfo_V3 : PlayerCpInfo_V2 {
+    /* Each's players status in the race, with a focus on CP related info. */
+    shared class PlayerCpInfo_V3 : PlayerCpInfo_V2 {
         // this player's CP times for their best lap this session, measured from the start of the lap.
         const array<uint>@ BestLapTimes;
+
         PlayerCpInfo_V3(MLHook::PendingEvent@ event, uint _spawnIndex) {
             super(event, _spawnIndex);
         }
@@ -420,6 +421,28 @@ namespace MLFeed {
             // return recHook.LastRecordTime;
             throw("implemented elsewhere");
             return 0;
+        }
+    }
+
+    /**
+     * The main class used to access race data.
+     * It exposes 3 sorted lists of players, and general information about the map/race.
+     */
+    shared class HookRaceStatsEventsBase_V3 : HookRaceStatsEventsBase_V2 {
+        HookRaceStatsEventsBase_V3(const string &in type) {
+            super(type);
+        }
+
+        /* Get a player's info */
+        const PlayerCpInfo_V3@ GetPlayer_V3(const string &in name) const {
+            if (not latestPlayerStats.Exists(name)) return null;
+            return cast<PlayerCpInfo_V3>(latestPlayerStats[name]);
+        }
+
+        // internal
+        PlayerCpInfo_V3@ _GetPlayer_V3(const string &in name) {
+            if (not latestPlayerStats.Exists(name)) return null;
+            return cast<PlayerCpInfo_V3>(latestPlayerStats[name]);
         }
     }
 
