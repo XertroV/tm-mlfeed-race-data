@@ -297,6 +297,18 @@ namespace MLFeed {
         }
     }
 
+    /* Each's players status in the race, with a focus on CP related info. */
+    // shared // todo: uncomment when ready for use / next release
+    class PlayerCpInfo_V4 : PlayerCpInfo_V3 {
+        PlayerCpInfo_V4(MLHook::PendingEvent@ event, uint _spawnIndex) {
+            super(event, _spawnIndex);
+        }
+        PlayerCpInfo_V4(PlayerCpInfo_V4@ _from, int cpOffset) {
+            super(_from, cpOffset);
+        }
+        uint CurrentLap;
+    }
+
     // direction to move; down=-1, up=1
     shared enum Dir {
         Down = -1, Up = 1

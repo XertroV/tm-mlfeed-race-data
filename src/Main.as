@@ -401,6 +401,10 @@ namespace RaceFeed {
                     player.cpTimes[i2] = Text::ParseInt(currentCpsParts[i]);
                 }
             }
+            auto player_v4 = cast<MLFeed::PlayerCpInfo_V4>(player);
+            if (player_v4 !is null) {
+                player_v4.CurrentLap = player.CpCount / (CpCount + 1) + 1;
+            }
         }
 
         private array<uint> _emptyUintArray;
