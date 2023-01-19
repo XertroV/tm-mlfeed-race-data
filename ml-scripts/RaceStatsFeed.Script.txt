@@ -57,7 +57,7 @@ Integer GetBestLapTime(CSmPlayer Player) {
 
 declare Text[] LastKnownPlayers;
 
-// send a complete list of players every now and then.
+// send a players that left every now and then.
 Void SendDepartedPlayers() {
     declare Boolean[Text] CurrentPlayers;
     declare Text[] CurrPlayerNames;
@@ -67,7 +67,7 @@ Void SendDepartedPlayers() {
     }
     foreach (PlayerName in LastKnownPlayers) {
         if (CurrentPlayers.existskey(PlayerName)) continue;
-        SendCustomEvent("MLHook_Event_RaceStats_PlayerLeft", [PlayerName]);
+        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_PlayerLeft", [PlayerName]);
     }
     LastKnownPlayers = CurrPlayerNames;
 }
@@ -98,7 +98,7 @@ Void _SendPlayerTimes(CSmPlayer Player) {
         BestTimes = RaceTimes;
     }
     // we used to send race times at ix=1 but don't anymore, so zero it
-    SendCustomEvent("MLHook_Event_RaceStats_PlayerRaceTimes", [Name, RaceTimes, BestTimes, BestLapTimes]);
+    SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_PlayerRaceTimes", [Name, RaceTimes, BestTimes, BestLapTimes]);
 }
 
 // we only want to send info when a player's CP count changes.
@@ -128,6 +128,7 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
     declare Boolean RespawnsChanged = LastRespawnsCount.existskey(Name) && RespawnsCount != LastRespawnsCount[Name];
     declare Boolean BestTimeChanged = !LastBestTimes.existskey(Name) || BestTime != LastBestTimes[Name];
     declare Boolean BestLapTimeChanged = !LastBestLapTimes.existskey(Name) || BestLapTime != LastBestLapTimes[Name];
+
     // update if there are changes or the update is forced.
     declare Boolean WillSendEvent = Force || SpawnChanged || CpsChanged || RespawnsChanged || BestTimeChanged || BestLapTimeChanged;
     if (WillSendEvent) {
@@ -137,8 +138,9 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
         }
         // events should be prefixed with "MLHook_Event_" + PageUID.
         // Suffixes can be applied if multiple types of events are sent.
-        SendCustomEvent("MLHook_Event_RaceStats_PlayerCP", [Name, ""^CPCount, LatestCPTime, ""^BestTime, ""^SpawnStatusToUint(Player.SpawnStatus), ""^RespawnsCount^","^Player.StartTime]);
+        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_PlayerCP", [Name, ""^CPCount, LatestCPTime, ""^BestTime, ""^SpawnStatusToUint(Player.SpawnStatus), ""^RespawnsCount^","^Player.StartTime]);
     }
+    // if (Force || )
     if (Force || BestTimeChanged || BestLapTimeChanged) {
         _SendPlayerTimes(Player);
     }
@@ -152,11 +154,18 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
     // tuningend();
 }
 
+
+Void _SendPlayerInfos(CSmPlayer Player) {
+    SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_PlayerInfo", [Player.User.Name, Player.User.Login, Player.User.WebServicesUserId]);
+}
+
+
 // to start with we want to send all data.
 Void InitialSend() {
     foreach (Player in Players) {
         yield;
         _SendPlayerStats(Player, True);
+        _SendPlayerInfos(Player);
     }
     MLHookLog("Completed: InitialSend");
 }

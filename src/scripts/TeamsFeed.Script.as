@@ -1,0 +1,234 @@
+const string TEAMSFEED_SCRIPT_TXT = """
+// TeamsFeed.Script.txt
+ #Const C_PageUID "TeamsFeed"
+ #Include "TextLib" as TL
+
+// logging function, should be "MLHook_LogMe_" + PageUID
+Void MLHookLog(Text msg) {
+    SendCustomEvent("MLHook_LogMe_" ^ C_PageUID, [msg]);
+}
+
+Void MLHookUpdateKP(Text Key, Text Value) {
+    SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_MatchKeyPair", [Key, Value]);
+    MLHookLog("MatchKeyPair: " ^ [Key, Value]);
+}
+
+
+Text[] IntsToStrs(Integer[] ListInts) {
+    declare Text[] Ret = [];
+    foreach (t in ListInts) {
+        Ret.add("" ^ t);
+    }
+    return Ret;
+}
+
+
+declare Integer[Ident] LastPlayerPoints;
+
+Void CheckPlayerPoints() {
+    foreach (Player in Players) {
+        if (Player.Score != Null) {
+            declare Score <=> Player.Score;
+            if (!LastPlayerPoints.existskey(Score.Id) || LastPlayerPoints[Score.Id] != Score.RoundPoints) {
+                LastPlayerPoints[Score.Id] = Score.RoundPoints;
+                MLHookUpdateKP("PlayerScore", TL::Join(",", [Player.Name, ""^Score.TeamNum, ""^Score.RoundPoints, ""^Score.Points]));
+            }
+        }
+    }
+}
+
+
+CSmPlayer GetPlayerByID(Text AccountId) {
+    foreach (Player in Players) {
+        if (AccountId == Player.User.WebServicesUserId) {
+            return Player;
+        }
+    }
+    return Null;
+}
+
+Text[] GetPlayerNamesByLogins(Text[] Logins) {
+    declare Text[] PlayerNames = [];
+    foreach (Login in Logins) {
+        foreach (Player in Players) {
+            if (Player.User.Login == Login) {
+                PlayerNames.add(Player.User.Name);
+                break;
+            }
+        }
+    }
+    return PlayerNames;
+}
+
+declare Integer _TriggerUIUpdate;
+declare Integer _StartNewRace;
+declare Boolean _WarmUpIsActive;
+declare Text _MvpAccountId;
+declare Integer _RankingMode;
+declare Text[] _PlayerFinishedRace;
+declare Integer _PlayerFinishedRaceUpdate;
+declare Integer[] _PointsRepartition;
+declare Integer _PlayersFinishedCount;
+declare Integer _RoundWinningClan;
+declare Integer _RoundNumber;
+declare Integer _PointsLimit;
+declare Integer[] _ClanScores;
+
+Void ResetState() {
+    _TriggerUIUpdate = -123;
+    _StartNewRace = -123;
+    _WarmUpIsActive = False;
+    _MvpAccountId = "";
+    _PlayerFinishedRace = [];
+    _PlayerFinishedRaceUpdate = -123;
+    _PointsRepartition = [];
+    _PlayersFinishedCount = -1;
+    _RankingMode = -1;
+    _RoundWinningClan = -1;
+    _RoundNumber = -1;
+    _PointsLimit = -1;
+    _ClanScores = [-1, -1, -1];
+    LastPlayerPoints = [];
+}
+
+Void CheckRoundUpdates() {
+    declare netread Integer Net_Teams_Matchmaking_LiveRanking_TriggerUIUpdate for Teams[0] = 0;
+    declare netread Integer Net_Teams_Matchmaking_LiveRanking_StartNewRace for Teams[0] = 0;
+    declare netread Boolean Net_Teams_Matchmaking_LiveRanking_WarmUpIsActive for Teams[0] = False;
+    declare netread Text Net_Teams_Matchmaking_LiveRanking_MvpAccountId for Teams[0];
+    declare netread Integer Net_Teams_Matchmaking_LiveRanking_RankingMode for Teams[0];
+    declare netread Text[] Net_Teams_Matchmaking_LiveRanking_PlayerFinishedRace for Teams[0];
+    declare netread Integer Net_Teams_Matchmaking_LiveRanking_PlayerFinishedRaceUpdate for Teams[0];
+    declare netread Integer[] Net_Teams_Matchmaking_LiveRanking_PointsRepartition for Teams[0];
+
+    if (_RankingMode != Net_Teams_Matchmaking_LiveRanking_RankingMode) {
+        _RankingMode = Net_Teams_Matchmaking_LiveRanking_RankingMode;
+        MLHookUpdateKP("LR_RankingMode", ""^_RankingMode);
+    }
+
+    if (_StartNewRace != Net_Teams_Matchmaking_LiveRanking_StartNewRace) {
+        _StartNewRace = Net_Teams_Matchmaking_LiveRanking_StartNewRace;
+        MLHookUpdateKP("LR_StartNewRace", ""^_StartNewRace);
+    }
+
+    if (_WarmUpIsActive != Net_Teams_Matchmaking_LiveRanking_WarmUpIsActive) {
+        _WarmUpIsActive = Net_Teams_Matchmaking_LiveRanking_WarmUpIsActive;
+        MLHookUpdateKP("LR_WarmUpIsActive", ""^_WarmUpIsActive);
+    }
+
+    if (_MvpAccountId != Net_Teams_Matchmaking_LiveRanking_MvpAccountId) {
+        _MvpAccountId = Net_Teams_Matchmaking_LiveRanking_MvpAccountId;
+        declare _Player <=> GetPlayerByID(_MvpAccountId);
+        if (_Player != Null) {
+            MLHookUpdateKP("LR_MvpAccountId", TL::Join(",",[""^_Player.User.Name, ""^_Player.User.WebServicesUserId]));
+        }
+    }
+
+    if (_PlayerFinishedRaceUpdate != Net_Teams_Matchmaking_LiveRanking_PlayerFinishedRaceUpdate) {
+        _PlayerFinishedRaceUpdate = Net_Teams_Matchmaking_LiveRanking_PlayerFinishedRaceUpdate;
+        MLHookUpdateKP("LR_PlayerFinishedRace", TL::Join(",", Net_Teams_Matchmaking_LiveRanking_PlayerFinishedRace));
+        MLHookUpdateKP("LR_PlayerFinishedRace_Names", TL::Join(",", GetPlayerNamesByLogins(Net_Teams_Matchmaking_LiveRanking_PlayerFinishedRace)));
+        MLHookUpdateKP("LR_PlayerFinishedRaceUpdate", ""^Net_Teams_Matchmaking_LiveRanking_PlayerFinishedRaceUpdate);
+    }
+
+    declare Integer nbPointsRepartition = Net_Teams_Matchmaking_LiveRanking_PointsRepartition.count;
+    if (_PointsRepartition.count != nbPointsRepartition
+        || (nbPointsRepartition > 0 && _PointsRepartition[0] != Net_Teams_Matchmaking_LiveRanking_PointsRepartition[0])) {
+        _PointsRepartition = Net_Teams_Matchmaking_LiveRanking_PointsRepartition;
+        MLHookUpdateKP("LR_PointsRepartition", TL::Join(",",IntsToStrs(Net_Teams_Matchmaking_LiveRanking_PointsRepartition)));
+    }
+
+    // LiveRanking_Client.Script.txt
+    declare netread Integer Net_Teams_Matchmaking_ScoreAndMapInfos_RoundWinningClan for Teams[0];
+    declare netread Integer Net_Teams_Matchmaking_ScoreAndMapInfos_RoundNumber for Teams[0];
+    declare netread Integer Net_Teams_Matchmaking_ScoreAndMapInfos_PointsLimit for Teams[0];
+
+    if (_RoundWinningClan != Net_Teams_Matchmaking_ScoreAndMapInfos_RoundWinningClan) {
+        _RoundWinningClan = Net_Teams_Matchmaking_ScoreAndMapInfos_RoundWinningClan;
+        MLHookUpdateKP("SAMI_RoundWinningClan", ""^_RoundWinningClan);
+    }
+
+    if (_RoundNumber != Net_Teams_Matchmaking_ScoreAndMapInfos_RoundNumber) {
+        _RoundNumber = Net_Teams_Matchmaking_ScoreAndMapInfos_RoundNumber;
+        MLHookUpdateKP("SAMI_RoundNumber", ""^_RoundNumber);
+    }
+
+    if (_PointsLimit != Net_Teams_Matchmaking_ScoreAndMapInfos_PointsLimit) {
+        _PointsLimit = Net_Teams_Matchmaking_ScoreAndMapInfos_PointsLimit;
+        MLHookUpdateKP("SAMI_PointsLimit", ""^_PointsLimit);
+    }
+
+    // only updated at end of match, not useful
+    // // Ranking_Matchmaking_Client.Script.txt
+    // declare netread Integer Net_Teams_Matchmaking_WinningTeamId for Teams[0];
+    // declare netread Text Net_Teams_Matchmaking_MVPAccountId for Teams[0];
+    // declare netread Integer Net_Teams_Matchmaking_MatchParticipants_Update for Teams[0];
+    // declare netread MatchmakingStruct::LibStructuresMatchmaking_K_MatchParticipants Net_Teams_Matchmaking_MatchParticipants for Teams[0];
+    // declare netread Integer Net_Teams_Matchmaking_Divisions_Update for Teams[0];
+    // declare netread MatchmakingStruct::LibStructuresMatchmaking_K_Division[Text] Net_Teams_Matchmaking_Divisions for Teams[0];
+    // declare netread MatchmakingStruct::LibStructuresMatchmaking_K_TeamMember[Integer] Net_Teams_Matchmaking_BlueTeamMembers for Teams[0];
+    // declare netread MatchmakingStruct::LibStructuresMatchmaking_K_TeamMember[Integer] Net_Teams_Matchmaking_RedTeamMembers for Teams[0];
+    // declare netread Integer Net_Teams_Matchmaking_Top10_Update for Teams[0];
+    // declare netread MatchmakingStruct::LibStructuresMatchmaking_K_PlayerLeaderboard[] Net_Teams_Matchmaking_Top10 for Teams[0];
+
+    if (_ClanScores[0] != ClanScores[0] || _ClanScores[1] != ClanScores[1] || _ClanScores[2] != ClanScores[2]) {
+        _ClanScores[0] = ClanScores[0];
+        _ClanScores[1] = ClanScores[1];
+        _ClanScores[2] = ClanScores[2];
+        declare Text[] _Scores;
+        foreach (points in ClanScores) {
+            _Scores.add(""^points);
+        }
+        MLHookUpdateKP("ClanScores", TL::Join(",", _Scores));
+    }
+}
+
+declare Text CurrentGameMode;
+declare Boolean IsMmGameMode;
+
+Void CheckGM() {
+    CurrentGameMode = Playground.ServerInfo.ModeName;
+    // This is always true atm, does not seem to affect much. Leaving it always on means we might work for game modes we didn't explicitly list here.
+    IsMmGameMode = CurrentGameMode == "TM_Teams_Matchmaking_Online" || True;
+}
+
+declare Text G_PreviousMapUid;
+
+Void CheckMapChange() {
+    if (Map != Null && Map.MapInfo.MapUid != G_PreviousMapUid) {
+        G_PreviousMapUid = Map.MapInfo.MapUid;
+        ResetState();
+        CheckGM();
+    }
+}
+
+Void CheckIncoming() {
+    declare Text[][] MLHook_Inbound_TeamsFeed for ClientUI;
+    foreach (Event in MLHook_Inbound_TeamsFeed) {
+        if (Event[0] == "SendAllMatchKeyPairs") {
+            ResetState();
+        }
+        MLHookLog("processed incoming event: " ^ Event[0]);
+    }
+    MLHook_Inbound_TeamsFeed = [];
+}
+
+main() {
+    CheckGM();
+    // note that we yield in the main inner loop (30 frames)
+    while (True) {
+        // these will trigger once every 30 frames
+        CheckMapChange();
+        CheckGM();
+        // main loop, for 30 frames
+        for (I, 0, 30) {
+            yield;
+            CheckIncoming();
+            if (IsMmGameMode) {
+                CheckRoundUpdates();
+                CheckPlayerPoints();
+            }
+        }
+    }
+}
+""";

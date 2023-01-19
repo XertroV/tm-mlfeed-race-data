@@ -63,4 +63,12 @@ namespace MLFeed {
     const SharedGhostDataHook_V2@ GetGhostData() {
         return ghostHook;
     }
+
+    /**
+     * Object exposing info about the current Matchmaking Teams game.
+     * Includes warm up, team points, player points, when new rounds begin, current MVP, players finished.
+     */
+    const HookTeamsMMEventsBase_V1@ GetTeamsMMData_V1() {
+        return teamsFeed;
+    }
 }

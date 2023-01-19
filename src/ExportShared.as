@@ -17,6 +17,68 @@ namespace MLFeed {
         }
     }
 
+    /**
+     * Info about MM: game state, team points, player points (this round and total), current MVP
+     */
+    shared class HookTeamsMMEventsBase_V1 : MLHook::HookMLEventsByType {
+        // Increments each race as a flag to reset state. 0 during warmup. 1 during first round, etc.
+        int StartNewRace = -123;
+        // True when the warmup is active.
+        bool WarmUpIsActive;
+        // Ranking mode used. 0 = BestRace, 1 = CurrentRace. (MM uses 1)
+        int RankingMode = -1;
+        // Rounds won by team. Updated each round as soon as the last player despawns. Blue at index 1, Red at index 2. Length: 31.
+        array<int>@ ClanScores;
+        // Current MVP's account id. Updated with scores.
+        string MvpAccountId;
+        // Current MVP's name. Updated with scores.
+        string MvpName;
+        // Player logins in finishing order. Updated when a player finishes and at the start of the race.
+        array<string>@ PlayersFinishedLogins;
+        // Player names in finishing order. Updated when a player finishes and at the start of the race.
+        array<string>@ PlayersFinishedNames;
+        // The last game time that a player finished and the corresponding lists were updated.
+        int PlayerFinishedRaceUpdate = -123;
+        // The points available for each position, set after warmup and updated at the start of the next race (after a player leaves).
+        array<int>@ PointsRepartition;
+        // set to -1 on race start, and set to 1 or 2 at end of race indicating the winning team. 0 = draw.
+        int RoundWinningClan;
+        // The current round. Incremented at the completion of each round. (RoundNumber will end +1 more than StartNewRace.)
+        int RoundNumber;
+        // A team wins when they reach this many points. Set after warmup.
+        int PointsLimit;
+
+        HookTeamsMMEventsBase_V1(const string &in type) {
+            super(type);
+        }
+
+        // Get the player's match making info (points, team number)
+        MatchMakingPlayer_V1@ GetPlayer_V1(const string &in name) { throw("implemented elsewhere"); return null; }
+
+        // An unordered list of all players.
+        MatchMakingPlayer_V1@[]@ AllPlayers;
+
+        // The number of players on each team. Length is always 31.
+        int[]@ TeamPopulations;
+
+        // Prefer `.AllPlayers` or `GetRaceData_V3().SortedPlayers_Race_Respawns` as a source of players. This list is not sorted and is generated on-demand.
+        string[]@ GetAllPlayerNames() { throw("implemented elsewhere"); return null; }
+
+        // Given a list of ints that is the team number of players that have finished, this returns how many points each position on the given team will earn. Ideally avoid calling more than once per frame per input.
+        int[]@ ComputePoints(int[]@ finishedTeamOrder) { throw("implemented elsewhere"); return 0; }
+    }
+
+    shared class MatchMakingPlayer_V1 {
+        // The player's name.
+        string Name;
+        // The points the player earned this round.
+        int RoundPoints;
+        // The points total of this player. Updated when RoundPoints is set to 0.
+        int Points;
+        // The team the player is on. 1 = Blue, 2 = Red.
+        int TeamNum;
+    }
+
     shared class HookKoStatsEventsBase : MLHook::HookMLEventsByType {
         HookKoStatsEventsBase(const string &in type) {
             super(type);
@@ -307,6 +369,12 @@ namespace MLFeed {
             super(_from, cpOffset);
         }
         uint CurrentLap;
+        // todo
+        string WebServicesUserId;
+        string Login;
+        // array<uint>@ PrevRaceTimes;
+
+        CSmPlayer@ FindPlayerInstance() { throw("overloaded elsewhere"); return null; }
     }
 
     // direction to move; down=-1, up=1

@@ -4,6 +4,7 @@ void Main() {
     @koFeedHook = KoFeed::HookKoStatsEvents();
     @recordHook = HookRecordFeed();
     @ghostHook = HookGhostData();
+    @teamsFeed = TeamsFeed::HookTeamsMMEvents();
 
     MLHook::RequireVersionApi('0.3.2');
 
@@ -23,9 +24,12 @@ void InitCoro() {
     MLHook::RegisterMLHook(theHook, "RaceStats_PlayerCP");
     MLHook::RegisterMLHook(theHook, "RaceStats_PlayerLeft");
     MLHook::RegisterMLHook(theHook, "RaceStats_PlayerRaceTimes");
+    MLHook::RegisterMLHook(theHook, "RaceStats_PlayerInfo");
     // ko feed hook
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_PlayerStatus");
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_MatchKeyPair");
+    // teams feed
+    MLHook::RegisterMLHook(teamsFeed, TeamsFeed::Page_UID + "_MatchKeyPair");
     // records
     // todo?: make optional component that must be requested to load
     MLHook::RegisterMLHook(recordHook, recordHook.type, true);
@@ -37,13 +41,13 @@ void InitCoro() {
     MLHook::InjectManialinkToPlayground("MLFeedRace", RACESTATSFEED_SCRIPT_TXT, true);
     MLHook::InjectManialinkToPlayground("MLFeedKOs", MLFEEDKOS_SCRIPT_TXT, true);
     MLHook::InjectManialinkToPlayground("MLFeedGhostData", GHOSTDATA_SCRIPT_TXT, true);
+    MLHook::InjectManialinkToPlayground("MLFeedTeams", TEAMSFEED_SCRIPT_TXT, true);
     yield(); // wait 2 frames for ML to load
-    yield();
-    yield();
     yield();
     // start coros
     startnew(CoroutineFunc(theHook.MainCoro));
     startnew(CoroutineFunc(koFeedHook.MainCoro));
+    startnew(CoroutineFunc(teamsFeed.MainCoro));
 
 #if DEV
     auto devHook = MLHook::DebugLogAllHook("GhostData");
@@ -59,14 +63,19 @@ void RenderInterface() {
     KoFeedUI::Render();
     RaceFeedUI::Render();
     GhostDataUI::Render();
+    TeamsFeed::RenderDemoUI();
 }
 #endif
 
 #if SIG_DEVELOPER
 void RenderMenu() {
-    KoFeedUI::RenderMenu();
-    RaceFeedUI::RenderMenu();
-    GhostDataUI::RenderMenu();
+    if (UI::BeginMenu(Icons::Rss + " MLFeed::DemoUIs")) {
+        KoFeedUI::RenderMenu();
+        RaceFeedUI::RenderMenu();
+        GhostDataUI::RenderMenu();
+        TeamsFeed::RenderMenu();
+        UI::EndMenu();
+    }
 }
 #endif
 
@@ -193,7 +202,7 @@ namespace RaceFeed {
                 for (uint i = 0; i < timeLostToRespawnsByCp.Length; i++) {
                     timeLostToRespawnsByCp[i] = 0;
                 }
-                timeLostToRespawnsByCp.Resize(1);
+                timeLostToRespawnsByCp.Resize(cpTimes.Length);
             } else {
                 timeLostToRespawnsByCp.Resize(cpTimes.Length);
                 if (cpsChanged) {

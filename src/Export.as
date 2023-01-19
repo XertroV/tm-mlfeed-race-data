@@ -30,4 +30,10 @@ namespace MLFeed {
         Therefore, duplicate ghost infos may be recorded (though measures are taken to prevent this).
         The list is cleared on map change. */
     import const SharedGhostDataHook_V2@ GetGhostData() from "MLFeed";
+
+    /**
+     * Object exposing info about the current Matchmaking Teams game.
+     * Includes warm up, team points, player points, when new rounds begin, current MVP, players finished.
+     */
+    import const HookTeamsMMEventsBase_V1@ GetTeamsMMData_V1() from "MLFeed";
 }
