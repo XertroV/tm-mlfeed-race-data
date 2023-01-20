@@ -10,6 +10,11 @@ Void MLHookLog(Text msg) {
     SendCustomEvent("MLHook_LogMe_" ^ C_PageUID, [msg]);
 }
 
+Void MLHookUpdateKP(Text Key, Text Value) {
+    SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_MatchKeyPair", [Key, Value]);
+    // MLHookLog("MatchKeyPair: " ^ [Key, Value]);
+}
+
 Integer SpawnStatusToUint(CSmPlayer::ESpawnStatus status) {
     switch (status) {
         case CSmPlayer::ESpawnStatus::NotSpawned: {
@@ -102,6 +107,30 @@ Void _SendPlayerTimes(CSmPlayer Player) {
     SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_PlayerRaceTimes", [Name, RaceTimes, BestTimes, BestLapTimes]);
 }
 
+
+declare Integer[Ident] LastPlayerRoundPoints;
+declare Integer[Ident] LastPlayerPoints;
+declare Integer[Ident] LastPlayerTeams;
+
+Void CheckPlayerPoints() {
+    foreach (Player in Players) {
+        if (Player.Score != Null) {
+            declare Score <=> Player.Score;
+            declare RPointsChanged = !LastPlayerRoundPoints.existskey(Score.Id) || LastPlayerRoundPoints[Score.Id] != Score.RoundPoints;
+            declare PointsChanged = !LastPlayerPoints.existskey(Score.Id) || LastPlayerPoints[Score.Id] != Score.Points;
+            declare TeamChanged = !LastPlayerTeams.existskey(Score.Id) || LastPlayerTeams[Score.Id] != Score.TeamNum;
+            if (RPointsChanged || PointsChanged || TeamChanged) {
+                LastPlayerRoundPoints[Score.Id] = Score.RoundPoints;
+                LastPlayerPoints[Score.Id] = Score.Points;
+                LastPlayerTeams[Score.Id] = Score.TeamNum;
+                MLHookUpdateKP("PlayerScore", TL::Join(",", [Player.Name, ""^Score.TeamNum, ""^Score.RoundPoints, ""^Score.Points]));
+            }
+        }
+    }
+}
+
+
+
 // we only want to send info when a player's CP count changes.
 declare Integer[Text] LastCPCounts;
 declare Integer[Text] LastBestTimes;
@@ -190,6 +219,9 @@ Void CheckMapChange() {
         LastRespawnsCount = [];
         LastSpawn = [];
         MostCPsSeen = 0;
+        LastPlayerPoints = [];
+        LastPlayerRoundPoints = [];
+        LastPlayerTeams = [];
     }
 }
 
@@ -225,6 +257,7 @@ main() {
     while (True) {
         yield;
         CheckPlayers();
+        CheckPlayerPoints();
         LoopCounter += 1;
         if (LoopCounter % 60 == 0) {
             SendDepartedPlayers();

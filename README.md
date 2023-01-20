@@ -147,10 +147,16 @@ You can call this function as often as you like -- it will always return the sam
 
 ### GetRaceData_V2 -- `const HookRaceStatsEventsBase_V2@ GetRaceData_V2()`
 ### GetRaceData_V3 -- `const HookRaceStatsEventsBase_V3@ GetRaceData_V3()`
+### GetRaceData_V4 -- `const HookRaceStatsEventsBase_V4@ GetRaceData_V4()`
 
 Exposes checkpoint data, spawn info, and lists of players for each sorting method.
 You can call this function as often as you like.
 Backwards compatible with RaceDataProxy (except that it's a different type; properties/methods are the same, though.)
+
+### GetTeamsMMData_V1 -- `const HookTeamsMMEventsBase_V1@ GetTeamsMMData_V1()`
+
+Object exposing info about the current Matchmaking Teams game.
+Includes warm up, team points, when new rounds begin, current MVP, players finished, and points prediction.
 
 ## Properties
 
@@ -178,6 +184,7 @@ It exposes 3 sorted lists of players, and general information about the map/race
 #### GetPlayer_V2 -- `const PlayerCpInfo_V2@ GetPlayer_V2(const string &in name) const`
 
 #### GetPlayer_V3 -- `const PlayerCpInfo_V3@ GetPlayer_V3(const string &in name) const`
+#### GetPlayer_V4 -- `const PlayerCpInfo_V4@ GetPlayer_V4(const string &in name) const`
 
 Get a player's info
 
@@ -216,19 +223,19 @@ The map UID
 
 An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest.
 
-**Note:** cast to `PlayerCpInfo_V3` to access `BestLapTimes`.
+**Note:** cast to `PlayerCpInfo_V4` to access new properties.
 
 #### SortedPlayers_Race_Respawns -- `const array<PlayerCpInfo_V2>@ SortedPlayers_Race_Respawns`
 
 An array of `PlayerCpInfo_V2`s sorted by most checkpoints to fewest, accounting for player respawns.
 
-**Note:** cast to `PlayerCpInfo_V3` to access `BestLapTimes`.
+**Note:** cast to `PlayerCpInfo_V4` to access new properties.
 
 #### SortedPlayers_TimeAttack -- `const array<PlayerCpInfo_V2>@ SortedPlayers_TimeAttack`
 
 An array of `PlayerCpInfo_V2`s sorted by best time to worst time.
 
-**Note:** cast to `PlayerCpInfo_V3` to access `BestLapTimes`.
+**Note:** cast to `PlayerCpInfo_V4` to access new properties.
 
 #### SpawnCounter -- `uint SpawnCounter`
 
@@ -245,11 +252,15 @@ This value is set to 0 on plugin load and never reset.
 
 
 
-## MLFeed::PlayerCpInfo_V3 (class)
+## MLFeed::PlayerCpInfo_V4 (class)
 
 Each's players status in the race, with a focus on CP related info.
 
 ### Functions
+
+#### FindCSmPlayer -- `CSmPlayer@ FindCSmPlayer()`
+
+Return's the players CSmPlayer object if it is available, otherwise null. The full list of players is searched each time.
 
 #### ToString -- `string ToString() const`
 
@@ -277,6 +288,10 @@ How many CPs that player currently has
 
 The CP times of that player (including the 0th cp at the 0th index; which will always be 0)
 
+#### CurrentLap -- `uint CurrentLap`
+
+The player's current lap.
+
 #### CurrentRaceTime -- `int CurrentRaceTime`
 
 This player's CurrentRaceTime with latency taken into account
@@ -288,6 +303,10 @@ This player's CurrentRaceTime without accounting for latency
 #### IsLocalPlayer -- `bool IsLocalPlayer`
 
 whether this player corresponds to the physical player playing the game
+
+#### IsMVP -- `bool IsMVP`
+
+Whether the player is currently the MVP (for MM / Ranked)
 
 #### IsSpawned -- `bool IsSpawned`
 
@@ -313,6 +332,10 @@ the last time this player respawned (measure against CurrentRaceTime)
 
 get the last CP time of the player minus time lost to respawns
 
+#### Login -- `string Login`
+
+The player's Login (note: if you can, use WebServicesUserId instead)
+
 #### Name -- `const string Name`
 
 The player's name
@@ -321,6 +344,10 @@ The player's name
 
 number of times the player has respawned
 
+#### Points -- `int Points`
+
+The points total of this player. Updated with +RoundPoints on EndRound UI sequence (before RoundPoints is reset).
+
 #### RaceRank -- `uint RaceRank`
 
 The player's rank as measured in a race (when all players would spawn at the same time).
@@ -328,6 +355,10 @@ The player's rank as measured in a race (when all players would spawn at the sam
 #### RaceRespawnRank -- `uint RaceRespawnRank`
 
 The player's rank as measured in a race (when all players would spawn at the same time), accounting for respawns.
+
+#### RoundPoints -- `int RoundPoints`
+
+The points the player earned this round. Reset on Playing UI sequence.
 
 #### SpawnIndex -- `uint SpawnIndex`
 
@@ -345,6 +376,10 @@ when the player spawned (measured against GameTime)
 
 The player's rank as measured in Time Attack (one more than their index in `RaceData.SortedPlayers_TimeAttack`)
 
+#### TeamNum -- `int TeamNum`
+
+The team the player is on. 1 = Blue, 2 = Red.
+
 #### TheoreticalRaceTime -- `int TheoreticalRaceTime`
 
 get the current race time of this player minus time lost to respawns
@@ -357,14 +392,13 @@ The time lost due to respawning at each CP
 
 the amount of time the player has lost due to respawns in total since the start of their current race/attempt
 
+#### WebServicesUserId -- `string WebServicesUserId`
+
+The player's WebServicesUserId
+
 #### latencyEstimate -- `float latencyEstimate`
 
 an estimate of the latency in ms between when a player passes a checkpoint and when we learn about it
-
-#### name -- `string name`
-
-The player's name
-
 
 
 
@@ -528,3 +562,83 @@ Ghost.Result.Score
 #### Result_Time -- `int Result_Time`
 
 Ghost.Result.Time
+
+
+
+
+
+## MLFeed::HookTeamsMMEventsBase_V1 (class)
+
+Info about MM: game state, team points, player points (this round and total), current MVP
+
+### Functions
+
+#### ComputePoints -- `void ComputePoints(const int[]@ finishedTeamOrder, int[]@ points, int[]@ teamPoints) const`
+
+Pass in a list of player.TeamNum for a finishing order, and 2 arrays that will be written to: the first will contain the points earned by each player for their team, the second contains the total points for each team (length 3).
+
+Usage: `teamPoints[player.TeamNum]`
+
+Implementation reference: `ComputeLatestRaceScores` in `Titles/Trackmania/Scripts/Libs/Nadeo/ModeLibs/TrackMania/Teams/TeamsCommon.Script.txt`
+
+### Properties
+
+#### ClanScores -- `array<int>@ ClanScores`
+
+Rounds won by team. Updated each round as soon as the last player despawns. Blue at index 1, Red at index 2. Length: 31.
+
+#### MvpAccountId -- `string MvpAccountId`
+
+Current MVP's account id. Updated with scores.
+
+#### MvpName -- `string MvpName`
+
+Current MVP's name. Updated with scores.
+
+#### PlayerFinishedRaceUpdate -- `int PlayerFinishedRaceUpdate`
+
+The last game time that a player finished and the corresponding lists were updated.
+
+#### PlayersFinishedLogins -- `array<string>@ PlayersFinishedLogins`
+
+Player logins in finishing order. Updated when a player finishes and at the start of the race.
+
+#### PlayersFinishedNames -- `array<string>@ PlayersFinishedNames`
+
+Player names in finishing order. Updated when a player finishes and at the start of the race.
+
+#### PointsLimit -- `int PointsLimit`
+
+A team wins when they reach this many points. Set after warmup.
+
+#### PointsRepartition -- `array<int>@ PointsRepartition`
+
+The points available for each position, set after warmup and updated at the start of the next race (after a player leaves).
+
+#### RankingMode -- `int RankingMode`
+
+Ranking mode used. 0 = BestRace, 1 = CurrentRace. (MM uses 1)
+
+#### RoundNumber -- `int RoundNumber`
+
+The current round. Incremented at the completion of each round. (RoundNumber will end +1 more than StartNewRace.)
+
+#### RoundWinningClan -- `int RoundWinningClan`
+
+set to -1 on race start, and set to 1 or 2 at end of race indicating the winning team. 0 = draw.
+
+#### StartNewRace -- `int StartNewRace`
+
+Increments each race as a flag to reset state. 0 during warmup. 1 during first round, etc.
+
+#### TeamPopulations -- `array<int>@ TeamPopulations`
+
+The number of players on each team. Length is always 31.
+
+#### TeamsUnbalanced -- `bool TeamsUnbalanced`
+
+Whether the populations of the teams is unequal.
+
+#### WarmUpIsActive -- `bool WarmUpIsActive`
+
+True when the warmup is active.

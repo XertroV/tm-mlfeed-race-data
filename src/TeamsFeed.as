@@ -5,8 +5,6 @@ namespace TeamsFeed {
     string lastGM;
     string lastMap;
 
-    dictionary _players;
-
     class HookTeamsMMEvents : MLFeed::HookTeamsMMEventsBase_V1 {
         HookTeamsMMEvents() {
             super(Page_UID);
@@ -17,7 +15,6 @@ namespace TeamsFeed {
             @PointsRepartition = array<int>();
             @PlayersFinishedLogins = array<string>();
             @PlayersFinishedNames = array<string>();
-            @AllPlayers = array<MLFeed::MatchMakingPlayer_V1>();
         }
 
         // // override this method to avoid reload crash?
@@ -44,8 +41,7 @@ namespace TeamsFeed {
             RoundWinningClan = -1;
             RoundNumber = -1;
             PointsLimit = -1;
-            _players.DeleteAll();
-            AllPlayers.RemoveRange(0, AllPlayers.Length);
+            TeamsUnbalanced = false;
             for (uint i = 0; i < ClanScores.Length; i++) {
                 ClanScores[i] = 0;
                 TeamPopulations[i] = 0;
@@ -100,11 +96,6 @@ namespace TeamsFeed {
             if (evt.type.EndsWith("MatchKeyPair")) {
                 UpdateMatchKeyPair(evt);
             }
-            try {
-                print('TeamsFeed event: ' + evt.type + '; ' + evt.data[0] + ": " + evt.data[1]);
-            } catch {
-                print('exception processing evt ' + getExceptionInfo());
-            }
         }
 
         /* main functionality */
@@ -115,8 +106,7 @@ namespace TeamsFeed {
                 return;
             }
             string key = evt.data[0];
-            if (key == "PlayerScore") UpdatePlayerScore(evt);
-            else if (key.StartsWith("LR_")) UpdateLrKP(evt);
+            if (key.StartsWith("LR_")) UpdateLrKP(evt);
             else if (key.StartsWith("SAMI_")) UpdateSamiKP(evt);
             else if (key == "ClanScores") UpdateClanScores(evt);
             else {
@@ -124,68 +114,68 @@ namespace TeamsFeed {
             }
         }
 
-        MLFeed::MatchMakingPlayer_V1@ GetPlayer_V1(const string&in name) override {
-            return cast<MLFeed::MatchMakingPlayer_V1>(_players[name]);
-        }
-
-        // Prefer GetRaceData_V3().SortedPlayers_Race_Respawns as a source of players. This list is not sorted and is generated on-demand.
-        array<string>@ GetAllPlayerNames() override {
-            return _players.GetKeys();
-        }
-
-        // See ComputeLatestRaceScores in Titles/Trackmania/Scripts/Libs/Nadeo/ModeLibs/TrackMania/Teams/TeamsCommon.Script.txt
-        int[]@ ComputePoints(int[]@ finishedTeamOrder) override {
-            if (PointsRepartition.Length == 0) return array<int>(finishedTeamOrder.Length);
+        /**
+         * Pass in a list of player.TeamNum for a finishing order, and 2 arrays that will be written to: the first will contain the points for each player, the second contains the total points for each team (length 3).
+         *
+         * Usage: teamPoints[player.TeamNum]
+         *
+         * Implementation reference: `ComputeLatestRaceScores` in `Titles/Trackmania/Scripts/Libs/Nadeo/ModeLibs/TrackMania/Teams/TeamsCommon.Script.txt`
+         */
+        void ComputePoints(const int[]@ finishedTeamOrder, int[]@ points, int[]@ teamPoints) const override {
+            if (PointsRepartition.Length == 0 || finishedTeamOrder.Length == 0) {
+                points.Resize(finishedTeamOrder.Length);
+                teamPoints.Resize(3);
+                for (int i = 0; i < Math::Max(points.Length, 3); i++) {
+                    if (i < int(points.Length))
+                        points[i] = 0;
+                    if (i < 3)
+                        teamPoints[i] = 0;
+                }
+                return;
+            }
             int minTeamPop = Math::Min(TeamPopulations[1], TeamPopulations[2]);
             int[] finishedCountByTeam = {0, 0, 0};
-            int[] pointsRet;
             int teamCurrPop;
             int key = 0;
             int tn;
+            // points.RemoveRange(0, points.Length);
+            points.Resize(0);
+            teamPoints.Resize(3);
+            teamPoints[0] = 0; teamPoints[1] = 0; teamPoints[2] = 0;
             for (uint i = 0; i < finishedTeamOrder.Length; i++) {
                 tn = finishedTeamOrder[i];
-                if (tn != 1 || tn != 2) {
-                    pointsRet.InsertLast(0);
+                if (tn != 1 && tn != 2) {
+                    points.InsertLast(0);
                     continue;
                 }
                 teamCurrPop = ++finishedCountByTeam[tn];
                 if (teamCurrPop > minTeamPop) {
-                    pointsRet.InsertLast(0);
+                    points.InsertLast(0);
+                } else if (key >= int(PointsRepartition.Length)) {
+                    int p = PointsRepartition[PointsRepartition.Length - 1];
+                    points.InsertLast(p);
+                    teamPoints[tn] += p;
                 } else {
-                    pointsRet.InsertLast(PointsRepartition[key]);
+                    int p = PointsRepartition[key];
+                    points.InsertLast(p);
+                    teamPoints[tn] += p;
                     key += 1;
                 }
             }
-            if (key >= PointsRepartition.Length) return PointsRepartition[PointsRepartition.Length - 1];
-            return PointsRepartition[key];
+            // print("minTeamPop: " + minTeamPop);
+            // print("finishedCountByTeam: " + IntsToStrs(finishedCountByTeam));
+            // print("points: " + IntsToStrs(points));
+            // print("teamPoints: " + IntsToStrs(teamPoints));
         }
 
-        void UpdatePlayerScore(MLHook::PendingEvent@ evt) {
-            auto @parts = string(evt.data[1]).Split(",");
-            auto player = cast<PlayerMMInfo>(GetPlayer_V1(parts[0]));
-            if (player is null) {
-                auto newPlayer = PlayerMMInfo(parts);
-                _players[parts[0]] = @newPlayer;
-                AllPlayers.InsertLast(newPlayer);
-                TeamPopulations[newPlayer.TeamNum]++;
-            } else {
-                auto oldTeam = player.TeamNum;
-                player.UpdateFrom(parts);
-                if (player.TeamNum != oldTeam) {
-                    TeamPopulations[oldTeam]--;
-                    TeamPopulations[player.TeamNum]++;
-                }
+        void UpdateTeamsPopulation(int oldTeam, int newTeam) {
+            if (oldTeam < 0) {
+                TeamPopulations[newTeam]++;
+            } else if (newTeam >= 0) {
+                TeamPopulations[oldTeam]--;
+                TeamPopulations[newTeam]++;
             }
-            // RecalcTeamPopulations();
-        }
-
-        void RecalcTeamPopulations() {
-            for (uint i = 0; i < TeamPopulations.Length; i++) {
-                TeamPopulations[i] = 0;
-            }
-            for (uint i = 0; i < AllPlayers.Length; i++) {
-                TeamPopulations[AllPlayers[i].TeamNum]++;
-            }
+            TeamsUnbalanced = TeamPopulations[1] != TeamPopulations[2];
         }
 
         void UpdateClanScores(MLHook::PendingEvent@ evt) {
@@ -229,6 +219,11 @@ namespace TeamsFeed {
             auto @parts = string(evt.data[1]).Split(",");
             MvpName = parts[0];
             MvpAccountId = parts[1];
+            for (uint i = 0; i < theHook._SortedPlayers_Race_Respawns.Length; i++) {
+                cast<RaceFeed::_PlayerCpInfo>(theHook._SortedPlayers_Race_Respawns[i]).IsMVP = false;
+            }
+            auto mvpPlayer = theHook._GetPlayer(MvpName);
+            if (mvpPlayer !is null) mvpPlayer.IsMVP = true;
         }
 
         void UpdateSamiKP(MLHook::PendingEvent@ evt) {
@@ -238,19 +233,6 @@ namespace TeamsFeed {
             else if (key == "SAMI_RoundNumber") RoundNumber = val;
             else if (key == "SAMI_PointsLimit") PointsLimit = val;
             else warn("Unknown SAMI key: " + key);
-        }
-    }
-
-    class PlayerMMInfo : MLFeed::MatchMakingPlayer_V1 {
-        PlayerMMInfo(array<string>@ parts) {
-            UpdateFrom(parts);
-        }
-
-        void UpdateFrom(array<string>@ parts) {
-            Name = parts[0];
-            TeamNum = Text::ParseInt(parts[1]);
-            RoundPoints = Text::ParseInt(parts[2]);
-            Points = Text::ParseInt(parts[3]);
         }
     }
 
@@ -264,12 +246,14 @@ namespace TeamsFeed {
 
     void RenderDemoUI() {
         if (!DemoUIOpen) return;
-        UI::SetNextWindowSize(700, 500, UI::Cond::Appearing);
+        UI::SetNextWindowSize(300, 600, UI::Cond::Appearing);
         int[] currOrder;
         for (uint i = 0; i < theHook.SortedPlayers_Race_Respawns.Length; i++) {
-            auto item = theHook.SortedPlayers_Race_Respawns[i];
-            currOrder.InsertLast(teamsFeed.GetPlayer_V1(item.Name).TeamNum);
+            currOrder.InsertLast(cast<RaceFeed::_PlayerCpInfo>(theHook.SortedPlayers_Race_Respawns[i]).TeamNum);
         }
+        int[] points;
+        int[] teamPoints;
+        teamsFeed.ComputePoints(currOrder, points, teamPoints);
         if (UI::Begin("Teams Feed Demo UI", DemoUIOpen)) {
             UI::Text("WarmUpIsActive: " + tostring(teamsFeed.WarmUpIsActive));
             UI::Text("RankingMode: " + teamsFeed.RankingMode);
@@ -285,20 +269,14 @@ namespace TeamsFeed {
             UI::Text("Blue Score: " + teamsFeed.ClanScores[1]);
             UI::Text("Red Score: " + teamsFeed.ClanScores[2]);
             UI::Text("ClanScores: " + IntsToStrs(teamsFeed.ClanScores));
-            UI::Text("ComputePoints(): " + IntsToStrs(teamsFeed.ComputePoints(currOrder)));
+            UI::Text("ComputePoints() Finish Order Input: " + IntsToStrs(currOrder));
+            UI::Text("ComputePoints() Points: " + IntsToStrs(points));
+            UI::Text("ComputePoints() TeamPoints: " + IntsToStrs(teamPoints));
+            UI::Text("TeamPopulations: " + IntsToStrs(teamsFeed.TeamPopulations));
             UI::Separator();
             DrawPlayers();
         }
         UI::End();
-    }
-
-    const string IntsToStrs(int[]@ list) {
-        if (list is null || list.Length == 0) return "";
-        string ret;
-        for (uint i = 0; i < list.Length; i++) {
-            ret += list[i] + ", ";
-        }
-        return ret.SubStr(0, ret.Length - 2);
     }
 
     void DrawPlayers() {
@@ -316,25 +294,25 @@ namespace TeamsFeed {
     void DrawPlayersTableInner() {
         auto @players = theHook.SortedPlayers_Race_Respawns;
         for (uint i = 0; i < players.Length; i++) {
-            auto playerCpInfo = players[i];
-            auto playerMmInfo = teamsFeed.GetPlayer_V1(playerCpInfo.Name);
-            int team = -1;
-            int points = -1;
-            int roundPoints = -1;
-            if (playerMmInfo !is null) {
-                team = playerMmInfo.TeamNum;
-                points = playerMmInfo.Points;
-                roundPoints = playerMmInfo.RoundPoints;
-            }
+            auto playerCpInfo = cast<RaceFeed::_PlayerCpInfo>(players[i]);
             UI::TableNextRow();
             UI::TableNextColumn();
             UI::Text(playerCpInfo.Name);
             UI::TableNextColumn();
-            UI::Text(tostring(team));
+            UI::Text(tostring(playerCpInfo.TeamNum));
             UI::TableNextColumn();
-            UI::Text(tostring(roundPoints));
+            UI::Text(tostring(playerCpInfo.RoundPoints));
             UI::TableNextColumn();
-            UI::Text(tostring(points));
+            UI::Text(tostring(playerCpInfo.Points));
         }
     }
+}
+
+const string IntsToStrs(int[]@ list) {
+    if (list is null || list.Length == 0) return "";
+    string ret;
+    for (uint i = 0; i < list.Length; i++) {
+        ret += list[i] + ", ";
+    }
+    return ret.SubStr(0, ret.Length - 2);
 }

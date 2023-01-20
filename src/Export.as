@@ -10,7 +10,18 @@ namespace MLFeed {
      * Backwards compatible with RaceDataProxy (except that it's a different type; properties/methods are the same, though.)
      */
     import const HookRaceStatsEventsBase_V2@ GetRaceData_V2() from "MLFeed";
+    /**
+     * Exposes checkpoint data, spawn info, and lists of players for each sorting method.
+     * You can call this function as often as you like.
+     * Backwards compatible with RaceDataProxy (except that it's a different type; properties/methods are the same, though.)
+     */
     import const HookRaceStatsEventsBase_V3@ GetRaceData_V3() from "MLFeed";
+    /**
+     * Exposes checkpoint data, spawn info, and lists of players for each sorting method.
+     * You can call this function as often as you like.
+     * Backwards compatible with RaceDataProxy (except that it's a different type; properties/methods are the same, though.)
+     */
+    import const HookRaceStatsEventsBase_V4@ GetRaceData_V4() from "MLFeed";
 
     /**
      * Get a player's best CP times since the map loaded.
@@ -33,7 +44,7 @@ namespace MLFeed {
 
     /**
      * Object exposing info about the current Matchmaking Teams game.
-     * Includes warm up, team points, player points, when new rounds begin, current MVP, players finished.
+     * Includes warm up, team points, when new rounds begin, current MVP, players finished, and points prediction.
      */
     import const HookTeamsMMEventsBase_V1@ GetTeamsMMData_V1() from "MLFeed";
 }

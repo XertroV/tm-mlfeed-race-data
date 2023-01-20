@@ -47,36 +47,24 @@ namespace MLFeed {
         int RoundNumber;
         // A team wins when they reach this many points. Set after warmup.
         int PointsLimit;
+        // Whether the populations of the teams is unequal.
+        bool TeamsUnbalanced = false;
+        // The number of players on each team. Length is always 31.
+        int[]@ TeamPopulations;
 
         HookTeamsMMEventsBase_V1(const string &in type) {
             super(type);
         }
 
-        // Get the player's match making info (points, team number)
-        MatchMakingPlayer_V1@ GetPlayer_V1(const string &in name) { throw("implemented elsewhere"); return null; }
-
-        // An unordered list of all players.
-        MatchMakingPlayer_V1@[]@ AllPlayers;
-
-        // The number of players on each team. Length is always 31.
-        int[]@ TeamPopulations;
-
-        // Prefer `.AllPlayers` or `GetRaceData_V3().SortedPlayers_Race_Respawns` as a source of players. This list is not sorted and is generated on-demand.
-        string[]@ GetAllPlayerNames() { throw("implemented elsewhere"); return null; }
-
-        // Given a list of ints that is the team number of players that have finished, this returns how many points each position on the given team will earn. Ideally avoid calling more than once per frame per input.
-        int[]@ ComputePoints(int[]@ finishedTeamOrder) { throw("implemented elsewhere"); return 0; }
-    }
-
-    shared class MatchMakingPlayer_V1 {
-        // The player's name.
-        string Name;
-        // The points the player earned this round.
-        int RoundPoints;
-        // The points total of this player. Updated when RoundPoints is set to 0.
-        int Points;
-        // The team the player is on. 1 = Blue, 2 = Red.
-        int TeamNum;
+        /**
+         * Pass in a list of player.TeamNum for a finishing order, and 2 arrays that will be written to: the first will contain the points earned by each player for their team, the second contains the total points for each team (length 3).
+         *
+         * Usage: teamPoints[player.TeamNum]
+         *
+         * Implementation reference: `ComputeLatestRaceScores` in `Titles/Trackmania/Scripts/Libs/Nadeo/ModeLibs/TrackMania/Teams/TeamsCommon.Script.txt`
+         */
+        void ComputePoints(const int[]@ finishedTeamOrder, int[]@ points, int[]@ teamPoints) const { throw("implemented elsewhere"); }
+        // int[]@ ComputePoints(int[]@ finishedTeamOrder) const { throw("implemented elsewhere"); return null; }
     }
 
     shared class HookKoStatsEventsBase : MLHook::HookMLEventsByType {
@@ -360,21 +348,31 @@ namespace MLFeed {
     }
 
     /* Each's players status in the race, with a focus on CP related info. */
-    // shared // todo: uncomment when ready for use / next release
-    class PlayerCpInfo_V4 : PlayerCpInfo_V3 {
+    shared class PlayerCpInfo_V4 : PlayerCpInfo_V3 {
         PlayerCpInfo_V4(MLHook::PendingEvent@ event, uint _spawnIndex) {
             super(event, _spawnIndex);
         }
         PlayerCpInfo_V4(PlayerCpInfo_V4@ _from, int cpOffset) {
             super(_from, cpOffset);
         }
+        // The player's current lap.
         uint CurrentLap;
-        // todo
+        // The player's WebServicesUserId
         string WebServicesUserId;
+        // The player's Login (note: if you can, use WebServicesUserId instead)
         string Login;
-        // array<uint>@ PrevRaceTimes;
 
-        CSmPlayer@ FindPlayerInstance() { throw("overloaded elsewhere"); return null; }
+        // The points the player earned this round. Reset on Playing UI sequence.
+        int RoundPoints = 0;
+        // The points total of this player. Updated with +RoundPoints on EndRound UI sequence (before RoundPoints is reset).
+        int Points = 0;
+        // The team the player is on. 1 = Blue, 2 = Red.
+        int TeamNum = -1;
+        // Whether the player is currently the MVP (for MM / Ranked)
+        bool IsMVP = false;
+
+        // Return's the players CSmPlayer object if it is available, otherwise null. The full list of players is searched each time.
+        CSmPlayer@ FindCSmPlayer() { throw("overloaded elsewhere"); return null; }
     }
 
     // direction to move; down=-1, up=1
@@ -413,7 +411,7 @@ namespace MLFeed {
             super(type);
         }
 
-        // *deprecated; use GetPlayer_V2* get a player's cp info
+        // *deprecated; use GetPlayer_V4* get a player's cp info
         PlayerCpInfo@ GetPlayer(const string &in name) {
             return cast<PlayerCpInfo>(latestPlayerStats[name]);
         }
@@ -523,6 +521,29 @@ namespace MLFeed {
         PlayerCpInfo_V3@ _GetPlayer_V3(const string &in name) {
             if (not latestPlayerStats.Exists(name)) return null;
             return cast<PlayerCpInfo_V3>(latestPlayerStats[name]);
+        }
+    }
+
+
+    /**
+     * The main class used to access race data.
+     * It exposes 3 sorted lists of players, and general information about the map/race.
+     */
+    shared class HookRaceStatsEventsBase_V4 : HookRaceStatsEventsBase_V3 {
+        HookRaceStatsEventsBase_V4(const string &in type) {
+            super(type);
+        }
+
+        /* Get a player's info */
+        const PlayerCpInfo_V4@ GetPlayer_V4(const string &in name) const {
+            if (not latestPlayerStats.Exists(name)) return null;
+            return cast<PlayerCpInfo_V4>(latestPlayerStats[name]);
+        }
+
+        // internal
+        PlayerCpInfo_V4@ _GetPlayer_V4(const string &in name) {
+            if (not latestPlayerStats.Exists(name)) return null;
+            return cast<PlayerCpInfo_V4>(latestPlayerStats[name]);
         }
     }
 

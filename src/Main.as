@@ -25,6 +25,7 @@ void InitCoro() {
     MLHook::RegisterMLHook(theHook, "RaceStats_PlayerLeft");
     MLHook::RegisterMLHook(theHook, "RaceStats_PlayerRaceTimes");
     MLHook::RegisterMLHook(theHook, "RaceStats_PlayerInfo");
+    MLHook::RegisterMLHook(theHook, "RaceStats_MatchKeyPair");
     // ko feed hook
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_PlayerStatus");
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_MatchKeyPair");
@@ -164,12 +165,43 @@ namespace RaceFeed {
         return Cmp::Gt;
     }
 
-    class _PlayerCpInfo_V3 : MLFeed::PlayerCpInfo_V3 {
-        _PlayerCpInfo_V3(MLHook::PendingEvent@ event, uint _spawnIndex) {
+    class _PlayerCpInfo : MLFeed::PlayerCpInfo_V4 {
+        _PlayerCpInfo(MLHook::PendingEvent@ event, uint _spawnIndex) {
             super(event, _spawnIndex);
+            SetPlayerLoginWsid();
         }
-        _PlayerCpInfo_V3(_PlayerCpInfo_V3@ _from, int cpOffset) {
+        _PlayerCpInfo(_PlayerCpInfo@ _from, int cpOffset) {
             super(_from, cpOffset);
+            SetPlayerLoginWsid();
+        }
+
+        CSmPlayer@ FindCSmPlayer() override {
+            auto cp = GetApp().CurrentPlayground;
+            if (cp is null) return null;
+            for (uint i = 0; i < cp.Players.Length; i++) {
+                auto player = cast<CSmPlayer>(cp.Players[i]);
+                if (player !is null && player.User.Name == Name) {
+                    return player;
+                }
+            }
+            return null;
+        }
+
+        void SetPlayerLoginWsid() {
+            auto net = GetApp().Network;
+            for (uint i = 0; i < net.PlayerInfos.Length; i++) {
+                auto item = cast<CGamePlayerInfo>(net.PlayerInfos[i]);
+                if (string(item.Name) == this.Name) {
+                    Login = item.Login;
+                    WebServicesUserId = item.WebServicesUserId;
+                }
+            }
+        }
+
+        void UpdateScoreFrom(const string[] &in parts) {
+            TeamNum = Text::ParseInt(parts[1]);
+            RoundPoints = Text::ParseInt(parts[2]);
+            Points = Text::ParseInt(parts[3]);
         }
 
         void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex) override {
@@ -231,7 +263,7 @@ namespace RaceFeed {
     }
 
 
-    class HookRaceStatsEvents : MLFeed::HookRaceStatsEventsBase_V3 {
+    class HookRaceStatsEvents : MLFeed::HookRaceStatsEventsBase_V4 {
         // props defined in HookRaceStatsEventsBase
 
         // expanded props
@@ -249,10 +281,10 @@ namespace RaceFeed {
             MLHook::Queue_MessageManialinkPlayground("RaceStats", {"SendAllPlayerStates"});
             while (true) {
                 yield();
-                while (incoming_msgs.Length > 0) {
-                    ProcessMsg(incoming_msgs[incoming_msgs.Length - 1]);
-                    incoming_msgs.RemoveLast();
+                for (uint i = 0; i < incoming_msgs.Length; i++) {
+                    ProcessMsg(incoming_msgs[i]);
                 }
+                incoming_msgs.RemoveRange(0, incoming_msgs.Length);
                 if (lastMap != CurrentMap) {
                     lastMap = CurrentMap;
                     OnMapChange();
@@ -261,13 +293,19 @@ namespace RaceFeed {
         }
 
         void ProcessMsg(MLHook::PendingEvent@ event) {
-            if (event.type.EndsWith("PlayerLeft")) {
+            if (event.type.EndsWith("_PlayerLeft")) {
                 // update active player list
                 UpdatePlayerLeft(event);
-            } else if (event.type.EndsWith("PlayerCP")) {
+            } else if (event.type.EndsWith("_PlayerCP")) {
                 UpdatePlayer(event);
-            } else if (event.type.EndsWith("PlayerRaceTimes")) {
+            } else if (event.type.EndsWith("_MatchKeyPair")) {
+                ProcessMatchKP(event);
+            } else if (event.type.EndsWith("_PlayerRaceTimes")) {
                 UpdatePlayerRaceTimes(event);
+            } else if (event.type.EndsWith("_PlayerInfo")) {
+                // skip, could update tho.
+            } else {
+                warn("race stats: unknown event type: " + event.type);
             }
         }
 
@@ -275,7 +313,36 @@ namespace RaceFeed {
             incoming_msgs.InsertLast(event);
         }
 
+        _PlayerCpInfo@ _GetPlayer(const string &in name) const {
+            return cast<_PlayerCpInfo>(_GetPlayer_V4(name));
+        }
+
         /* main functionality logic */
+
+        void ProcessMatchKP(MLHook::PendingEvent@ event) {
+            if (event.data.Length < 2) {
+                warn("race stats KP not enough data");
+                return;
+            }
+            string key = event.data[0];
+            if (key == "PlayerScore") UpdatePlayerScore(event);
+            else warn("Unknown race status match kp: " + key + " w value: " + event.data[1]);
+        }
+
+        void UpdatePlayerScore(MLHook::PendingEvent@ evt) {
+            auto @parts = string(evt.data[1]).Split(",");
+            auto player = _GetPlayer(parts[0]);
+            if (player is null) {
+                warn("Got update player score for a nonexistant player: " + parts[0]);
+                return;
+            }
+            bool isNew = player.TeamNum < 0;
+            auto oldTeam = player.TeamNum;
+            player.UpdateScoreFrom(parts);
+            if (oldTeam != player.TeamNum) {
+                teamsFeed.UpdateTeamsPopulation(oldTeam, player.TeamNum);
+            }
+        }
 
         void UpdatePlayer(MLHook::PendingEvent@ event) {
             uint spawnIx = SpawnCounter;
@@ -285,7 +352,7 @@ namespace RaceFeed {
             if (hadPlayer) {
                 player.UpdateFrom(event, spawnIx);
             } else {
-                @player = _PlayerCpInfo_V3(event, spawnIx);
+                @player = _PlayerCpInfo(event, spawnIx);
                 @latestPlayerStats[name] = player;
                 _SortedPlayers_Race.InsertLast(player);
                 _SortedPlayers_TimeAttack.InsertLast(player);
@@ -484,6 +551,15 @@ namespace RaceFeed {
                 }
             }
             return _localUserName;
+        }
+
+        string get_GUIPlayerName() {
+            auto cp = GetApp().CurrentPlayground;
+            if (cp is null) return "";
+            if (cp.GameTerminals.Length < 1) return "";
+            auto term = cp.GameTerminals[0];
+            if (term.GUIPlayer is null) return "";
+            return term.GUIPlayer.User.Name;
         }
 
 
