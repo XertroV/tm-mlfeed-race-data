@@ -177,15 +177,17 @@ Void CheckRoundUpdates() {
     // declare netread Integer Net_Teams_Matchmaking_Top10_Update for Teams[0];
     // declare netread MatchmakingStruct::LibStructuresMatchmaking_K_PlayerLeaderboard[] Net_Teams_Matchmaking_Top10 for Teams[0];
 
-    if (_ClanScores[0] != ClanScores[0] || _ClanScores[1] != ClanScores[1] || _ClanScores[2] != ClanScores[2]) {
-        _ClanScores[0] = ClanScores[0];
-        _ClanScores[1] = ClanScores[1];
-        _ClanScores[2] = ClanScores[2];
-        declare Text[] _Scores;
-        foreach (points in ClanScores) {
-            _Scores.add(""^points);
+    if (_ClanScores.count >= 3 && ClanScores.count >= 3) {
+        if (_ClanScores[0] != ClanScores[0] || _ClanScores[1] != ClanScores[1] || _ClanScores[2] != ClanScores[2]) {
+            _ClanScores[0] = ClanScores[0];
+            _ClanScores[1] = ClanScores[1];
+            _ClanScores[2] = ClanScores[2];
+            declare Text[] _Scores;
+            foreach (points in ClanScores) {
+                _Scores.add(""^points);
+            }
+            MLHookUpdateKP("ClanScores", TL::Join(",", _Scores));
         }
-        MLHookUpdateKP("ClanScores", TL::Join(",", _Scores));
     }
 }
 

@@ -4,13 +4,13 @@ This plugin provides other plugins with data about the current race. You might n
 
 *Requires MLHook (you need to install that plugin too)*
 
-**Please report performance issues!** See bottom of page for who/where.
+**Please report performance issues!** See `boring stuff` below for who/where.
 
 ## For Developers
 
 Currently exposed data:
 * Sorted Player data
-  * For each player: LatestCPTime, CPCount, Cached Previous CP Times, Spawn Status, Best Time, Best CP Times, Best Lap Times, Time Lost to Respawns (in total and per CP), NbRespawns
+  * For each player: LatestCPTime, CPCount, Cached Previous CP Times, Spawn Status, Best Time, Best CP Times, Best Lap Times, Time Lost to Respawns (in total and per CP), NbRespawns, RoundPoints, Points, TeamNum, IsMVP, CurrentLap
   * Sort methods
     * `TimeAttack`: sort by best time
     * `Race`: sorted by race leader
@@ -21,6 +21,9 @@ Currently exposed data:
 * The last record set by the current player
 * Ghost Data
   * Which ghosts have been loaded, the name of the ghost, and the ghost's checkpoint times.
+* Matchmaking data
+  * Clan (Team) Scores, current MVP, Players Finished, Points Limit, Points Repartition, Ranking mode, Round Number, Round Winning Clan, Start of round indicators, Team Populations, Teams Unbalanced flag, Warm Up flag
+  * Points calculation given current points repartition and a finish order.
 
 Additional data exposure available upon request.
 
@@ -51,9 +54,10 @@ see also: [https://openplanet.dev/docs/reference/info-toml](https://openplanet.d
 
 Several feeds are available that provide different information. The functions that provide the feeds are:
 
-* `auto RaceData = MLFeed::GetRaceData_V3()`
+* `auto RaceData = MLFeed::GetRaceData_V4()`
 * `auto KoData = MLFeed::GetKoData()`
 * `auto GhostData = MLFeed::GetGhostData()`
+* `auto TeamsData = MLFeed::GetTeamsMMData_V1()`
 
 Full docs are below.
 
@@ -63,7 +67,7 @@ See the upgrade guide: (https://github.com/XertroV/tm-mlfeed-race-data/blob/mast
 
 ##### Race Data Example
 
-Main type: `HookRaceStatsEventsBase_V3`
+Main type: `HookRaceStatsEventsBase_V4`
 
 Example usage: doing something on player respawn.
 
@@ -73,8 +77,8 @@ uint lastRespawnCount = 0;
 void Update(float dt) {
     if (GetApp().CurrentPlayground is null) return;
     // Get race data and the local player
-    auto RaceData = MLFeed::GetRaceData_V3();
-    auto player = RaceData.GetPlayer_V3(MLFeed::LocalPlayersName);
+    auto RaceData = MLFeed::GetRaceData_V4();
+    auto player = RaceData.GetPlayer_V4(MLFeed::LocalPlayersName);
     if (player is null) return;
     // check for respawns
     if (player.NbRespawnsRequested != lastRespawnCount) {
