@@ -63,7 +63,7 @@ namespace MLFeed {
          *
          * Implementation reference: `ComputeLatestRaceScores` in `Titles/Trackmania/Scripts/Libs/Nadeo/ModeLibs/TrackMania/Teams/TeamsCommon.Script.txt`
          */
-        void ComputePoints(const int[]@ finishedTeamOrder, int[]@ points, int[]@ teamPoints) const { throw("implemented elsewhere"); }
+        void ComputePoints(const int[]@ finishedTeamOrder, int[]@ points, int[]@ teamPoints, int &out winningTeam) const { throw("implemented elsewhere"); }
         // int[]@ ComputePoints(int[]@ finishedTeamOrder) const { throw("implemented elsewhere"); return null; }
     }
 

@@ -6,6 +6,10 @@ void Main() {
     @ghostHook = HookGhostData();
     @teamsFeed = TeamsFeed::HookTeamsMMEvents();
 
+#if DEV
+    // TestTeamsFeedScoring();
+#endif
+
     MLHook::RequireVersionApi('0.3.2');
 
     startnew(InitCoro);

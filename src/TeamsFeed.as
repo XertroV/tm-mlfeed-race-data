@@ -42,6 +42,8 @@ namespace TeamsFeed {
             RoundNumber = -1;
             PointsLimit = -1;
             TeamsUnbalanced = false;
+            TeamPopulations.Resize(31);
+            ClanScores.Resize(31);
             for (uint i = 0; i < ClanScores.Length; i++) {
                 ClanScores[i] = 0;
                 TeamPopulations[i] = 0;
@@ -121,7 +123,7 @@ namespace TeamsFeed {
          *
          * Implementation reference: `ComputeLatestRaceScores` in `Titles/Trackmania/Scripts/Libs/Nadeo/ModeLibs/TrackMania/Teams/TeamsCommon.Script.txt`
          */
-        void ComputePoints(const int[]@ finishedTeamOrder, int[]@ points, int[]@ teamPoints) const override {
+        void ComputePoints(const int[]@ finishedTeamOrder, int[]@ points, int[]@ teamPoints, int &out winningTeam) const override {
             if (PointsRepartition.Length == 0 || finishedTeamOrder.Length == 0) {
                 points.Resize(finishedTeamOrder.Length);
                 teamPoints.Resize(3);
@@ -131,6 +133,7 @@ namespace TeamsFeed {
                     if (i < 3)
                         teamPoints[i] = 0;
                 }
+                winningTeam = 0;
                 return;
             }
             int minTeamPop = Math::Min(TeamPopulations[1], TeamPopulations[2]);
@@ -161,6 +164,15 @@ namespace TeamsFeed {
                     teamPoints[tn] += p;
                     key += 1;
                 }
+            }
+            if (teamPoints[1] == teamPoints[2]) {
+                if (TeamPopulations[1] == TeamPopulations[2]) {
+                    winningTeam = 0;
+                } else {
+                    winningTeam = finishedTeamOrder[0];
+                }
+            } else {
+                winningTeam = teamPoints[1] > teamPoints[2] ? 1 : 2;
             }
             // print("minTeamPop: " + minTeamPop);
             // print("finishedCountByTeam: " + IntsToStrs(finishedCountByTeam));
@@ -253,7 +265,8 @@ namespace TeamsFeed {
         }
         int[] points;
         int[] teamPoints;
-        teamsFeed.ComputePoints(currOrder, points, teamPoints);
+        int winningTeam;
+        teamsFeed.ComputePoints(currOrder, points, teamPoints, winningTeam);
         if (UI::Begin("Teams Feed Demo UI", DemoUIOpen)) {
             UI::Text("WarmUpIsActive: " + tostring(teamsFeed.WarmUpIsActive));
             UI::Text("RankingMode: " + teamsFeed.RankingMode);
@@ -272,6 +285,7 @@ namespace TeamsFeed {
             UI::Text("ComputePoints() Finish Order Input: " + IntsToStrs(currOrder));
             UI::Text("ComputePoints() Points: " + IntsToStrs(points));
             UI::Text("ComputePoints() TeamPoints: " + IntsToStrs(teamPoints));
+            UI::Text("ComputePoints() WinningTeam: " + winningTeam);
             UI::Text("TeamPopulations: " + IntsToStrs(teamsFeed.TeamPopulations));
             UI::Separator();
             DrawPlayers();
@@ -315,4 +329,28 @@ const string IntsToStrs(int[]@ list) {
         ret += list[i] + ", ";
     }
     return ret.SubStr(0, ret.Length - 2);
+}
+
+void TestTeamsFeedScoring() {
+#if DEV
+    @teamsFeed.PointsRepartition = {4,3,2,1,0};
+    @teamsFeed.TeamPopulations = {0, 3, 2};
+    teamsFeed.TeamsUnbalanced = true;
+    int[] points;
+    int[] teamScore;
+    int winningTeam;
+    teamsFeed.ComputePoints({2,1,1,1,2}, points, teamScore, winningTeam);
+    for (uint i = 0; i < points.Length; i++) {
+        print("points " + i + ": " + points[i]);
+    }
+    for (uint i = 0; i < teamScore.Length; i++) {
+        print("teamScore " + i + ": " + teamScore[i]);
+    }
+    int playersTeam = 2;
+    int otherTeam = playersTeam == 1 ? 2 : 1;
+    bool teamWinning = teamScore[playersTeam] > teamScore[otherTeam]
+            || (teamsFeed.TeamsUnbalanced && teamScore[playersTeam] == teamScore[otherTeam]
+                && 2 == playersTeam);
+    print("teamWinning: " + tostring(teamWinning));
+#endif
 }
