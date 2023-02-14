@@ -375,6 +375,22 @@ namespace MLFeed {
         CSmPlayer@ FindCSmPlayer() { throw("overloaded elsewhere"); return null; }
     }
 
+    //shared
+    class PlayerCpInfo_V5 : PlayerCpInfo_V4 {
+        PlayerCpInfo_V5(MLHook::PendingEvent@ event, uint _spawnIndex) {
+            super(event, _spawnIndex);
+        }
+
+        PlayerCpInfo_V5(PlayerCpInfo_V5@ _from, int cpOffset) {
+            super(_from, cpOffset);
+        }
+
+        // Whether the player is spawned
+        bool get_IsSpawned() const {
+            return spawnStatus == SpawnStatus::Spawned;
+        }
+    }
+
     // direction to move; down=-1, up=1
     shared enum Dir {
         Down = -1, Up = 1
