@@ -63,17 +63,23 @@ void InitCoro() {
 #endif
 }
 
+[Setting hidden]
 #if SIG_DEVELOPER
+bool S_ShowDebugMenu = true;
+#elif
+bool S_ShowDebugMenu = false;
+#endif
+
 void RenderInterface() {
+    if (!S_ShowDebugMenu) return;
     KoFeedUI::Render();
     RaceFeedUI::Render();
     GhostDataUI::Render();
     TeamsFeed::RenderDemoUI();
 }
-#endif
 
-#if SIG_DEVELOPER
 void RenderMenu() {
+    if (!S_ShowDebugMenu) return;
     if (UI::BeginMenu(Icons::Rss + " MLFeed::DemoUIs")) {
         KoFeedUI::RenderMenu();
         RaceFeedUI::RenderMenu();
@@ -82,7 +88,6 @@ void RenderMenu() {
         UI::EndMenu();
     }
 }
-#endif
 
 /* with race, the winning players unspawn. how to differentiate?
 maybe track *when* they unspawned, and group those.
