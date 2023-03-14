@@ -645,7 +645,7 @@ namespace MLFeed {
     */
     shared class SharedGhostDataHook : MLHook::HookMLEventsByType {
         SharedGhostDataHook(const string &in type) { super(type); }
-        // Number of currently loaded ghosts
+        // Number of ghosts that have been loaded on this map, including unloaded ghosts
         uint get_NbGhosts() const { return 0; };
         // *Deprecated, prefer .Ghosts_V2*; Array of GhostInfos
         const array<const MLFeed::GhostInfo@> get_Ghosts() const { return {}; };
@@ -658,9 +658,16 @@ namespace MLFeed {
         V2 adds .IsLocalPlayer and .IsPersonalBest properties to GhostInfo objects.
     */
     shared class SharedGhostDataHook_V2 : SharedGhostDataHook {
+        // Currently loaded ghosts -- sorted fastest to slowest.
+        array<MLFeed::GhostInfo_V2@> LoadedGhosts;
+        // Known ghosts -- sorted fastest to slowest.
+        array<MLFeed::GhostInfo_V2@> SortedGhosts;
+
         SharedGhostDataHook_V2(const string &in type) { super(type); }
         // Array of GhostInfo_V2s
         const array<const MLFeed::GhostInfo_V2@> get_Ghosts_V2() const { return {}; };
+        // Number of currently loaded ghosts
+        uint get_NbLoadedGhosts() const { return LoadedGhosts.Length; }
     }
 
     /** Information about a currently loaded ghost.
@@ -728,10 +735,12 @@ namespace MLFeed {
      * Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
      */
     shared class GhostInfo_V2 : GhostInfo {
-        // Whether this is the local player (sitting at this computer)
+        // Whether this is the local player (sitting at this computer) -- includes PBs
         bool IsLocalPlayer;
         // Whether this is a PB ghost (named: 'Personal best')
         bool IsPersonalBest;
+        // Whether this ghost is currently loaded in DataFileMgr
+        bool IsLoaded = true;
 
         GhostInfo_V2(const MLHook::PendingEvent@ &in event) {
             super(event);
@@ -739,6 +748,20 @@ namespace MLFeed {
             IsLocalPlayer = IsPersonalBest || Nickname == LocalPlayersName;
         }
     }
+
+    // /** Information about a currently loaded ghost.
+    //  * Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
+    //  */
+    // shared class GhostInfo_V3 : GhostInfo_V2 {
+    //     // Whether this ghost is currently loaded in DataFileMgr
+    //     bool IsLoaded = true;
+
+    //     GhostInfo_V3(const MLHook::PendingEvent@ &in event) {
+    //         super(event);
+    //         IsPersonalBest = Nickname == "Personal best"; // fixed by HookGhostData
+    //         IsLocalPlayer = IsPersonalBest || Nickname == LocalPlayersName;
+    //     }
+    // }
 
     // returns the name of the local player, or an empty string if this is not yet known
     shared const string get_LocalPlayersName() {

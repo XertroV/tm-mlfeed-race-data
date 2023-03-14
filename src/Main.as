@@ -40,6 +40,7 @@ void InitCoro() {
     MLHook::RegisterMLHook(recordHook, recordHook.type, true);
     // GhostData
     MLHook::RegisterMLHook(ghostHook);
+    MLHook::RegisterMLHook(ghostHook, "GhostData_Removed");
 
     // ml load
     yield(); // time for hooks to be instantiated etc

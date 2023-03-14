@@ -40,6 +40,11 @@ Void SendGhostInfo(CGhost Ghost) {
     MLHookLog("Send ghost data: " ^ ToSend);
 }
 
+Void SendGhostLeft(Ident GhostId) {
+    SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_Removed", [""^GhostId]);
+    MLHookLog("Remove ghost: " ^ GhostId);
+}
+
 /// Convert a C++ array to a script array
 Integer[] ToScriptArray(Integer[] _Array) {
 	return _Array;
@@ -95,11 +100,22 @@ Void CheckGhostsCPData() {
     if (LastNbGhosts == NbGhosts && (NbGhosts == 0 || SeenGhosts.existskey(DataFileMgr.Ghosts[0].Id))) { return; }
     // figure out if we want to cache this ghost's CP times
     MLHookLog("DataFileMgr.Ghosts found " ^ (NbGhosts - LastNbGhosts) ^ " new ghosts.");
+    declare Boolean GhostLeft = NbGhosts < LastNbGhosts;
     LastNbGhosts = NbGhosts;
     foreach (Ghost in DataFileMgr.Ghosts) {
         if (ShouldCacheGhost(Ghost)) {
             RecordSeen(Ghost);
             SendGhostInfo(Ghost);
+        }
+    }
+    if (GhostLeft) {
+        declare ToRemove = SeenGhosts;
+        foreach (Ghost in DataFileMgr.Ghosts) {
+            ToRemove.removekey(Ghost.Id);
+        }
+        foreach (GhostId => _Meh in ToRemove) {
+            SendGhostLeft(GhostId);
+            SeenGhosts.removekey(GhostId);
         }
     }
     // does not work -- might work from game script code, but not ML

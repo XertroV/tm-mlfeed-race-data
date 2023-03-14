@@ -65,6 +65,11 @@ class HookGhostData : MLFeed::SharedGhostDataHook_V2 {
         lastMap = CurrentMap;
         _ghosts.RemoveRange(0, _ghosts.Length);
         _ghosts_copy.RemoveRange(0, _ghosts_copy.Length);
+        for (uint i = 0; i < LoadedGhosts.Length; i++) {
+            LoadedGhosts[i].IsLoaded = false;
+        }
+        LoadedGhosts.RemoveRange(0, LoadedGhosts.Length);
+        SortedGhosts.RemoveRange(0, SortedGhosts.Length);
         last_PGS_DFM_NbGhosts = 0;
         seenGhosts.DeleteAll();
         if (askForRefresh)
@@ -79,6 +84,9 @@ class HookGhostData : MLFeed::SharedGhostDataHook_V2 {
         // only ghost data events, only one type
         // if it has fewer then 5 elements then it's a special message
         if (event.data.Length < 5) {
+            if (event.type.EndsWith("_Removed")) {
+                RemoveByIdStr(event.data[0]);
+            }
             // if (event.data.Length == 0) {
             //     warn("HookGhostData got an empty message.");
             // } else {
@@ -99,6 +107,44 @@ class HookGhostData : MLFeed::SharedGhostDataHook_V2 {
         auto g = MLFeed::GhostInfo_V2(event);
         _ghosts.InsertLast(g);
         _ghosts_copy.InsertLast(cast<MLFeed::GhostInfo>(g));
+        AddLoadedGhost(g);
+    }
+
+    void RemoveByIdStr(const string &in ghostId) {
+        for (uint i = 0; i < LoadedGhosts.Length; i++) {
+            auto g = LoadedGhosts[i];
+            if (g.IdName == ghostId) {
+                g.IsLoaded = false;
+                LoadedGhosts.RemoveAt(i);
+                i--;
+            }
+        }
+    }
+
+    void AddLoadedGhost(MLFeed::GhostInfo_V2@ g) {
+        auto initLoaded = NbLoadedGhosts;
+        for (uint i = 0; i < LoadedGhosts.Length; i++) {
+            auto item = LoadedGhosts[i];
+            if (g.Result_Time < item.Result_Time) {
+                LoadedGhosts.InsertAt(i, g);
+                break;
+            }
+        }
+        if (initLoaded == NbLoadedGhosts) {
+            LoadedGhosts.InsertLast(g);
+        }
+
+        auto initGhosts = SortedGhosts.Length;
+        for (uint i = 0; i < SortedGhosts.Length; i++) {
+            auto item = SortedGhosts[i];
+            if (g.Result_Time < item.Result_Time) {
+                SortedGhosts.InsertAt(i, g);
+                break;
+            }
+        }
+        if (initGhosts == SortedGhosts.Length) {
+            SortedGhosts.InsertLast(g);
+        }
     }
 
     uint get_NbGhosts() const override {
@@ -114,6 +160,9 @@ class HookGhostData : MLFeed::SharedGhostDataHook_V2 {
     }
 }
 
+bool g_ShowOnlyLoaded = false;
+bool g_SortedGhosts = false;
+
 namespace GhostDataUI {
     bool g_windowVisible = false;
 
@@ -126,13 +175,44 @@ namespace GhostDataUI {
                 UI::Text("GhostData is null.");
             } else {
                 UI::Text("NbGhosts: " + ghostData.NbGhosts);
+                UI::SameLine();
+                UI::Text("/   NbLoadedGhosts: " + ghostData.NbLoadedGhosts);
+                g_ShowOnlyLoaded = UI::Checkbox("Show only Loaded Ghosts", g_ShowOnlyLoaded);
+                AddSimpleTooltip("'Loaded' ghosts should be currently accessible via DataFileMgr (under Network.ClientManiaAppPlayground).");
+                if (!g_ShowOnlyLoaded) {
+                    g_SortedGhosts = UI::Checkbox("Use SortedGhosts (fastest to slowest)", g_SortedGhosts);
+                    AddSimpleTooltip("via `.SortedGhosts`");
+                }
                 UI::Separator();
-                for (uint i = 0; i < ghostData.Ghosts_V2.Length; i++) {
-                    auto ghost = ghostData.Ghosts_V2[i];
-                    DrawGhost(i, ghost);
+                if (g_ShowOnlyLoaded) {
+                    DrawGhosts_Loaded(ghostData);
+                } else {
+                    if (g_SortedGhosts)
+                        DrawGhosts_Sorted(ghostData);
+                    else
+                        DrawGhosts_All(ghostData);
                 }
             }
             UI::End();
+        }
+    }
+
+    void DrawGhosts_All(const MLFeed::SharedGhostDataHook_V2@ ghostData) {
+        for (uint i = 0; i < ghostData.Ghosts_V2.Length; i++) {
+            auto ghost = ghostData.Ghosts_V2[i];
+            DrawGhost(i, ghost);
+        }
+    }
+    void DrawGhosts_Sorted(const MLFeed::SharedGhostDataHook_V2@ ghostData) {
+        for (uint i = 0; i < ghostData.SortedGhosts.Length; i++) {
+            auto ghost = ghostData.SortedGhosts[i];
+            DrawGhost(i, ghost);
+        }
+    }
+    void DrawGhosts_Loaded(const MLFeed::SharedGhostDataHook_V2@ ghostData) {
+        for (uint i = 0; i < ghostData.LoadedGhosts.Length; i++) {
+            auto ghost = ghostData.LoadedGhosts[i];
+            DrawGhost(i, ghost);
         }
     }
 
@@ -142,8 +222,14 @@ namespace GhostDataUI {
             AddSimpleTooltip("Equivalent to Ghost.IdName");
             UI::Text("IdUint: " + ghost.IdUint + " (0x" + Text::Format("%x", ghost.IdUint) + ")");
             AddSimpleTooltip("Equivalent to Ghost.Id.Value (experimental)");
+            UI::Text("IsLoaded: " + tostring(ghost.IsLoaded));
+            AddSimpleTooltip("True when the ghost is available via the DataFileMgr");
             UI::Text("Nickname: " + ghost.Nickname);
             AddSimpleTooltip("Equivalent to Ghost.Nickname");
+            UI::Text("IsPersonalBest: " + tostring(ghost.IsPersonalBest));
+            AddSimpleTooltip("True when the name is 'Personal best'");
+            UI::Text("IsLocalPlayer: " + tostring(ghost.IsLocalPlayer));
+            AddSimpleTooltip("True when the nickname is the same as the local player or this ghost is called 'Personal best'");
             UI::Text("Result_Score: " + ghost.Result_Score);
             AddSimpleTooltip("Equivalent to Ghost.Result.Score (note: often 0, mb always)");
             UI::Text("Result_Time: " + ghost.Result_Time);
