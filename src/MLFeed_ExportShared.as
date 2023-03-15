@@ -749,20 +749,6 @@ namespace MLFeed {
         }
     }
 
-    // /** Information about a currently loaded ghost.
-    //  * Constructor expects a pending event with data: `{IdName, Nickname, Result_Score, Result_Time, cpTimes (as string joined with ',')}`
-    //  */
-    // shared class GhostInfo_V3 : GhostInfo_V2 {
-    //     // Whether this ghost is currently loaded in DataFileMgr
-    //     bool IsLoaded = true;
-
-    //     GhostInfo_V3(const MLHook::PendingEvent@ &in event) {
-    //         super(event);
-    //         IsPersonalBest = Nickname == "Personal best"; // fixed by HookGhostData
-    //         IsLocalPlayer = IsPersonalBest || Nickname == LocalPlayersName;
-    //     }
-    // }
-
     // returns the name of the local player, or an empty string if this is not yet known
     shared const string get_LocalPlayersName() {
         try {
