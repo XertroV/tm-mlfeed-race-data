@@ -64,7 +64,7 @@ void InitCoro() {
 #endif
 }
 
-[Setting hidden]
+[Setting category="Demo UIs" name="Show Demos Menu under Plugins"]
 #if SIG_DEVELOPER
 bool S_ShowDebugMenu = true;
 #elif
