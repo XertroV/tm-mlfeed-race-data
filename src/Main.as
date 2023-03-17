@@ -13,6 +13,10 @@ void Main() {
     MLHook::RequireVersionApi('0.3.2');
 
     startnew(InitCoro);
+
+#if SIG_DEVELOPER
+    S_ShowDebugMenu = true;
+#endif
 }
 
 void OnDestroyed() { _Unload(); }
@@ -65,11 +69,7 @@ void InitCoro() {
 }
 
 [Setting category="Demo UIs" name="Show Demos Menu under Plugins"]
-#if SIG_DEVELOPER
-bool S_ShowDebugMenu = true;
-#elif
 bool S_ShowDebugMenu = false;
-#endif
 
 void RenderInterface() {
     if (!S_ShowDebugMenu) return;
