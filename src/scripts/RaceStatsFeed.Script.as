@@ -36,10 +36,10 @@ Integer GetBestRaceTime(CSmPlayer Player) {
     declare BrCount = Player.Score.BestRaceTimes.count;
     if (BrCount == 0) return -1;
     declare BrTime = Player.Score.BestRaceTimes[BrCount - 1];
-    if (Player.RaceWaypointTimes.count == BrCount) {
-        declare RwTime = Player.RaceWaypointTimes[BrCount - 1];
-        if (RwTime < BrTime) return RwTime;
-    }
+    // if (Player.RaceWaypointTimes.count == BrCount) {
+    //     declare RwTime = Player.RaceWaypointTimes[BrCount - 1];
+    //     if (RwTime < BrTime) return RwTime;
+    // }
     return BrTime;
 }
 
@@ -95,14 +95,14 @@ Void _SendPlayerTimes(CSmPlayer Player) {
     declare RaceTimes = TL::Join(",", CPTimesStr(Player.RaceWaypointTimes));
     declare BestTimes = TL::Join(",", CPTimesStr(Player.Score.BestRaceTimes));
     declare BestLapTimes = TL::Join(",", CPTimesStr(Player.Score.BestLapTimes));
-    declare NbCurrCheckpoints = Player.RaceWaypointTimes.count;
-    if (NbCurrCheckpoints > 0
-        && NbCurrCheckpoints == Player.Score.BestRaceTimes.count
-        && Player.RaceWaypointTimes[NbCurrCheckpoints - 1] < Player.Score.BestRaceTimes[NbCurrCheckpoints - 1]
-    ) {
-        // BestRaceTimes just not updated yet, so return current CP times instead
-        BestTimes = RaceTimes;
-    }
+    // declare NbCurrCheckpoints = Player.RaceWaypointTimes.count;
+    // if (NbCurrCheckpoints > 0
+    //     && NbCurrCheckpoints == Player.Score.BestRaceTimes.count
+    //     && Player.RaceWaypointTimes[NbCurrCheckpoints - 1] < Player.Score.BestRaceTimes[NbCurrCheckpoints - 1]
+    // ) {
+    //     // BestRaceTimes just not updated yet, so return current CP times instead
+    //     BestTimes = RaceTimes;
+    // }
     // we used to send race times at ix=1 but don't anymore, so zero it
     SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_PlayerRaceTimes", [Name, RaceTimes, BestTimes, BestLapTimes]);
 }
