@@ -255,12 +255,12 @@ main() {
     declare Integer Delta = 0;
     while (True) {
         yield;
+        CheckMapChange();
         CheckPlayers();
         CheckPlayerPoints();
         LoopCounter += 1;
         if (LoopCounter % 60 == 0) {
             SendDepartedPlayers();
-            CheckMapChange();
         }
         if (LoopCounter % 60 == 20) {
             CheckIncoming();
