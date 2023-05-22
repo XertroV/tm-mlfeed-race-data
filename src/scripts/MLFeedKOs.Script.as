@@ -31,6 +31,7 @@ declare Boolean[Text] ScoreLastDNF;
 Void UpdatePlayerStatus() {
     // tuningstart();
     foreach (Score in Scores) {
+        if (Score == Null || Score.User == Null) continue;
         declare netread Boolean Net_Knockout_PlayerIsAlive for Score;
         declare netread Boolean Net_Knockout_DNF for Score;
         declare Text UserId = Score.User.Name;
