@@ -139,9 +139,7 @@ declare CSmPlayer::ESpawnStatus[Text] LastSpawn;
 declare Integer MostCPsSeen;
 
 Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
-    while (Player.Score == Null) {
-        yield;
-    }
+    if (Player == Null || Player.Score == Null) return False;
     // tuningstart();
     declare Text Name = Player.User.Name;
     declare CPCount = Player.RaceWaypointTimes.count;
