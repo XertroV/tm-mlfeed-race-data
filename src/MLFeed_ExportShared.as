@@ -283,8 +283,8 @@ namespace MLFeed {
         // The player's rank as measured in a race (when all players would spawn at the same time), accounting for respawns.
         uint get_RaceRespawnRank() const { return raceRespawnRank; }
 
-        // this player's CP times for their best performance this session (since the map loaded)
-        const array<uint>@ BestRaceTimes;
+        // this player's CP times for their best performance this session (since the map loaded). Can be null. Can be partial before a player has finished a complete run.
+        const array<uint>@ BestRaceTimes = {};
         // whether this player corresponds to the physical player playing the game
         bool IsLocalPlayer;
         // when the player spawned (measured against GameTime)
