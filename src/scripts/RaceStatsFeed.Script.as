@@ -2,6 +2,8 @@ const string RACESTATSFEED_SCRIPT_TXT = """
 // 1 space indent due to openplanet preprocessor
  #Const C_PageUID "RaceStats"
  #Include "TextLib" as TL
+ #Include "Libs/Nadeo/TMNext/TrackMania/Modes/COTDQualifications/Constants.Script.txt" as COTDConst
+ #Include "Libs/Nadeo/TMNext/TrackMania/Modes/COTDQualifications/NetShare.Script.txt" as COTDNetShare
 
 declare Text G_PreviousMapUid;
 
@@ -188,6 +190,53 @@ Void _SendPlayerInfos(CSmPlayer Player) {
 }
 
 
+Boolean IsCotdQuali() {
+    return Playground.ServerInfo.ModeName == "TM_COTDQualifications_Online";
+}
+
+declare Integer LastLocalRaceTime;
+declare Integer LastAPIRaceTime;
+declare Integer LastRank;
+declare Integer LastQualificationsJoinTime;
+declare Integer LastQualificationsProgress;
+declare Boolean LastIsSynchronizingRecord;
+
+Void _SendCOTDQuali() {
+    if (!IsCotdQuali()) return;
+    if (
+        COTDNetShare::GetMyLocalRaceTime(UI) != LastLocalRaceTime ||
+        COTDNetShare::GetMyAPIRaceTime(UI) != LastAPIRaceTime ||
+        COTDNetShare::GetMyRank(UI) != LastRank ||
+        COTDNetShare::GetMyQualificationsJoinTime(UI) != LastQualificationsJoinTime ||
+        COTDNetShare::GetQualificationsProgress(Teams[0]) != LastQualificationsProgress ||
+        COTDNetShare::IsSynchronizingRecord(UI) != LastIsSynchronizingRecord
+    ) {
+        LastLocalRaceTime = COTDNetShare::GetMyLocalRaceTime(UI);
+        LastAPIRaceTime = COTDNetShare::GetMyAPIRaceTime(UI);
+        LastRank = COTDNetShare::GetMyRank(UI);
+        LastQualificationsJoinTime = COTDNetShare::GetMyQualificationsJoinTime(UI);
+        LastQualificationsProgress = COTDNetShare::GetQualificationsProgress(Teams[0]);
+        LastIsSynchronizingRecord = COTDNetShare::IsSynchronizingRecord(UI);
+        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_COTDQualiInfo", [
+            ""^LastLocalRaceTime,
+            ""^LastAPIRaceTime,
+            ""^LastRank,
+            ""^LastQualificationsJoinTime,
+            ""^LastQualificationsProgress,
+            ""^LastIsSynchronizingRecord
+        ]);
+        MLHookLog("COTD: " ^ [
+            ""^LastLocalRaceTime,
+            ""^LastAPIRaceTime,
+            ""^LastRank,
+            ""^LastQualificationsJoinTime,
+            ""^LastQualificationsProgress,
+            ""^LastIsSynchronizingRecord
+        ]);
+    }
+}
+
+
 // to start with we want to send all data.
 Void InitialSend() {
     foreach (Player in Players) {
@@ -263,6 +312,7 @@ main() {
         }
         if (LoopCounter % 60 == 20) {
             CheckIncoming();
+            _SendCOTDQuali();
         }
     }
 }

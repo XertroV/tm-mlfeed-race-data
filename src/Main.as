@@ -314,6 +314,8 @@ namespace RaceFeed {
                 UpdatePlayerRaceTimes(event);
             } else if (event.type.EndsWith("_PlayerInfo")) {
                 // skip, could update tho.
+            } else if (event.type.EndsWith("_COTDQualiInfo")) {
+                UpdateQualiInfo(event);
             } else {
                 warn("race stats: unknown event type: " + event.type);
             }
@@ -531,6 +533,20 @@ namespace RaceFeed {
             }
             this.CpCount = cpCount + lcps.GetSize();
             this.LapCount = cp.Map.MapInfo.TMObjective_NbLaps;
+        }
+
+        void UpdateQualiInfo(MLHook::PendingEvent@ event) {
+            if (event.data.Length != 6) {
+                warn("UpdateQualiInfo got bad event data length: " + event.data.Length);
+                return;
+            }
+            COTDQ_LocalRaceTime = Text::ParseInt(event.data[0]);
+            COTDQ_APIRaceTime = Text::ParseInt(event.data[1]);
+            COTDQ_Rank = Text::ParseInt(event.data[2]);
+            COTDQ_QualificationsJoinTime = Text::ParseInt(event.data[3]);
+            COTDQ_QualificationsProgress = Text::ParseInt(event.data[4]);
+            COTDQ_IsSynchronizingRecord = event.data[5] == "True";
+            COTDQ_UpdateNonce++;
         }
 
         void OnMapChange() {

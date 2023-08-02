@@ -546,6 +546,14 @@ namespace MLFeed {
      * It exposes 3 sorted lists of players, and general information about the map/race.
      */
     shared class HookRaceStatsEventsBase_V4 : HookRaceStatsEventsBase_V3 {
+        int COTDQ_LocalRaceTime;
+        int COTDQ_APIRaceTime;
+        int COTDQ_Rank;
+        int COTDQ_QualificationsJoinTime;
+        int COTDQ_QualificationsProgress;
+        bool COTDQ_IsSynchronizingRecord;
+        int COTDQ_UpdateNonce;
+
         HookRaceStatsEventsBase_V4(const string &in type) {
             super(type);
         }
