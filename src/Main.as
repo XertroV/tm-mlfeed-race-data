@@ -303,21 +303,26 @@ namespace RaceFeed {
         }
 
         void ProcessMsg(MLHook::PendingEvent@ event) {
-            if (event.type.EndsWith("_PlayerLeft")) {
-                // update active player list
-                UpdatePlayerLeft(event);
-            } else if (event.type.EndsWith("_PlayerCP")) {
-                UpdatePlayer(event);
-            } else if (event.type.EndsWith("_MatchKeyPair")) {
-                ProcessMatchKP(event);
-            } else if (event.type.EndsWith("_PlayerRaceTimes")) {
-                UpdatePlayerRaceTimes(event);
-            } else if (event.type.EndsWith("_PlayerInfo")) {
-                // skip, could update tho.
-            } else if (event.type.EndsWith("_COTDQualiInfo")) {
-                UpdateQualiInfo(event);
-            } else {
-                warn("race stats: unknown event type: " + event.type);
+            if (event is null) return;
+            try {
+                if (event.type.EndsWith("_PlayerLeft")) {
+                    // update active player list
+                    UpdatePlayerLeft(event);
+                } else if (event.type.EndsWith("_PlayerCP")) {
+                    UpdatePlayer(event);
+                } else if (event.type.EndsWith("_MatchKeyPair")) {
+                    ProcessMatchKP(event);
+                } else if (event.type.EndsWith("_PlayerRaceTimes")) {
+                    UpdatePlayerRaceTimes(event);
+                } else if (event.type.EndsWith("_PlayerInfo")) {
+                    // skip, could update tho.
+                } else if (event.type.EndsWith("_COTDQualiInfo")) {
+                    UpdateQualiInfo(event);
+                } else {
+                    warn("race stats: unknown event type: " + event.type);
+                }
+            } catch {
+                warn("HookRaceStatsEvents::ProcessMsg: Got exception processing incoming event ("+event.type+"): " + getExceptionInfo());
             }
         }
 
@@ -544,7 +549,7 @@ namespace RaceFeed {
             COTDQ_APIRaceTime = Text::ParseInt(event.data[1]);
             COTDQ_Rank = Text::ParseInt(event.data[2]);
             COTDQ_QualificationsJoinTime = Text::ParseInt(event.data[3]);
-            COTDQ_QualificationsProgress = Text::ParseInt(event.data[4]);
+            COTDQ_QualificationsProgress = MLFeed::QualificationStage(Text::ParseInt(event.data[4]));
             COTDQ_IsSynchronizingRecord = event.data[5] == "True";
             COTDQ_UpdateNonce++;
         }

@@ -540,18 +540,35 @@ namespace MLFeed {
         }
     }
 
+    shared enum QualificationStage {
+        Null = 0,
+        ServerInitializing = 1,
+        WaitingForStart = 2,
+        Running = 3,
+        MatchesGenerating = 4,
+        ServerReady = 5,
+        TooLateToJoinKO = 6,
+        ServerEndingSoon = 7,
+    }
 
     /**
      * The main class used to access race data.
      * It exposes 3 sorted lists of players, and general information about the map/race.
      */
     shared class HookRaceStatsEventsBase_V4 : HookRaceStatsEventsBase_V3 {
+        // Qualification time known locally
         int COTDQ_LocalRaceTime;
+        // Qualification time according to the API
         int COTDQ_APIRaceTime;
+        // Qualification Rank, updated regularly (3-7s)
         int COTDQ_Rank;
+        // Time you joined the server
         int COTDQ_QualificationsJoinTime;
-        int COTDQ_QualificationsProgress;
+        // Stage that qualification is in;
+        QualificationStage COTDQ_QualificationsProgress;
+        // true when you load into a server before it has gotten your record from the API
         bool COTDQ_IsSynchronizingRecord;
+        // Incremented each time any COTD thing is updated
         int COTDQ_UpdateNonce;
 
         HookRaceStatsEventsBase_V4(const string &in type) {
