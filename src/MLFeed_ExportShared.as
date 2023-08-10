@@ -568,7 +568,7 @@ namespace MLFeed {
         QualificationStage COTDQ_QualificationsProgress;
         // true when you load into a server before it has gotten your record from the API
         bool COTDQ_IsSynchronizingRecord;
-        // Incremented each time any COTD thing is updated
+        // Incremented each time any COTDQ thing is updated
         int COTDQ_UpdateNonce;
 
         HookRaceStatsEventsBase_V4(const string &in type) {
