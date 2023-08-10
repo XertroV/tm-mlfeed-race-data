@@ -55,7 +55,19 @@ namespace RaceFeedUI {
             UI::Dummy(vec2(0, 20));
             int lrt = recordHook is null ? -1 : recordHook.LastRecordTime;
             UI::Text("LastRecordTime: " + lrt); // + NOTE_OPTIONAL);
+            UI::Dummy(vec2(0, 20));
+            ValueLabel(tostring(theHook.COTDQ_APIRaceTime), "COTDQ_APIRaceTime");
+            ValueLabel(tostring(theHook.COTDQ_IsSynchronizingRecord), "COTDQ_IsSynchronizingRecord");
+            ValueLabel(tostring(theHook.COTDQ_LocalRaceTime), "COTDQ_LocalRaceTime");
+            ValueLabel(tostring(theHook.COTDQ_QualificationsJoinTime), "COTDQ_QualificationsJoinTime");
+            ValueLabel(tostring(theHook.COTDQ_QualificationsProgress), "COTDQ_QualificationsProgress");
+            ValueLabel(tostring(theHook.COTDQ_Rank), "COTDQ_Rank");
+            ValueLabel(tostring(theHook.COTDQ_UpdateNonce), "COTDQ_UpdateNonce");
         }
+    }
+
+    void ValueLabel(const string &in value, const string &in label) {
+        UI::Text(label + ": " + value);
     }
 
     class RaceTab : Tab {
