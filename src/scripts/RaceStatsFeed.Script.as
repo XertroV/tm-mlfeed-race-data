@@ -140,6 +140,7 @@ declare Integer[Text] LastBestLapTimes;
 declare Integer[Text] LastRespawnsCount;
 declare CSmPlayer::ESpawnStatus[Text] LastSpawn;
 declare Integer MostCPsSeen;
+declare Integer LastKnownLapsNb;
 
 Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
     if (Player == Null || Player.Score == Null) return False;
@@ -236,6 +237,15 @@ Void _SendCOTDQuali() {
     }
 }
 
+Void _CheckLapsNb() {
+    declare netread Integer Net_Race_Helpers_LapsNb for Teams[0] = 0;
+    if (LastKnownLapsNb != Net_Race_Helpers_LapsNb) {
+        LastKnownLapsNb = Net_Race_Helpers_LapsNb;
+        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_LapsNb", [
+            ""^LastKnownLapsNb
+        ]);
+    }
+}
 
 // to start with we want to send all data.
 Void InitialSend() {
@@ -269,6 +279,7 @@ Void CheckMapChange() {
         LastPlayerPoints = [];
         LastPlayerRoundPoints = [];
         LastPlayerTeams = [];
+        LastKnownLapsNb = -1;
     }
 }
 
@@ -313,6 +324,7 @@ main() {
         if (LoopCounter % 60 == 20) {
             CheckIncoming();
             _SendCOTDQuali();
+            _CheckLapsNb();
         }
     }
 }

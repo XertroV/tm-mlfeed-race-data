@@ -223,6 +223,12 @@ namespace MLFeed {
             string[] inner = {name, ''+cpCount, ''+lastCpTime, ''+spawnStatus, ''+raceRank, ''+taRank, ''+bestTime};
             return "PlayerCpInfo(" + string::Join(inner, ", ") + ")";
         }
+
+        // Does the player's CP count indicate they are finished? This should work with a forced number of laps
+        bool get_IsFinished() const {
+            throw("implemented elsewhere");
+            return false;
+        }
     }
 
     /* Each's players status in the race, with a focus on CP related info. */
@@ -416,6 +422,8 @@ namespace MLFeed {
         uint CpCount;
         /* The number of laps for this map. */
         uint LapCount;
+        /* The number of laps as reported by the game mode */
+        int LapsNb;
         /** This increments by 1 each frame a player spawns.
          * When players spawn simultaneously, their PlayerCpInfo.spawnIndex values are the same.
          * This is useful for some sorting methods.
@@ -443,7 +451,13 @@ namespace MLFeed {
            In single lap races, this is 1 more than `.CPCount`.
         */
         uint get_CPsToFinish() const final {
-            return (CpCount + 1) * LapCount;
+            return (CpCount + 1) * LapCount_Accurate;
+        }
+
+        /* The number of laps, with priority given to the game mode */
+        uint get_LapCount_Accurate() const {
+            if (LapsNb > 0) return LapsNb;
+            return LapCount;
         }
     }
 

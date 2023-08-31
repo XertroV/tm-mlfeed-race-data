@@ -35,6 +35,7 @@ void InitCoro() {
     MLHook::RegisterMLHook(theHook, "RaceStats_PlayerInfo");
     MLHook::RegisterMLHook(theHook, "RaceStats_MatchKeyPair");
     MLHook::RegisterMLHook(theHook, "RaceStats_COTDQualiInfo");
+    MLHook::RegisterMLHook(theHook, "RaceStats_LapsNb");
     // ko feed hook
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_PlayerStatus");
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_MatchKeyPair");
@@ -271,6 +272,11 @@ namespace RaceFeed {
                 }
             }
         }
+
+        // Does the player's CP count indicate they are finished? This should work with a forced number of laps
+        bool get_IsFinished() const override {
+            return this.CpCount == theHook.CPsToFinish;
+        }
     }
 
 
@@ -333,6 +339,8 @@ namespace RaceFeed {
                     // skip, could update tho.
                 } else if (event.type.EndsWith("_COTDQualiInfo")) {
                     UpdateQualiInfo(event);
+                } else if (event.type.EndsWith("_LapsNb")) {
+                    UpdateLapsNb(event);
                 } else {
                     warn("race stats: unknown event type: " + event.type);
                 }
@@ -555,6 +563,13 @@ namespace RaceFeed {
             this.LapCount = cp.Map.MapInfo.TMObjective_NbLaps;
         }
 
+        void UpdateLapsNb(MLHook::PendingEvent@ event) {
+            if (event.data.Length < 1) {
+                warn("UpdateLapsNb got 0 length event");
+                return;
+            }
+            LapsNb = Text::ParseInt(event.data[0]);
+        }
         void UpdateQualiInfo(MLHook::PendingEvent@ event) {
             if (event.data.Length != 6) {
                 warn("UpdateQualiInfo got bad event data length: " + event.data.Length);

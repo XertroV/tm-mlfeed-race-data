@@ -10,3 +10,4 @@ dependencies = ["MLHook"]
 exports = ["MLFeed_Export.as"]
 shared_exports = ["MLFeed_ExportShared.as"]
 module = "MLFeed"
+# export_dependencies = ["MLHook"]

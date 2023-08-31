@@ -55,6 +55,8 @@ namespace RaceFeedUI {
             UI::Text("Rules GameTime: " + theHook.Rules_GameTime);
             UI::Text("Rules StartTime: " + theHook.Rules_StartTime);
             UI::Text("Rules EndTime: " + theHook.Rules_EndTime);
+            UI::Text("LapsNb: " + theHook.LapsNb);
+            UI::Text("LapCount_Accurate: " + theHook.LapCount_Accurate);
 
             UI::Dummy(vec2(0, 20));
             int lrt = recordHook is null ? -1 : recordHook.LastRecordTime;
@@ -481,6 +483,7 @@ namespace RaceFeedUI {
             if (UI::BeginTable("player-stats##"+name, 2, UI::TableFlags::SizingFixedSame)) {
                 DrawPair("Latency Est. (ms): ", tostring(player.latencyEstimate));
 
+                DrawPair("IsFinished: ", tostring(player.IsFinished));
                 DrawPair("CpCount: ", tostring(player.CpCount));
                 DrawPair("LastRespawnCheckpoint: ", tostring(player.LastRespawnCheckpoint));
 
