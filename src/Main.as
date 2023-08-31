@@ -300,7 +300,21 @@ namespace RaceFeed {
                     lastMap = CurrentMap;
                     OnMapChange();
                 }
+                UpdateServerTime();
             }
+        }
+
+        void UpdateServerTime() {
+            theHook.Rules_GameTime = -1;
+            theHook.Rules_StartTime = -1;
+            theHook.Rules_EndTime = -1;
+            auto app = cast<CGameManiaPlanet>(GetApp());
+            if (app.Network.PlaygroundInterfaceScriptHandler is null) return;
+            theHook.Rules_GameTime = app.Network.PlaygroundInterfaceScriptHandler.GameTime;
+            auto cp = cast<CSmArenaClient>(app.CurrentPlayground);
+            if (cp is null || cp.Arena is null || cp.Arena.Rules is null) return;
+            theHook.Rules_StartTime = cp.Arena.Rules.RulesStateStartTime;
+            theHook.Rules_EndTime = cp.Arena.Rules.RulesStateEndTime;
         }
 
         void ProcessMsg(MLHook::PendingEvent@ event) {

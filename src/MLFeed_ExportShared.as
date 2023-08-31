@@ -423,6 +423,13 @@ namespace MLFeed {
         */
         uint SpawnCounter = 0;
 
+        // The server's `Now` time
+        int Rules_GameTime = -1;
+        // When the game mode started (if applicable)
+        int Rules_StartTime = -1;
+        // When the game mode ends (if applicable)
+        int Rules_EndTime = -1;
+
         HookRaceStatsEventsBase(const string &in type) {
             super(type);
         }

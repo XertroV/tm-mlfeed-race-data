@@ -52,6 +52,10 @@ namespace RaceFeedUI {
             UI::Text("Map CpCount: " + theHook.CpCount);
             UI::Text("Map LapCount: " + theHook.LapCount);
             UI::Text("Map CPsToFinish: " + theHook.CPsToFinish);
+            UI::Text("Rules GameTime: " + theHook.Rules_GameTime);
+            UI::Text("Rules StartTime: " + theHook.Rules_StartTime);
+            UI::Text("Rules EndTime: " + theHook.Rules_EndTime);
+
             UI::Dummy(vec2(0, 20));
             int lrt = recordHook is null ? -1 : recordHook.LastRecordTime;
             UI::Text("LastRecordTime: " + lrt); // + NOTE_OPTIONAL);
