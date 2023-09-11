@@ -596,6 +596,10 @@ namespace RaceFeed {
             latestPlayerStats.DeleteAll();
             this.CpCount = 0;
             this.LapCount = 0;
+            this.LapsNb = 0;
+            this.Rules_EndTime = 0;
+            this.Rules_StartTime = 0;
+            this.Rules_GameTime = 0;
             // sorted players
             _SortedPlayers_Race.Resize(0);
             _SortedPlayers_TimeAttack.Resize(0);

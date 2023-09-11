@@ -238,7 +238,7 @@ Void _SendCOTDQuali() {
 }
 
 Void _CheckLapsNb() {
-    declare netread Integer Net_Race_Helpers_LapsNb for Teams[0] = 0;
+    declare netread Integer Net_Race_Helpers_LapsNb for Teams[0] = -1;
     if (LastKnownLapsNb != Net_Race_Helpers_LapsNb) {
         LastKnownLapsNb = Net_Race_Helpers_LapsNb;
         SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_LapsNb", [
