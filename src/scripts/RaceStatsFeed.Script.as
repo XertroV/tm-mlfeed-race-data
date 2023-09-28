@@ -143,7 +143,7 @@ declare Integer MostCPsSeen;
 declare Integer LastKnownLapsNb;
 
 Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
-    if (Player == Null || Player.Score == Null) return False;
+    if (Player == Null || Player.Score == Null || Player.User == Null) return False;
     // tuningstart();
     declare Text Name = Player.User.Name;
     declare CPCount = Player.RaceWaypointTimes.count;
@@ -250,7 +250,6 @@ Void _CheckLapsNb() {
 // to start with we want to send all data.
 Void InitialSend() {
     foreach (Player in Players) {
-        yield;
         _SendPlayerStats(Player, True);
         _SendPlayerInfos(Player);
     }
@@ -279,7 +278,7 @@ Void CheckMapChange() {
         LastPlayerPoints = [];
         LastPlayerRoundPoints = [];
         LastPlayerTeams = [];
-        LastKnownLapsNb = -1;
+        LastKnownLapsNb = -2;
     }
 }
 
