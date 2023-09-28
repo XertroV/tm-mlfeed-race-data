@@ -50,7 +50,8 @@ void InitCoro() {
 
     // ml load
     yield(); // time for hooks to be instantiated etc
-    MLHook::InjectManialinkToPlayground("MLFeedRace", RACESTATSFEED_SCRIPT_TXT, true);
+    string raceStatsScript = ProcessRaceStats2023_Oct(RACESTATSFEED_SCRIPT_TXT);
+    MLHook::InjectManialinkToPlayground("MLFeedRace", raceStatsScript, true);
     MLHook::InjectManialinkToPlayground("MLFeedKOs", MLFEEDKOS_SCRIPT_TXT, true);
     MLHook::InjectManialinkToPlayground("MLFeedGhostData", GHOSTDATA_SCRIPT_TXT, true);
     MLHook::InjectManialinkToPlayground("MLFeedTeams", TEAMSFEED_SCRIPT_TXT, true);

@@ -2,7 +2,6 @@ const string RACESTATSFEED_SCRIPT_TXT = """
 // 1 space indent due to openplanet preprocessor
  #Const C_PageUID "RaceStats"
  #Include "TextLib" as TL
- #Include "Libs/Nadeo/TMNext/TrackMania/Modes/COTDQualifications/Constants.Script.txt" as COTDConst
  #Include "Libs/Nadeo/TMNext/TrackMania/Modes/COTDQualifications/NetShare.Script.txt" as COTDNetShare
 
 declare Text G_PreviousMapUid;
