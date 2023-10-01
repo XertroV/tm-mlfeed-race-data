@@ -18,6 +18,7 @@ namespace KoFeed {
         MLHook::PendingEvent@[] incoming_msgs;
 
         void ResetState() {
+            UpdateNonce++;
             division = -1;
             mapRoundNb = -1;
             mapRoundTotal = -1;
@@ -26,6 +27,14 @@ namespace KoFeed {
             playersNb = -1;
             kosMilestone = -1;
             kosNumber = -1;
+            // clear link between states
+            for (uint i = 0; i < players.Length; i++) {
+                auto ps = GetPlayerState(players[i]);
+                if (ps !is null && ps.MainState !is null) {
+                    @ps.MainState.KoState = null;
+                    @ps.MainState = null;
+                }
+            }
             playerStates.DeleteAll();
             players.RemoveRange(0, players.Length);
         }
@@ -42,6 +51,8 @@ namespace KoFeed {
                         OnMapChange(); // only reset status when the map gets set to null, not when it gets set to a map
                 }
                 CheckGMChange();
+                // todo: reset flags
+                if (incoming_msgs.Length > 0) UpdateNonce++;
                 while (incoming_msgs.Length > 0) {
                     ProcessMsg(incoming_msgs[incoming_msgs.Length - 1]);
                     incoming_msgs.RemoveLast();
@@ -141,6 +152,13 @@ namespace KoFeed {
             }
             ps.isAlive = alive;
             ps.isDNF = dnf;
+            if (ps.MainState is null) {
+                auto playerMain = theHook.GetPlayer(name);
+                if (playerMain !is null) {
+                    @playerMain.KoState = ps;
+                    @ps.MainState = playerMain;
+                }
+            }
         }
     }
 }

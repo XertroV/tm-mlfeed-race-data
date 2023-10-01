@@ -57,6 +57,7 @@ namespace RaceFeedUI {
             UI::Text("Rules EndTime: " + theHook.Rules_EndTime);
             UI::Text("LapsNb: " + theHook.LapsNb);
             UI::Text("LapCount_Accurate: " + theHook.LapCount_Accurate);
+            UI::Text("UpdateNonce: " + theHook.UpdateNonce);
 
             UI::Dummy(vec2(0, 20));
             int lrt = recordHook is null ? -1 : recordHook.LastRecordTime;
@@ -96,7 +97,6 @@ namespace RaceFeedUI {
             UI::Text("Players ("+players.Length+") sorted for: " + mode + ". " + theHook.CPsToFinish + " total CPs incl finish.");
             uint nCols = 11;
             if (UI::BeginTable("players debug " + mode, nCols, UI::TableFlags::SizingStretchProp)) {
-
                 UI::TableSetupColumn("Rank");
                 UI::TableSetupColumn("Name");
                 UI::TableSetupColumn("StartTime");
@@ -107,6 +107,7 @@ namespace RaceFeedUI {
                 UI::TableSetupColumn("SpawnStatus");
                 UI::TableSetupColumn("Local?");
                 UI::TableSetupColumn("Lag Est");
+                UI::TableSetupColumn("UpdateNonce");
 
                 UI::TableSetupColumn(""); // view player's tab
 
@@ -149,6 +150,9 @@ namespace RaceFeedUI {
 
                         UI::TableNextColumn();
                         UI::Text(Text::Format("%.1f", ps.latencyEstimate));
+
+                        UI::TableNextColumn();
+                        UI::Text('' + ps.UpdateNonce);
 
                         UI::TableNextColumn();
                         if (UI::Button("View##"+ps.Name)) {

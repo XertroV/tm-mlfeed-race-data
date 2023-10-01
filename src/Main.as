@@ -299,6 +299,7 @@ namespace RaceFeed {
             MLHook::Queue_MessageManialinkPlayground("RaceStats", {"SendAllPlayerStates"});
             while (true) {
                 yield();
+                if (incoming_msgs.Length > 0) UpdateNonce++;
                 for (uint i = 0; i < incoming_msgs.Length; i++) {
                     ProcessMsg(incoming_msgs[i]);
                 }
@@ -593,6 +594,7 @@ namespace RaceFeed {
         }
 
         void ResetState() {
+            UpdateNonce++;
             bestPlayerTimes.DeleteAll();
             latestPlayerStats.DeleteAll();
             this.CpCount = 0;

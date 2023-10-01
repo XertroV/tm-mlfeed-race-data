@@ -7,6 +7,9 @@ namespace MLFeed {
         bool isAlive = true;
         /* Whether the player DNF'd or not. This is set to false the round after that player DNFs. */
         bool isDNF = false;
+        // The players main state
+        PlayerCpInfo@ MainState;
+
         KoPlayerState(const string &in n) {
             name = n;
         }
@@ -52,6 +55,9 @@ namespace MLFeed {
         // The number of players on each team. Length is always 31.
         int[]@ TeamPopulations;
 
+        // updated every time an event is recieved
+        uint UpdateNonce = 0;
+
         HookTeamsMMEventsBase_V1(const string &in type) {
             super(type);
         }
@@ -86,6 +92,8 @@ namespace MLFeed {
         int kosMilestone = -1;
         int kosNumber = -1;
         dictionary playerStates;
+
+        uint UpdateNonce = 0;
 
         KoPlayerState@ GetPlayerState(const string &in name) {
             return cast<KoPlayerState>(playerStates[name]);
@@ -179,6 +187,12 @@ namespace MLFeed {
         // The player's rank as measured in a race (when all players would spawn at the same time).
         uint raceRank = 0;  // set by hook; not sure if we can get it from ML
 
+        // The players KO state, if it exists
+        KoPlayerState@ KoState;
+
+        // Incremented every time the player is updated
+        uint UpdateNonce = 0;
+
         PlayerCpInfo(MLHook::PendingEvent@ event, uint _spawnIndex) {
             name = event.data[0]; // set once only
             cpTimes.InsertLast(0); // zeroth cpTime always 0
@@ -198,6 +212,7 @@ namespace MLFeed {
         }
 
         void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex) {
+            UpdateNonce++;
             spawnIndex = _spawnIndex;
             if (event.data.Length < 5) {
                 warn('PlayerCpInfo event.data had insufficient length');
@@ -214,7 +229,7 @@ namespace MLFeed {
         }
 
         // Whether the player is spawned
-        bool get_IsSpawned() {
+        bool get_IsSpawned() const {
             return spawnStatus == SpawnStatus::Spawned;
         }
 
@@ -437,6 +452,9 @@ namespace MLFeed {
         int Rules_StartTime = -1;
         // When the game mode ends (if applicable)
         int Rules_EndTime = -1;
+
+        // Incremented every time an event is recieved (so something was probably updated)
+        uint UpdateNonce = 0;
 
         HookRaceStatsEventsBase(const string &in type) {
             super(type);
