@@ -1,4 +1,4 @@
-const string NewRecordEvent = "TMxSM_Race_Record_NewRecord";
+const string NewRecordEvent = "TMGame_Record_NewRecord";
 
 class HookRecordFeed : MLFeed::HookRecordEventsBase {
     private MLHook::PendingEvent@[] pendingEvents = {};
