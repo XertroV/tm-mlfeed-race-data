@@ -276,7 +276,7 @@ namespace RaceFeed {
 
         // Does the player's CP count indicate they are finished? This should work with a forced number of laps
         bool get_IsFinished() const override {
-            return this.CpCount == theHook.CPsToFinish;
+            return this.CpCount == int(theHook.CPsToFinish);
         }
     }
 
@@ -571,6 +571,7 @@ namespace RaceFeed {
                 return;
             }
             LapsNb = Text::ParseInt(event.data[0]);
+            if (LapsNb == 0) LapsNb = 1;
         }
         void UpdateQualiInfo(MLHook::PendingEvent@ event) {
             if (event.data.Length != 6) {

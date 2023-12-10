@@ -94,8 +94,12 @@ namespace RaceFeedUI {
 
         void DrawInner() override {
             auto @players = Players;
+            if (players.Length == 0) {
+                UI::Text("no players :(");
+                return;
+            }
             UI::Text("Players ("+players.Length+") sorted for: " + mode + ". " + theHook.CPsToFinish + " total CPs incl finish.");
-            uint nCols = 11;
+            uint nCols = 12;
             if (UI::BeginTable("players debug " + mode, nCols, UI::TableFlags::SizingStretchProp)) {
                 UI::TableSetupColumn("Rank");
                 UI::TableSetupColumn("Name");

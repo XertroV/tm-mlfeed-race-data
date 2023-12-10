@@ -7,8 +7,8 @@ const string RACESTATSFEED_SCRIPT_TXT = """
 declare Text G_PreviousMapUid;
 
 // logging function, should be "MLHook_LogMe_" + PageUID
-Void MLHookLog(Text msg) {
-    SendCustomEvent("MLHook_LogMe_" ^ C_PageUID, [msg]);
+Void MLHookLog(Text _Msg) {
+    SendCustomEvent("MLHook_LogMe_" ^ C_PageUID, [_Msg]);
 }
 
 Void MLHookUpdateKP(Text Key, Text Value) {
@@ -282,7 +282,7 @@ Void CheckMapChange() {
 }
 
 Void CheckIncoming() {
-    declare Text[][] MLHook_Inbound_RaceStats for ClientUI;
+    declare Text[][] MLHook_Inbound_RaceStats for ClientUI = [];
     foreach (Event in MLHook_Inbound_RaceStats) {
         if (Event[0] == "SendAllPlayerStates") {
             InitialSend();
