@@ -10,8 +10,6 @@ void Main() {
     // TestTeamsFeedScoring();
 #endif
 
-    MLHook::RequireVersionApi('0.3.2');
-
     startnew(InitCoro);
 
 #if SIG_DEVELOPER

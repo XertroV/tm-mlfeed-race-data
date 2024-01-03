@@ -2,6 +2,7 @@ const string GD_PageUID = "GhostData";
 
 // class HookGhostData : MLHook::HookMLEventsByType {
 class HookGhostData : MLFeed::SharedGhostDataHook_V2 {
+    private array<MwId> ignoreGhosts;
     private array<const MLFeed::GhostInfo_V2@> _ghosts;
     private array<const MLFeed::GhostInfo@> _ghosts_copy;
     private string lastMap;
@@ -71,7 +72,8 @@ class HookGhostData : MLFeed::SharedGhostDataHook_V2 {
         LoadedGhosts.RemoveRange(0, LoadedGhosts.Length);
         SortedGhosts.RemoveRange(0, SortedGhosts.Length);
         last_PGS_DFM_NbGhosts = 0;
-        seenGhosts.DeleteAll();
+        // don't delete seenGhosts so that when we change map we don't re-include old ghosts -- hopefully fixes rare bug on servers where old ghosts are counted for current map
+        // seenGhosts.DeleteAll();
         if (askForRefresh)
             RefreshGhostData();
     }
