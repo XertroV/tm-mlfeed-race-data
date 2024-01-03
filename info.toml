@@ -2,7 +2,7 @@
 name     = "MLFeed: Race Data"
 author   = "XertroV"
 category = "MLHook"
-version  = "0.5.6"
+version  = "0.5.14"
 
 [script]
 #__DEFINES__
@@ -10,3 +10,4 @@ dependencies = ["MLHook"]
 exports = ["MLFeed_Export.as"]
 shared_exports = ["MLFeed_ExportShared.as"]
 module = "MLFeed"
+# export_dependencies = ["MLHook"]

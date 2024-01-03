@@ -52,10 +52,29 @@ namespace RaceFeedUI {
             UI::Text("Map CpCount: " + theHook.CpCount);
             UI::Text("Map LapCount: " + theHook.LapCount);
             UI::Text("Map CPsToFinish: " + theHook.CPsToFinish);
+            UI::Text("Rules GameTime: " + theHook.Rules_GameTime);
+            UI::Text("Rules StartTime: " + theHook.Rules_StartTime);
+            UI::Text("Rules EndTime: " + theHook.Rules_EndTime);
+            UI::Text("LapsNb: " + theHook.LapsNb);
+            UI::Text("LapCount_Accurate: " + theHook.LapCount_Accurate);
+            UI::Text("UpdateNonce: " + theHook.UpdateNonce);
+
             UI::Dummy(vec2(0, 20));
             int lrt = recordHook is null ? -1 : recordHook.LastRecordTime;
             UI::Text("LastRecordTime: " + lrt); // + NOTE_OPTIONAL);
+            UI::Dummy(vec2(0, 20));
+            ValueLabel(tostring(theHook.COTDQ_APIRaceTime), "COTDQ_APIRaceTime");
+            ValueLabel(tostring(theHook.COTDQ_IsSynchronizingRecord), "COTDQ_IsSynchronizingRecord");
+            ValueLabel(tostring(theHook.COTDQ_LocalRaceTime), "COTDQ_LocalRaceTime");
+            ValueLabel(tostring(theHook.COTDQ_QualificationsJoinTime), "COTDQ_QualificationsJoinTime");
+            ValueLabel(tostring(theHook.COTDQ_QualificationsProgress), "COTDQ_QualificationsProgress");
+            ValueLabel(tostring(theHook.COTDQ_Rank), "COTDQ_Rank");
+            ValueLabel(tostring(theHook.COTDQ_UpdateNonce), "COTDQ_UpdateNonce");
         }
+    }
+
+    void ValueLabel(const string &in value, const string &in label) {
+        UI::Text(label + ": " + value);
     }
 
     class RaceTab : Tab {
@@ -75,10 +94,13 @@ namespace RaceFeedUI {
 
         void DrawInner() override {
             auto @players = Players;
+            if (players.Length == 0) {
+                UI::Text("no players :(");
+                return;
+            }
             UI::Text("Players ("+players.Length+") sorted for: " + mode + ". " + theHook.CPsToFinish + " total CPs incl finish.");
-            uint nCols = 11;
+            uint nCols = 12;
             if (UI::BeginTable("players debug " + mode, nCols, UI::TableFlags::SizingStretchProp)) {
-
                 UI::TableSetupColumn("Rank");
                 UI::TableSetupColumn("Name");
                 UI::TableSetupColumn("StartTime");
@@ -89,6 +111,7 @@ namespace RaceFeedUI {
                 UI::TableSetupColumn("SpawnStatus");
                 UI::TableSetupColumn("Local?");
                 UI::TableSetupColumn("Lag Est");
+                UI::TableSetupColumn("UpdateNonce");
 
                 UI::TableSetupColumn(""); // view player's tab
 
@@ -131,6 +154,9 @@ namespace RaceFeedUI {
 
                         UI::TableNextColumn();
                         UI::Text(Text::Format("%.1f", ps.latencyEstimate));
+
+                        UI::TableNextColumn();
+                        UI::Text('' + ps.UpdateNonce);
 
                         UI::TableNextColumn();
                         if (UI::Button("View##"+ps.Name)) {
@@ -465,6 +491,7 @@ namespace RaceFeedUI {
             if (UI::BeginTable("player-stats##"+name, 2, UI::TableFlags::SizingFixedSame)) {
                 DrawPair("Latency Est. (ms): ", tostring(player.latencyEstimate));
 
+                DrawPair("IsFinished: ", tostring(player.IsFinished));
                 DrawPair("CpCount: ", tostring(player.CpCount));
                 DrawPair("LastRespawnCheckpoint: ", tostring(player.LastRespawnCheckpoint));
 

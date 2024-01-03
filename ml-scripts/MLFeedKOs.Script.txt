@@ -5,12 +5,6 @@ Void MLHookLog(Text msg) {
     SendCustomEvent("MLHook_LogMe_MLFeedKOs", [msg]);
 }
 
-// Void MLHookUpdatePlayerStatus(Text UserId, Boolean IsAlive, Boolean IsDNF) {
-//     declare Payload = [UserId, ""^IsAlive, ""^IsDNF];
-//     SendCustomEvent("MLHook_Event_MLFeedKOs_PlayerStatus", Payload);
-//     // MLHookLog("PlayerStatus: " ^ Payload);
-// }
-
 Void MLHookUpdateKP(Text Key, Text Value) {
     SendCustomEvent("MLHook_Event_MLFeedKOs_MatchKeyPair", [Key, Value]);
     // MLHookLog("MatchKeyPair: " ^ [Key, Value]);

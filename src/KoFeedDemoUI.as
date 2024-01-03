@@ -18,6 +18,7 @@ namespace KoFeedUI {
             UI::Text("playersNb: " + koFeedHook.playersNb);
             UI::Text("kosMilestone: " + koFeedHook.kosMilestone);
             UI::Text("kosNumber: " + koFeedHook.kosNumber);
+            UI::Text("UpdateNonce: " + koFeedHook.UpdateNonce);
             UI::Separator();
 
             for (uint i = 0; i < koFeedHook.players.Length; i++) {

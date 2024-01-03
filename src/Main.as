@@ -32,6 +32,8 @@ void InitCoro() {
     MLHook::RegisterMLHook(theHook, "RaceStats_PlayerRaceTimes");
     MLHook::RegisterMLHook(theHook, "RaceStats_PlayerInfo");
     MLHook::RegisterMLHook(theHook, "RaceStats_MatchKeyPair");
+    MLHook::RegisterMLHook(theHook, "RaceStats_COTDQualiInfo");
+    MLHook::RegisterMLHook(theHook, "RaceStats_LapsNb");
     // ko feed hook
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_PlayerStatus");
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_MatchKeyPair");
@@ -46,7 +48,8 @@ void InitCoro() {
 
     // ml load
     yield(); // time for hooks to be instantiated etc
-    MLHook::InjectManialinkToPlayground("MLFeedRace", RACESTATSFEED_SCRIPT_TXT, true);
+    string raceStatsScript = ProcessRaceStats2023_Oct(RACESTATSFEED_SCRIPT_TXT);
+    MLHook::InjectManialinkToPlayground("MLFeedRace", raceStatsScript, true);
     MLHook::InjectManialinkToPlayground("MLFeedKOs", MLFEEDKOS_SCRIPT_TXT, true);
     MLHook::InjectManialinkToPlayground("MLFeedGhostData", GHOSTDATA_SCRIPT_TXT, true);
     MLHook::InjectManialinkToPlayground("MLFeedTeams", TEAMSFEED_SCRIPT_TXT, true);
@@ -268,6 +271,11 @@ namespace RaceFeed {
                 }
             }
         }
+
+        // Does the player's CP count indicate they are finished? This should work with a forced number of laps
+        bool get_IsFinished() const override {
+            return this.CpCount == int(theHook.CPsToFinish);
+        }
     }
 
 
@@ -289,6 +297,7 @@ namespace RaceFeed {
             MLHook::Queue_MessageManialinkPlayground("RaceStats", {"SendAllPlayerStates"});
             while (true) {
                 yield();
+                if (incoming_msgs.Length > 0) UpdateNonce++;
                 for (uint i = 0; i < incoming_msgs.Length; i++) {
                     ProcessMsg(incoming_msgs[i]);
                 }
@@ -297,23 +306,46 @@ namespace RaceFeed {
                     lastMap = CurrentMap;
                     OnMapChange();
                 }
+                UpdateServerTime();
             }
         }
 
+        void UpdateServerTime() {
+            theHook.Rules_GameTime = -1;
+            theHook.Rules_StartTime = -1;
+            theHook.Rules_EndTime = -1;
+            auto app = cast<CGameManiaPlanet>(GetApp());
+            if (app.Network.PlaygroundInterfaceScriptHandler is null) return;
+            theHook.Rules_GameTime = app.Network.PlaygroundInterfaceScriptHandler.GameTime;
+            auto cp = cast<CSmArenaClient>(app.CurrentPlayground);
+            if (cp is null || cp.Arena is null || cp.Arena.Rules is null) return;
+            theHook.Rules_StartTime = cp.Arena.Rules.RulesStateStartTime;
+            theHook.Rules_EndTime = cp.Arena.Rules.RulesStateEndTime;
+        }
+
         void ProcessMsg(MLHook::PendingEvent@ event) {
-            if (event.type.EndsWith("_PlayerLeft")) {
-                // update active player list
-                UpdatePlayerLeft(event);
-            } else if (event.type.EndsWith("_PlayerCP")) {
-                UpdatePlayer(event);
-            } else if (event.type.EndsWith("_MatchKeyPair")) {
-                ProcessMatchKP(event);
-            } else if (event.type.EndsWith("_PlayerRaceTimes")) {
-                UpdatePlayerRaceTimes(event);
-            } else if (event.type.EndsWith("_PlayerInfo")) {
-                // skip, could update tho.
-            } else {
-                warn("race stats: unknown event type: " + event.type);
+            if (event is null) return;
+            try {
+                if (event.type.EndsWith("_PlayerLeft")) {
+                    // update active player list
+                    UpdatePlayerLeft(event);
+                } else if (event.type.EndsWith("_PlayerCP")) {
+                    UpdatePlayer(event);
+                } else if (event.type.EndsWith("_MatchKeyPair")) {
+                    ProcessMatchKP(event);
+                } else if (event.type.EndsWith("_PlayerRaceTimes")) {
+                    UpdatePlayerRaceTimes(event);
+                } else if (event.type.EndsWith("_PlayerInfo")) {
+                    // skip, could update tho.
+                } else if (event.type.EndsWith("_COTDQualiInfo")) {
+                    UpdateQualiInfo(event);
+                } else if (event.type.EndsWith("_LapsNb")) {
+                    UpdateLapsNb(event);
+                } else {
+                    warn("race stats: unknown event type: " + event.type);
+                }
+            } catch {
+                warn("HookRaceStatsEvents::ProcessMsg: Got exception processing incoming event ("+event.type+"): " + getExceptionInfo());
             }
         }
 
@@ -531,6 +563,28 @@ namespace RaceFeed {
             this.LapCount = cp.Map.MapInfo.TMObjective_NbLaps;
         }
 
+        void UpdateLapsNb(MLHook::PendingEvent@ event) {
+            if (event.data.Length < 1) {
+                warn("UpdateLapsNb got 0 length event");
+                return;
+            }
+            LapsNb = Text::ParseInt(event.data[0]);
+            if (LapsNb == 0) LapsNb = 1;
+        }
+        void UpdateQualiInfo(MLHook::PendingEvent@ event) {
+            if (event.data.Length != 6) {
+                warn("UpdateQualiInfo got bad event data length: " + event.data.Length);
+                return;
+            }
+            COTDQ_LocalRaceTime = Text::ParseInt(event.data[0]);
+            COTDQ_APIRaceTime = Text::ParseInt(event.data[1]);
+            COTDQ_Rank = Text::ParseInt(event.data[2]);
+            COTDQ_QualificationsJoinTime = Text::ParseInt(event.data[3]);
+            COTDQ_QualificationsProgress = MLFeed::QualificationStage(Text::ParseInt(event.data[4]));
+            COTDQ_IsSynchronizingRecord = event.data[5] == "True";
+            COTDQ_UpdateNonce++;
+        }
+
         void OnMapChange() {
             ResetState();
             if (CurrentMap != "") {
@@ -539,10 +593,15 @@ namespace RaceFeed {
         }
 
         void ResetState() {
+            UpdateNonce++;
             bestPlayerTimes.DeleteAll();
             latestPlayerStats.DeleteAll();
             this.CpCount = 0;
             this.LapCount = 0;
+            this.LapsNb = 0;
+            this.Rules_EndTime = 0;
+            this.Rules_StartTime = 0;
+            this.Rules_GameTime = 0;
             // sorted players
             _SortedPlayers_Race.Resize(0);
             _SortedPlayers_TimeAttack.Resize(0);

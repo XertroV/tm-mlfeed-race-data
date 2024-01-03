@@ -29,6 +29,7 @@ namespace TeamsFeed {
         MLHook::PendingEvent@[] incoming_msgs;
 
         void ResetState() {
+            UpdateNonce++;
             StartNewRace = -123;
             WarmUpIsActive = false;
             RankingMode = -1;
@@ -60,6 +61,7 @@ namespace TeamsFeed {
                         OnMapChange(); // only reset status when the map gets set to null, not when it gets set to a map
                 }
                 CheckGMChange();
+                if (incoming_msgs.Length > 0) UpdateNonce++;
                 while (incoming_msgs.Length > 0) {
                     ProcessMsg(incoming_msgs[incoming_msgs.Length - 1]);
                     incoming_msgs.RemoveLast();
@@ -198,6 +200,7 @@ namespace TeamsFeed {
             }
         }
 
+        // LR = live ranking
         void UpdateLrKP(MLHook::PendingEvent@ evt) {
             string key = evt.data[0];
             if (key == "LR_WarmUpIsActive") WarmUpIsActive = string(evt.data[1]) == "True";
@@ -238,6 +241,7 @@ namespace TeamsFeed {
             if (mvpPlayer !is null) mvpPlayer.IsMVP = true;
         }
 
+        // Score and map infos
         void UpdateSamiKP(MLHook::PendingEvent@ evt) {
             string key = evt.data[0];
             int val = Text::ParseInt(evt.data[1]);
@@ -287,6 +291,7 @@ namespace TeamsFeed {
             UI::Text("ComputePoints() TeamPoints: " + IntsToStrs(teamPoints));
             UI::Text("ComputePoints() WinningTeam: " + winningTeam);
             UI::Text("TeamPopulations: " + IntsToStrs(teamsFeed.TeamPopulations));
+            UI::Text("UpdateNonce: " + teamsFeed.UpdateNonce);
             UI::Separator();
             DrawPlayers();
         }

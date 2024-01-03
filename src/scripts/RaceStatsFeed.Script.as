@@ -2,12 +2,13 @@ const string RACESTATSFEED_SCRIPT_TXT = """
 // 1 space indent due to openplanet preprocessor
  #Const C_PageUID "RaceStats"
  #Include "TextLib" as TL
+ #Include "Libs/Nadeo/TMNext/TrackMania/Modes/COTDQualifications/NetShare.Script.txt" as COTDNetShare
 
 declare Text G_PreviousMapUid;
 
 // logging function, should be "MLHook_LogMe_" + PageUID
-Void MLHookLog(Text msg) {
-    SendCustomEvent("MLHook_LogMe_" ^ C_PageUID, [msg]);
+Void MLHookLog(Text _Msg) {
+    SendCustomEvent("MLHook_LogMe_" ^ C_PageUID, [_Msg]);
 }
 
 Void MLHookUpdateKP(Text Key, Text Value) {
@@ -138,9 +139,10 @@ declare Integer[Text] LastBestLapTimes;
 declare Integer[Text] LastRespawnsCount;
 declare CSmPlayer::ESpawnStatus[Text] LastSpawn;
 declare Integer MostCPsSeen;
+declare Integer LastKnownLapsNb;
 
 Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
-    if (Player == Null || Player.Score == Null) return False;
+    if (Player == Null || Player.Score == Null || Player.User == Null) return False;
     // tuningstart();
     declare Text Name = Player.User.Name;
     declare CPCount = Player.RaceWaypointTimes.count;
@@ -188,10 +190,65 @@ Void _SendPlayerInfos(CSmPlayer Player) {
 }
 
 
+Boolean IsCotdQuali() {
+    return Playground.ServerInfo.ModeName == "TM_COTDQualifications_Online";
+}
+
+declare Integer LastLocalRaceTime;
+declare Integer LastAPIRaceTime;
+declare Integer LastRank;
+declare Integer LastQualificationsJoinTime;
+declare Integer LastQualificationsProgress;
+declare Boolean LastIsSynchronizingRecord;
+
+Void _SendCOTDQuali() {
+    if (!IsCotdQuali()) return;
+    if (
+        COTDNetShare::GetMyLocalRaceTime(UI) != LastLocalRaceTime ||
+        COTDNetShare::GetMyAPIRaceTime(UI) != LastAPIRaceTime ||
+        COTDNetShare::GetMyRank(UI) != LastRank ||
+        COTDNetShare::GetMyQualificationsJoinTime(UI) != LastQualificationsJoinTime ||
+        COTDNetShare::GetQualificationsProgress(Teams[0]) != LastQualificationsProgress ||
+        COTDNetShare::IsSynchronizingRecord(UI) != LastIsSynchronizingRecord
+    ) {
+        LastLocalRaceTime = COTDNetShare::GetMyLocalRaceTime(UI);
+        LastAPIRaceTime = COTDNetShare::GetMyAPIRaceTime(UI);
+        LastRank = COTDNetShare::GetMyRank(UI);
+        LastQualificationsJoinTime = COTDNetShare::GetMyQualificationsJoinTime(UI);
+        LastQualificationsProgress = COTDNetShare::GetQualificationsProgress(Teams[0]);
+        LastIsSynchronizingRecord = COTDNetShare::IsSynchronizingRecord(UI);
+        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_COTDQualiInfo", [
+            ""^LastLocalRaceTime,
+            ""^LastAPIRaceTime,
+            ""^LastRank,
+            ""^LastQualificationsJoinTime,
+            ""^LastQualificationsProgress,
+            ""^LastIsSynchronizingRecord
+        ]);
+        MLHookLog("COTD: " ^ [
+            ""^LastLocalRaceTime,
+            ""^LastAPIRaceTime,
+            ""^LastRank,
+            ""^LastQualificationsJoinTime,
+            ""^LastQualificationsProgress,
+            ""^LastIsSynchronizingRecord
+        ]);
+    }
+}
+
+Void _CheckLapsNb() {
+    declare netread Integer Net_Race_Helpers_LapsNb for Teams[0] = -1;
+    if (LastKnownLapsNb != Net_Race_Helpers_LapsNb) {
+        LastKnownLapsNb = Net_Race_Helpers_LapsNb;
+        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_LapsNb", [
+            ""^LastKnownLapsNb
+        ]);
+    }
+}
+
 // to start with we want to send all data.
 Void InitialSend() {
     foreach (Player in Players) {
-        yield;
         _SendPlayerStats(Player, True);
         _SendPlayerInfos(Player);
     }
@@ -220,11 +277,12 @@ Void CheckMapChange() {
         LastPlayerPoints = [];
         LastPlayerRoundPoints = [];
         LastPlayerTeams = [];
+        LastKnownLapsNb = -2;
     }
 }
 
 Void CheckIncoming() {
-    declare Text[][] MLHook_Inbound_RaceStats for ClientUI;
+    declare Text[][] MLHook_Inbound_RaceStats for ClientUI = [];
     foreach (Event in MLHook_Inbound_RaceStats) {
         if (Event[0] == "SendAllPlayerStates") {
             InitialSend();
@@ -263,6 +321,8 @@ main() {
         }
         if (LoopCounter % 60 == 20) {
             CheckIncoming();
+            _SendCOTDQuali();
+            _CheckLapsNb();
         }
     }
 }

@@ -7,6 +7,9 @@ namespace MLFeed {
         bool isAlive = true;
         /* Whether the player DNF'd or not. This is set to false the round after that player DNFs. */
         bool isDNF = false;
+        // The players main state
+        PlayerCpInfo@ MainState;
+
         KoPlayerState(const string &in n) {
             name = n;
         }
@@ -52,6 +55,9 @@ namespace MLFeed {
         // The number of players on each team. Length is always 31.
         int[]@ TeamPopulations;
 
+        // updated every time an event is recieved
+        uint UpdateNonce = 0;
+
         HookTeamsMMEventsBase_V1(const string &in type) {
             super(type);
         }
@@ -86,6 +92,8 @@ namespace MLFeed {
         int kosMilestone = -1;
         int kosNumber = -1;
         dictionary playerStates;
+
+        uint UpdateNonce = 0;
 
         KoPlayerState@ GetPlayerState(const string &in name) {
             return cast<KoPlayerState>(playerStates[name]);
@@ -179,6 +187,12 @@ namespace MLFeed {
         // The player's rank as measured in a race (when all players would spawn at the same time).
         uint raceRank = 0;  // set by hook; not sure if we can get it from ML
 
+        // The players KO state, if it exists
+        KoPlayerState@ KoState;
+
+        // Incremented every time the player is updated
+        uint UpdateNonce = 0;
+
         PlayerCpInfo(MLHook::PendingEvent@ event, uint _spawnIndex) {
             name = event.data[0]; // set once only
             cpTimes.InsertLast(0); // zeroth cpTime always 0
@@ -198,6 +212,7 @@ namespace MLFeed {
         }
 
         void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex) {
+            UpdateNonce++;
             spawnIndex = _spawnIndex;
             if (event.data.Length < 5) {
                 warn('PlayerCpInfo event.data had insufficient length');
@@ -214,7 +229,7 @@ namespace MLFeed {
         }
 
         // Whether the player is spawned
-        bool get_IsSpawned() {
+        bool get_IsSpawned() const {
             return spawnStatus == SpawnStatus::Spawned;
         }
 
@@ -222,6 +237,12 @@ namespace MLFeed {
         string ToString() const {
             string[] inner = {name, ''+cpCount, ''+lastCpTime, ''+spawnStatus, ''+raceRank, ''+taRank, ''+bestTime};
             return "PlayerCpInfo(" + string::Join(inner, ", ") + ")";
+        }
+
+        // Does the player's CP count indicate they are finished? This should work with a forced number of laps
+        bool get_IsFinished() const {
+            throw("implemented elsewhere");
+            return false;
         }
     }
 
@@ -283,8 +304,8 @@ namespace MLFeed {
         // The player's rank as measured in a race (when all players would spawn at the same time), accounting for respawns.
         uint get_RaceRespawnRank() const { return raceRespawnRank; }
 
-        // this player's CP times for their best performance this session (since the map loaded)
-        const array<uint>@ BestRaceTimes;
+        // this player's CP times for their best performance this session (since the map loaded). Can be null. Can be partial before a player has finished a complete run.
+        const array<uint>@ BestRaceTimes = {};
         // whether this player corresponds to the physical player playing the game
         bool IsLocalPlayer;
         // when the player spawned (measured against GameTime)
@@ -416,12 +437,24 @@ namespace MLFeed {
         uint CpCount;
         /* The number of laps for this map. */
         uint LapCount;
+        /* The number of laps as reported by the game mode */
+        int LapsNb;
         /** This increments by 1 each frame a player spawns.
          * When players spawn simultaneously, their PlayerCpInfo.spawnIndex values are the same.
          * This is useful for some sorting methods.
          * This value is set to 0 on plugin load and never reset.
         */
         uint SpawnCounter = 0;
+
+        // The server's `Now` time
+        int Rules_GameTime = -1;
+        // When the game mode started (if applicable)
+        int Rules_StartTime = -1;
+        // When the game mode ends (if applicable)
+        int Rules_EndTime = -1;
+
+        // Incremented every time an event is recieved (so something was probably updated)
+        uint UpdateNonce = 0;
 
         HookRaceStatsEventsBase(const string &in type) {
             super(type);
@@ -436,7 +469,13 @@ namespace MLFeed {
            In single lap races, this is 1 more than `.CPCount`.
         */
         uint get_CPsToFinish() const final {
-            return (CpCount + 1) * LapCount;
+            return (CpCount + 1) * LapCount_Accurate;
+        }
+
+        /* The number of laps, with priority given to the game mode */
+        uint get_LapCount_Accurate() const {
+            if (LapsNb > 0) return LapsNb;
+            return LapCount;
         }
     }
 
@@ -540,12 +579,37 @@ namespace MLFeed {
         }
     }
 
+    shared enum QualificationStage {
+        Null = 0,
+        ServerInitializing = 1,
+        WaitingForStart = 2,
+        Running = 3,
+        MatchesGenerating = 4,
+        ServerReady = 5,
+        TooLateToJoinKO = 6,
+        ServerEndingSoon = 7,
+    }
 
     /**
      * The main class used to access race data.
      * It exposes 3 sorted lists of players, and general information about the map/race.
      */
     shared class HookRaceStatsEventsBase_V4 : HookRaceStatsEventsBase_V3 {
+        // Qualification time known locally
+        int COTDQ_LocalRaceTime;
+        // Qualification time according to the API
+        int COTDQ_APIRaceTime;
+        // Qualification Rank, updated regularly (3-7s)
+        int COTDQ_Rank;
+        // Time you joined the server
+        int COTDQ_QualificationsJoinTime;
+        // Stage that qualification is in;
+        QualificationStage COTDQ_QualificationsProgress;
+        // true when you load into a server before it has gotten your record from the API
+        bool COTDQ_IsSynchronizingRecord;
+        // Incremented each time any COTDQ thing is updated
+        int COTDQ_UpdateNonce;
+
         HookRaceStatsEventsBase_V4(const string &in type) {
             super(type);
         }
