@@ -71,7 +71,7 @@ Void OnMapChange() {
 }
 
 Void CheckIncoming() {
-    declare Text[][] MLHook_Inbound_GhostData for ClientUI;
+    declare Text[][] MLHook_Inbound_GhostData for ClientUI = [];
     foreach (Event in MLHook_Inbound_GhostData) {
         if (Event[0] == "RefreshGhostData") {
             ResetState();
