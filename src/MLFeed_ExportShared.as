@@ -252,6 +252,8 @@ namespace MLFeed {
         // protected int LastCpOrRespawnTime;
         protected array<int> cpTimesRaw;
         protected array<int> timeLostToRespawnsByCp;
+        protected array<int> nbRespawnsByCp;
+        protected array<int> respawnTimes;
         int raceRespawnRank;
 
         PlayerCpInfo_V2(MLHook::PendingEvent@ event, uint _spawnIndex) {
@@ -279,6 +281,10 @@ namespace MLFeed {
         const int[]@ get_CpTimes() const { return cpTimes; }
         // The time lost due to respawning at each CP
         const int[]@ get_TimeLostToRespawnByCp() const { return timeLostToRespawnsByCp; }
+        // The number of respawns at each checkpoint
+        const int[]@ get_NbRespawnsByCp() const { return nbRespawnsByCp; }
+        // The player's respawn times (compare to CurrentRaceTime)
+        const int[]@ get_RespawnTimes() const { return respawnTimes; }
         // get the last CP time of the player minus time lost to respawns
         int get_LastTheoreticalCpTime() const {
             uint tl = 0;
@@ -303,6 +309,11 @@ namespace MLFeed {
         uint get_RaceRank() const { return raceRank; }
         // The player's rank as measured in a race (when all players would spawn at the same time), accounting for respawns.
         uint get_RaceRespawnRank() const { return raceRespawnRank; }
+
+        // Whether the player is still racing; based on Teams_Matchmaking_LiveRanking_PlayerIsRacing from LiveRanking_Client.Script.txt.
+        bool get_PlayerIsRacing() const { return spawnStatus != SpawnStatus::NotSpawned && StartTime > 0; }
+        // Whether the player has DNF'd. This is called `Eliminated` in LiveRanking_Client.Script.txt.
+        bool get_Eliminated() const { return !PlayerIsRacing && !IsFinished; }
 
         // this player's CP times for their best performance this session (since the map loaded). Can be null. Can be partial before a player has finished a complete run.
         const array<uint>@ BestRaceTimes = {};

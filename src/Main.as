@@ -242,14 +242,18 @@ namespace RaceFeed {
                 LastRespawnCheckpoint = 0;
                 LastRespawnRaceTime = 0;
                 TimeLostToRespawns = 0;
-                for (uint i = 0; i < timeLostToRespawnsByCp.Length; i++) {
-                    timeLostToRespawnsByCp[i] = 0;
-                }
+                ZeroIntArray(timeLostToRespawnsByCp);
+                ZeroIntArray(nbRespawnsByCp);
+                ZeroIntArray(respawnTimes);
                 timeLostToRespawnsByCp.Resize(cpTimes.Length);
+                nbRespawnsByCp.Resize(cpTimes.Length);
+                respawnTimes.Resize(0);
             } else {
                 timeLostToRespawnsByCp.Resize(cpTimes.Length);
+                nbRespawnsByCp.Resize(cpTimes.Length);
                 if (cpsChanged) {
                     timeLostToRespawnsByCp[CpCount] = 0;
+                    nbRespawnsByCp[CpCount] = 0;
                     if (CpCount > 0) {
                         // update latency estimate
                         float lag = float(CurrentRaceTimeRaw - LastCpTime); // should be 0 if instant, or like 1 frame
@@ -268,6 +272,8 @@ namespace RaceFeed {
                     TimeLostToRespawns -= timeLostToRespawnsByCp[CpCount];
                     timeLostToRespawnsByCp[CpCount] = newTimeLost;
                     TimeLostToRespawns += newTimeLost;
+                    nbRespawnsByCp[CpCount] += 1;
+                    respawnTimes.InsertLast(CurrentRaceTime);
                 }
             }
         }
@@ -277,7 +283,6 @@ namespace RaceFeed {
             return this.CpCount == int(theHook.CPsToFinish);
         }
     }
-
 
     class HookRaceStatsEvents : MLFeed::HookRaceStatsEventsBase_V4 {
         // props defined in HookRaceStatsEventsBase
@@ -651,4 +656,10 @@ string get_CurrentMap() {
     if (map is null) return "";
     // return map.EdChallengeId;
     return map.MapInfo.MapUid;
+}
+
+void ZeroIntArray(int[]@ arr) {
+    for (uint i = 0; i < arr.Length; i++) {
+        arr[i] = 0;
+    }
 }
