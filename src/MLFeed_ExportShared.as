@@ -553,7 +553,7 @@ namespace MLFeed {
         }
 
         /* The map UID */
-        const string get_Map() {
+        const string get_Map() const {
             return lastMap;
         }
 
