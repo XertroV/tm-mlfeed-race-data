@@ -534,6 +534,10 @@ namespace MLFeed {
         }
 
         // Players in the same order as app.CurrentPlayground.Players
+        array<PlayerCpInfo_V4@>@ get_Players() const {
+            throw("implemented elsewhere");
+            return null;
+        }
     }
 
     /**

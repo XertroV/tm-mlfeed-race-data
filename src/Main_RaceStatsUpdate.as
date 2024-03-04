@@ -1,6 +1,6 @@
 
 namespace RaceFeed {
-    _PlayerCpInfo@[] g_playerCpInfos;
+    MLFeed::PlayerCpInfo_V4@[] g_playerCpInfos;
     _PlayerCpInfo@[] playersJoined;
     _PlayerCpInfo@[] playersLeft;
 
@@ -79,7 +79,7 @@ namespace RaceFeed {
                 EmitGlobal_NewPlayer(player);
                 trace('created new player: ' + player.ToString());
             } else {
-                @player = g_playerCpInfos[i];
+                @player = cast<_PlayerCpInfo>(g_playerCpInfos[i]);
             }
 
             if (player is null) {
@@ -93,7 +93,7 @@ namespace RaceFeed {
                 // need to reorder
                 bool fixedReorder = false;
                 for (j = i + 1; j < g_playerCpInfos.Length; j++) {
-                    @p2 = g_playerCpInfos[j];
+                    @p2 = cast<_PlayerCpInfo>(g_playerCpInfos[j]);
                     if (p2.playerScoreMwId == playerMwId) {
                         // found the player that should be here, swap with player
                         @g_playerCpInfos[j] = player;
@@ -128,7 +128,7 @@ namespace RaceFeed {
         // find players that left
         if (g_playerCpInfos.Length > nbPlayers) {
             for (uint i = nbPlayers; i < g_playerCpInfos.Length; i++) {
-                @player = g_playerCpInfos[i];
+                @player = cast<_PlayerCpInfo>(g_playerCpInfos[i]);
                 if (player is null) throw("null player");
                 player.ResetUnsafeRefs();
                 // auto ix = player.lastVehicleId & 0xFFFFFF;
@@ -145,7 +145,6 @@ namespace RaceFeed {
 
     void EmitGlobal_NewPlayer(_PlayerCpInfo@ player) {
         playersJoined.InsertLast(player);
-        // theHook.AfterCreatedNewPlayer(player);
     }
 
     void EmitGlobal_PlayerLeft(_PlayerCpInfo@ player) {

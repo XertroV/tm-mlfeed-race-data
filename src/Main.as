@@ -531,6 +531,10 @@ namespace RaceFeed {
             return cast<_PlayerCpInfo>(_GetPlayer_V4(name));
         }
 
+        array<MLFeed::PlayerCpInfo_V4@>@ get_Players() const override {
+            return RaceFeed::g_playerCpInfos;
+        }
+
         /* main functionality logic */
 
         void ProcessMatchKP(MLHook::PendingEvent@ event) {
