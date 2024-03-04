@@ -247,6 +247,12 @@ namespace MLFeed {
             throw("implemented elsewhere");
             return false;
         }
+
+        // Can be null
+        CSmPlayer@ Player = null;
+
+        // Updated each frame with the fields / things that were updated.
+        PlayerUpdateFlags FieldsUpdated = PlayerUpdateFlags::None;
     }
 
     /* Each's players status in the race, with a focus on CP related info. */
@@ -426,11 +432,6 @@ namespace MLFeed {
 
         // Return's the players CSmPlayer object if it is available, otherwise null. The full list of players is searched each time.
         CSmPlayer@ FindCSmPlayer() { throw("overloaded elsewhere"); return null; }
-
-        // Can be null
-        CSmPlayer@ Player = null;
-
-        PlayerUpdateFlags FieldsUpdated = PlayerUpdateFlags::None;
     }
 
     shared enum PlayerUpdateFlags {
