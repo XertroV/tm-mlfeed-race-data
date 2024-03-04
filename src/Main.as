@@ -25,6 +25,8 @@ void _Unload() {
 }
 
 void InitCoro() {
+    RaceFeed::Setup();
+
     string KOsEvent = KoFeed::KOsEvent;
     // Race Stats
     MLHook::RegisterMLHook(theHook, "RaceStats_PlayerCP");
@@ -90,6 +92,8 @@ void RenderMenu() {
         UI::EndMenu();
     }
 }
+
+
 
 /* with race, the winning players unspawn. how to differentiate?
 maybe track *when* they unspawned, and group those.
@@ -185,6 +189,171 @@ namespace RaceFeed {
             super(_from, cpOffset);
             SetPlayerLoginWsid();
         }
+
+        _PlayerCpInfo(CSmPlayer@ player) {
+            super(player);
+            @Player = player;
+            name = player.User.Name;
+            Login = player.User.Login;
+            WebServicesUserId = player.User.WebServicesUserId;
+            playerScoreMwId = player.Score.Id.Value;
+            @BestLapTimes = {};
+            @BestRaceTimes = {};
+            UpdateFromPlayer(player);
+            theHook.AfterCreatedNewPlayer(this);
+        }
+
+        // Used to keep the reference to CSmPlayer safe to use or null
+        void ResetUnsafeRefs() {
+            @Player = null;
+            FieldsUpdated = MLFeed::PlayerUpdateFlags::None;
+        }
+
+
+
+        void UpdateFromPlayer(CSmPlayer@ player) {
+            if (player is null || player.ScriptAPI is null || player.Score is null) return;
+            // trace('UpdateFromPlayer: ' + player.User.Name);
+            auto api = cast<CSmScriptPlayer>(player.ScriptAPI);
+            auto score = player.Score;
+            @Player = player;
+
+            bool raceReset, didRespawn, cpsChanged;
+
+            cpsChanged = cpCount != api.RaceWaypointTimes.Length;
+            if (cpsChanged) {
+                FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::Checkpoint);
+                cpCount = api.RaceWaypointTimes.Length;
+                lastCpTime = cpCount == 0 ? 0 : api.RaceWaypointTimes[cpCount - 1];
+                cpTimes.Resize(cpCount + 1);
+                if (cpCount > 0) {
+                    cpTimes[cpCount] = lastCpTime;
+                }
+            }
+            if (NbRespawnsRequested != score.NbRespawnsRequested) {
+                didRespawn = NbRespawnsRequested < score.NbRespawnsRequested;
+                NbRespawnsRequested = score.NbRespawnsRequested;
+                FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::Respawn);
+            }
+            if (spawnIndex != player.SpawnIndex) {
+                spawnIndex = player.SpawnIndex;
+                FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::SpawnIndex);
+            }
+            if (spawnStatus != MLFeed::SpawnStatus(api.SpawnStatus)) {
+                spawnStatus = MLFeed::SpawnStatus(api.SpawnStatus);
+                FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::SpawnStatus);
+            }
+
+            //trace('best race times; score is null: ' + (score is null));
+            if (score.BestRaceTimes.Length > 0 && bestTime != score.BestRaceTimes[score.BestRaceTimes.Length - 1]) {
+                bestTime = score.BestRaceTimes[score.BestRaceTimes.Length - 1];
+                BestRaceTimes.Resize(score.BestRaceTimes.Length);
+                for (uint i = 0; i < score.BestRaceTimes.Length; i++) {
+                    BestRaceTimes[i] = score.BestRaceTimes[i];
+                }
+                FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::BestTime);
+            }
+            //trace('best lap times');
+            if (score.BestLapTimes.Length > 0 && (BestLapTimes.Length == 0 || BestLapTimes[BestLapTimes.Length - 1] != score.BestLapTimes[score.BestLapTimes.Length - 1])) {
+                auto nbCps = score.BestLapTimes.Length;
+                BestLapTimes.Resize(nbCps);
+                for (uint i = 0; i < nbCps; i++) {
+                    BestLapTimes[i] = score.BestLapTimes[i];
+                }
+                FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::BestLapTimes);
+            }
+            //trace('current lap');
+            if (CurrentLap != api.CurrentLapNumber) {
+                CurrentLap = api.CurrentLapNumber;
+                LapStartTime = api.LapStartTime;
+                // api.CurrentLapWaypointTimes
+                FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::CurrentLap);
+            }
+            //trace('start time');
+            if (StartTime != api.StartTime) {
+                raceReset = StartTime < api.StartTime;
+                StartTime = api.StartTime;
+                FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::StartTime);
+            }
+
+            //trace('if raceReset: ' + raceReset);
+            if (raceReset) {
+                LastRespawnCheckpoint = 0;
+                LastRespawnRaceTime = 0;
+                TimeLostToRespawns = 0;
+                ZeroIntArray(timeLostToRespawnsByCp);
+                ZeroIntArray(nbRespawnsByCp);
+                ZeroIntArray(respawnTimes);
+                timeLostToRespawnsByCp.Resize(cpTimes.Length);
+                nbRespawnsByCp.Resize(cpTimes.Length);
+                respawnTimes.Resize(0);
+            } else {
+                timeLostToRespawnsByCp.Resize(cpCount + 1);
+                nbRespawnsByCp.Resize(cpCount + 1);
+                if (cpsChanged) {
+                    timeLostToRespawnsByCp[cpCount] = 0;
+                    nbRespawnsByCp[cpCount] = 0;
+                    if (cpCount > 0) {
+                        // update latency estimate
+                        float lag = float(CurrentRaceTimeRaw - LastCpTime); // should be 0 if instant, or like 1 frame
+                        auto n = Math::Min(9., lagDataPoints);
+                        latencyEstimate = (latencyEstimate * n + lag) / (n + 1.); // simple exp/moving average type thing
+                        lagDataPoints += 1;
+                    }
+                }
+                if (didRespawn) {
+                    // if we respawn at the start of the race (and it isn't a restart) then the car moves instantly
+                    int respawnOverhead = cpCount == 0 ? 0 : 1000;
+                    // lag is accounted for in CurrentRaceTime
+                    int newTimeLost = respawnOverhead + Math::Max(0, CurrentRaceTime - LastCpTime);
+                    LastRespawnRaceTime = respawnOverhead + CurrentRaceTime;
+                    LastRespawnCheckpoint = cpCount;
+                    TimeLostToRespawns -= timeLostToRespawnsByCp[cpCount];
+                    timeLostToRespawnsByCp[cpCount] = newTimeLost;
+                    TimeLostToRespawns += newTimeLost;
+                    nbRespawnsByCp[cpCount] += 1;
+                    respawnTimes.InsertLast(CurrentRaceTime);
+                }
+            }
+
+            // still needed?
+            // race events don't update the local players best time until they've respawned for some reason (other ppl are immediate)
+            // if (player.cpCount == int(this.CPsToFinish) && player.name == LocalUserName && player.IsSpawned) {
+            //     int bt = int(player.bestTime);
+            //     if (bt <= 0) {
+            //         bt = 1 << 30;
+            //     }
+            //     player.bestTime = Math::Min(bt, player.lastCpTime);
+            // }
+
+            //trace('fields updated check');
+            if (FieldsUpdated > 0) {
+                UpdateNonce++;
+                theHook.UpdatePlayerPosition(this);
+            }
+        }
+
+        void ModifyRank(MLFeed::Dir dir, MLFeed::RankType rt) override {
+            MLFeed::PlayerCpInfo_V4::ModifyRank(dir, rt);
+            FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::AnyRaceRank);
+        }
+
+        void UpdateFromScore(CSmPlayer@ player) {
+            auto score = player.Score;
+            if (TeamNum != score.TeamNum) {
+                TeamNum = score.TeamNum;
+                FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::TeamNum);
+            }
+            if (RoundPoints != score.RoundPoints) {
+                RoundPoints = score.RoundPoints;
+                FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::RoundPoints);
+            }
+            if (Points != score.Points) {
+                Points = score.Points;
+                FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::Points);
+            }
+        }
+
 
         CSmPlayer@ FindCSmPlayer() override {
             auto cp = GetApp().CurrentPlayground;
@@ -392,19 +561,13 @@ namespace RaceFeed {
         void UpdatePlayer(MLHook::PendingEvent@ event) {
             uint spawnIx = SpawnCounter;
             string name = event.data[0];
-            MLFeed::PlayerCpInfo_V2@ player;
+            _PlayerCpInfo@ player;
             bool hadPlayer = latestPlayerStats.Get(name, @player);
             if (hadPlayer) {
                 player.UpdateFrom(event, spawnIx);
             } else {
                 @player = _PlayerCpInfo(event, spawnIx);
-                @latestPlayerStats[name] = player;
-                _SortedPlayers_Race.InsertLast(player);
-                _SortedPlayers_TimeAttack.InsertLast(player);
-                _SortedPlayers_Race_Respawns.InsertLast(player);
-                player.raceRank = _SortedPlayers_Race.Length;
-                player.taRank = _SortedPlayers_TimeAttack.Length;
-                player.raceRespawnRank = _SortedPlayers_Race_Respawns.Length;
+                AfterCreatedNewPlayer(player);
             }
 
             if (player.spawnStatus == MLFeed::SpawnStatus::Spawned && player.cpCount == 0) {
@@ -420,6 +583,19 @@ namespace RaceFeed {
             }
             UpdatePlayerPosition(player);
             DuplicateArraysForVersion1();
+        }
+
+        // called from _PlayerCpInfo when created from CSmPlayer
+        void AfterCreatedNewPlayer(_PlayerCpInfo@ player) {
+            trace('After create new player: ' + player.Name);
+            @latestPlayerStats[player.name] = player;
+            _SortedPlayers_Race.InsertLast(player);
+            _SortedPlayers_TimeAttack.InsertLast(player);
+            _SortedPlayers_Race_Respawns.InsertLast(player);
+            player.raceRank = _SortedPlayers_Race.Length;
+            player.taRank = _SortedPlayers_TimeAttack.Length;
+            player.raceRespawnRank = _SortedPlayers_Race_Respawns.Length;
+            player.FieldsUpdated = MLFeed::PlayerUpdateFlags(player.FieldsUpdated | MLFeed::PlayerUpdateFlags::AnyRaceRank);
         }
 
         void UpdatePlayerPosition(MLFeed::PlayerCpInfo_V2@ player) {
@@ -478,7 +654,12 @@ namespace RaceFeed {
             string name = event.data[0];
             if (!latestPlayerStats.Exists(name)) return;
             auto player = GetPlayer_V2(name);
+            OnPlayerLeft(player);
+        }
+
+        void OnPlayerLeft(const MLFeed::PlayerCpInfo_V2@ player) {
             if (player !is null) {
+                trace('removing: ' + player.name);
                 uint ix = _SortedPlayers_Race.FindByRef(player);
                 if (ix >= 0) _SortedPlayers_Race.RemoveAt(ix);
                 FixRanksRace();
@@ -488,7 +669,7 @@ namespace RaceFeed {
                 ix = _SortedPlayers_Race_Respawns.FindByRef(player);
                 if (ix >= 0) _SortedPlayers_Race_Respawns.RemoveAt(ix);
                 FixRanksRaceRespawns();
-                latestPlayerStats.Delete(name);
+                latestPlayerStats.Delete(player.Name);
             }
             DuplicateArraysForVersion1();
         }
@@ -598,6 +779,7 @@ namespace RaceFeed {
         }
 
         void ResetState() {
+            print('reset state');
             UpdateNonce++;
             bestPlayerTimes.DeleteAll();
             latestPlayerStats.DeleteAll();
@@ -612,6 +794,7 @@ namespace RaceFeed {
             _SortedPlayers_TimeAttack.Resize(0);
             _SortedPlayers_Race_Respawns.Resize(0);
             DuplicateArraysForVersion1();
+            RaceFeed::ResetState();
         }
 
         private string _localUserName;

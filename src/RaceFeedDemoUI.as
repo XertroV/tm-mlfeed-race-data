@@ -1,6 +1,7 @@
 const string NOTE_OPTIONAL = "\\$bbb (Optional component)\\$z";
 
 namespace RaceFeedUI {
+    [Setting hidden]
     bool g_windowVisible = false;
 
     array<Tab@> tabs;
@@ -11,6 +12,7 @@ namespace RaceFeedUI {
 
         if (tabs.Length == 0) {
             tabs.InsertLast(MainTab());
+            tabs.InsertLast(PlayersTab());
             tabs.InsertLast(RaceTab());
             tabs.InsertLast(RaceRespawnsTab());
             tabs.InsertLast(TaTab());
@@ -47,6 +49,7 @@ namespace RaceFeedUI {
         void DrawInner() override {
             // UI::Text("latestPlayerStats.GetSize(): " + theHook.latestPlayerStats.GetSize());
             UI::Text("NbPlayers: " + theHook.SortedPlayers_Race.Length);
+            UI::Text("NbPlayers2: " + RaceFeed::g_playerCpInfos.Length);
             UI::Text("SpawnCounter: " + theHook.SpawnCounter);
             UI::Text("Map: " + theHook.lastMap);
             UI::Text("Map CpCount: " + theHook.CpCount);
@@ -99,7 +102,7 @@ namespace RaceFeedUI {
                 return;
             }
             UI::Text("Players ("+players.Length+") sorted for: " + mode + ". " + theHook.CPsToFinish + " total CPs incl finish.");
-            uint nCols = 12;
+            uint nCols = 13;
             if (UI::BeginTable("players debug " + mode, nCols, UI::TableFlags::SizingStretchProp)) {
                 UI::TableSetupColumn("Rank");
                 UI::TableSetupColumn("Name");
@@ -112,6 +115,7 @@ namespace RaceFeedUI {
                 UI::TableSetupColumn("Local?");
                 UI::TableSetupColumn("Lag Est");
                 UI::TableSetupColumn("UpdateNonce");
+                UI::TableSetupColumn("FieldsUpdated");
 
                 UI::TableSetupColumn(""); // view player's tab
 
@@ -120,7 +124,7 @@ namespace RaceFeedUI {
                 UI::ListClipper clipper(players.Length);
                 while (clipper.Step()) {
                     for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
-                        auto ps = players[i];
+                        auto ps = cast<RaceFeed::_PlayerCpInfo>(players[i]);
                         UI::TableNextRow();
                         if (ps is null) { continue; }
 
@@ -159,6 +163,9 @@ namespace RaceFeedUI {
                         UI::Text('' + ps.UpdateNonce);
 
                         UI::TableNextColumn();
+                        UI::Text(Text::Format("%x", int(ps.FieldsUpdated)));
+
+                        UI::TableNextColumn();
                         if (UI::Button("View##"+ps.Name)) {
                             tabs.InsertLast(PlayerTab(ps.Name));
                             tabs[tabs.Length - 1].windowOpen = true;
@@ -168,6 +175,23 @@ namespace RaceFeedUI {
 
                 UI::EndTable();
             }
+        }
+    }
+
+    class PlayersTab : RaceTab {
+        PlayersTab() {
+            super();
+        }
+        const string get_mode() override { return "Players"; }
+        array<MLFeed::PlayerCpInfo_V2@> get_Players() override {
+            array<MLFeed::PlayerCpInfo_V2@> ret = {};
+            for (uint i = 0; i < RaceFeed::g_playerCpInfos.Length; i++) {
+                ret.InsertLast(RaceFeed::g_playerCpInfos[i]);
+            }
+            return ret;
+        }
+        uint PlayersRank(MLFeed::PlayerCpInfo_V2@ player) override {
+            return player.RaceRank;
         }
     }
 

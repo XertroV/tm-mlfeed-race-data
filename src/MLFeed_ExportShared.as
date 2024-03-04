@@ -210,6 +210,9 @@ namespace MLFeed {
             bestTime = _from.bestTime;
             spawnStatus = _from.spawnStatus;
         }
+        PlayerCpInfo(CSmPlayer@ player) {
+            // compatibility constructor
+        }
 
         void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex) {
             UpdateNonce++;
@@ -268,6 +271,10 @@ namespace MLFeed {
             StartTime = _from.StartTime;
             @BestRaceTimes = _from.BestRaceTimes;
         }
+        PlayerCpInfo_V2(CSmPlayer@ player) {
+            // compatibility constructor
+            super(player);
+        }
 
         // The player's name
         const string get_Name() const { return name; }
@@ -316,7 +323,8 @@ namespace MLFeed {
         bool get_Eliminated() const { return !PlayerIsRacing && !IsFinished; }
 
         // this player's CP times for their best performance this session (since the map loaded). Can be null. Can be partial before a player has finished a complete run.
-        const array<uint>@ BestRaceTimes = {};
+        array<uint>@ BestRaceTimes = {};
+
         // whether this player corresponds to the physical player playing the game
         bool IsLocalPlayer;
         // when the player spawned (measured against GameTime)
@@ -369,13 +377,17 @@ namespace MLFeed {
     /* Each's players status in the race, with a focus on CP related info. */
     shared class PlayerCpInfo_V3 : PlayerCpInfo_V2 {
         // this player's CP times for their best lap this session, measured from the start of the lap.
-        const array<uint>@ BestLapTimes;
+        array<uint>@ BestLapTimes;
 
         PlayerCpInfo_V3(MLHook::PendingEvent@ event, uint _spawnIndex) {
             super(event, _spawnIndex);
         }
         PlayerCpInfo_V3(PlayerCpInfo_V3@ _from, int cpOffset) {
             super(_from, cpOffset);
+        }
+        PlayerCpInfo_V3(CSmPlayer@ player) {
+            // compatibility constructor
+            super(player);
         }
     }
 
@@ -387,8 +399,14 @@ namespace MLFeed {
         PlayerCpInfo_V4(PlayerCpInfo_V4@ _from, int cpOffset) {
             super(_from, cpOffset);
         }
+        PlayerCpInfo_V4(CSmPlayer@ player) {
+            // compatibility constructor
+            super(player);
+        }
         // The player's current lap.
         uint CurrentLap;
+        // The time the player started the current lap
+        uint LapStartTime;
         // The player's WebServicesUserId
         string WebServicesUserId;
         // The player's Login (note: if you can, use WebServicesUserId instead)
@@ -403,8 +421,34 @@ namespace MLFeed {
         // Whether the player is currently the MVP (for MM / Ranked)
         bool IsMVP = false;
 
+        // The player's Score.Id.Value (corresponds to login MwId)
+        uint playerScoreMwId;
+
         // Return's the players CSmPlayer object if it is available, otherwise null. The full list of players is searched each time.
         CSmPlayer@ FindCSmPlayer() { throw("overloaded elsewhere"); return null; }
+
+        // Can be null
+        CSmPlayer@ Player = null;
+
+        PlayerUpdateFlags FieldsUpdated = PlayerUpdateFlags::None;
+    }
+
+    shared enum PlayerUpdateFlags {
+        None = 0,
+        Checkpoint = 1,
+        Respawn = 2,
+        SpawnIndex = 4,
+        BestTime = 8,
+        StartTime = 16,
+        AnyRaceRank = 32,
+        BestRaceTimes = 256,
+        BestLapTimes = 512,
+        CurrentLap = 1024,
+        NbRespawnsRequested = 2048,
+        SpawnStatus = 4096,
+        RoundPoints = 8192,
+        Points = 16384,
+        TeamNum = 32768,
     }
 
     //shared
@@ -488,6 +532,8 @@ namespace MLFeed {
             if (LapsNb > 0) return LapsNb;
             return LapCount;
         }
+
+        // Players in the same order as app.CurrentPlayground.Players
     }
 
     /**

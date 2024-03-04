@@ -168,11 +168,11 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
         }
         // events should be prefixed with "MLHook_Event_" + PageUID.
         // Suffixes can be applied if multiple types of events are sent.
-        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_PlayerCP", [Name, ""^CPCount, LatestCPTime, ""^BestTime, ""^SpawnStatusToUint(Player.SpawnStatus), ""^RespawnsCount^","^Player.StartTime]);
+        // SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_PlayerCP", [Name, ""^CPCount, LatestCPTime, ""^BestTime, ""^SpawnStatusToUint(Player.SpawnStatus), ""^RespawnsCount^","^Player.StartTime]);
     }
     // if (Force || )
     if (Force || BestTimeChanged || BestLapTimeChanged) {
-        _SendPlayerTimes(Player);
+        // _SendPlayerTimes(Player);
     }
     // update last spawn and cp count always
     LastCPCounts[Name] = CPCount;
@@ -285,7 +285,7 @@ Void CheckIncoming() {
     declare Text[][] MLHook_Inbound_RaceStats for ClientUI = [];
     foreach (Event in MLHook_Inbound_RaceStats) {
         if (Event[0] == "SendAllPlayerStates") {
-            InitialSend();
+            // InitialSend();
         } else {
             MLHookLog("Skipped unknown incoming event: " ^ Event);
             continue;
@@ -306,18 +306,18 @@ main() {
     yield;
     yield;
     yield;
-    InitialSend();
+    // InitialSend();
     MLHookLog("RaceStatsFeed did init send");
     declare Integer StartTime = 0;
     declare Integer Delta = 0;
     while (True) {
         yield;
         CheckMapChange();
-        CheckPlayers();
-        CheckPlayerPoints();
+        // CheckPlayers();
+        // CheckPlayerPoints();
         LoopCounter += 1;
         if (LoopCounter % 60 == 0) {
-            SendDepartedPlayers();
+            // SendDepartedPlayers();
         }
         if (LoopCounter % 60 == 20) {
             CheckIncoming();
