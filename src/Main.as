@@ -17,7 +17,10 @@ void Main() {
 #endif
 }
 
-void OnDestroyed() { _Unload(); }
+void OnDestroyed() {
+    _Unload();
+    @theHook = null;
+}
 void OnDisabled() { _Unload(); }
 void _Unload() {
     trace('_Unload, unloading hooks and removing injected ML');
@@ -113,9 +116,9 @@ namespace RaceFeed {
         MLFeed::SpawnStatus p1SS = p1.spawnStatus;
         MLFeed::SpawnStatus p2SS = p2.spawnStatus;
         if (theHook !is null) {
-            if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p1.spawnIndex == theHook.SpawnCounter)
+            if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned) // && p1.spawnIndex == theHook.SpawnCounter)
                 p1SS = MLFeed::SpawnStatus::Spawned;
-            if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p2.spawnIndex == theHook.SpawnCounter)
+            if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned) // && p2.spawnIndex == theHook.SpawnCounter)
                 p2SS = MLFeed::SpawnStatus::Spawned;
         }
         // spawned status dominates
@@ -140,9 +143,9 @@ namespace RaceFeed {
         MLFeed::SpawnStatus p1SS = p1.spawnStatus;
         MLFeed::SpawnStatus p2SS = p2.spawnStatus;
         if (theHook !is null) {
-            if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p1.spawnIndex == theHook.SpawnCounter)
+            if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned) // && p1.spawnIndex == theHook.SpawnCounter)
                 p1SS = MLFeed::SpawnStatus::Spawned;
-            if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p2.spawnIndex == theHook.SpawnCounter)
+            if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned) // && p2.spawnIndex == theHook.SpawnCounter)
                 p2SS = MLFeed::SpawnStatus::Spawned;
         }
         // spawned status dominates
@@ -199,6 +202,8 @@ namespace RaceFeed {
             playerScoreMwId = player.Score.Id.Value;
             @BestLapTimes = {};
             @BestRaceTimes = {};
+            cpTimes = {0};
+            bestTime = -1;
             UpdateFromPlayer(player);
             theHook.AfterCreatedNewPlayer(this);
         }
@@ -209,7 +214,9 @@ namespace RaceFeed {
             FieldsUpdated = MLFeed::PlayerUpdateFlags::None;
         }
 
-
+        bool raceReset = false;
+        bool didRespawn = false;
+        bool cpsChanged = false;
 
         void UpdateFromPlayer(CSmPlayer@ player) {
             if (player is null || player.ScriptAPI is null || player.Score is null) return;
@@ -218,7 +225,9 @@ namespace RaceFeed {
             auto score = player.Score;
             @Player = player;
 
-            bool raceReset, didRespawn, cpsChanged;
+            raceReset = false;
+            didRespawn = false;
+            cpsChanged = false;
 
             cpsChanged = cpCount != api.RaceWaypointTimes.Length;
             if (cpsChanged) {
@@ -226,14 +235,17 @@ namespace RaceFeed {
                 cpCount = api.RaceWaypointTimes.Length;
                 lastCpTime = cpCount == 0 ? 0 : api.RaceWaypointTimes[cpCount - 1];
                 cpTimes.Resize(cpCount + 1);
-                if (cpCount > 0) {
-                    cpTimes[cpCount] = lastCpTime;
-                }
+                cpTimes[cpCount] = lastCpTime;
             }
             if (NbRespawnsRequested != score.NbRespawnsRequested) {
                 didRespawn = NbRespawnsRequested < score.NbRespawnsRequested;
-                NbRespawnsRequested = score.NbRespawnsRequested;
+                // sometimes on respawn, a few frames later the respawn count decreases by 1 then increases again shortly after
+                // so just take the max b/c when it resets to zero we'll reset it differently.
+                NbRespawnsRequested = Math::Max(NbRespawnsRequested, score.NbRespawnsRequested);
                 FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::Respawn);
+                if (didRespawn) {
+                    trace('did respawn: ' + name);
+                }
             }
             if (spawnIndex != player.SpawnIndex) {
                 spawnIndex = player.SpawnIndex;
@@ -245,25 +257,30 @@ namespace RaceFeed {
             }
 
             //trace('best race times; score is null: ' + (score is null));
-            if (score.BestRaceTimes.Length > 0 && bestTime != score.BestRaceTimes[score.BestRaceTimes.Length - 1]) {
-                bestTime = score.BestRaceTimes[score.BestRaceTimes.Length - 1];
-                BestRaceTimes.Resize(score.BestRaceTimes.Length);
-                for (uint i = 0; i < score.BestRaceTimes.Length; i++) {
+            uint bestTimeCps = score.BestRaceTimes.Length;
+            if ((bestTimeCps != BestRaceTimes.Length) || (bestTimeCps > 0 && bestTime != score.BestRaceTimes[bestTimeCps - 1])) {
+                if (bestTimeCps == 0) {
+                    bestTime = -1;
+                } else {
+                    bestTime = score.BestRaceTimes[bestTimeCps - 1];
+                }
+                BestRaceTimes.Resize(bestTimeCps);
+                for (uint i = 0; i < bestTimeCps; i++) {
                     BestRaceTimes[i] = score.BestRaceTimes[i];
                 }
                 FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::BestTime);
             }
             //trace('best lap times');
-            if (score.BestLapTimes.Length > 0 && (BestLapTimes.Length == 0 || BestLapTimes[BestLapTimes.Length - 1] != score.BestLapTimes[score.BestLapTimes.Length - 1])) {
-                auto nbCps = score.BestLapTimes.Length;
-                BestLapTimes.Resize(nbCps);
-                for (uint i = 0; i < nbCps; i++) {
+            uint bestLapTimeCps = score.BestLapTimes.Length;
+            if ((bestLapTimeCps != BestLapTimes.Length) || (bestLapTimeCps > 0 && (BestLapTimes.Length == 0 || BestLapTimes[BestLapTimes.Length - 1] != score.BestLapTimes[bestLapTimeCps - 1]))) {
+                BestLapTimes.Resize(bestLapTimeCps);
+                for (uint i = 0; i < bestLapTimeCps; i++) {
                     BestLapTimes[i] = score.BestLapTimes[i];
                 }
                 FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::BestLapTimes);
             }
             //trace('current lap');
-            if (CurrentLap != api.CurrentLapNumber) {
+            if (LapStartTime != api.LapStartTime) {
                 CurrentLap = api.CurrentLapNumber;
                 LapStartTime = api.LapStartTime;
                 // api.CurrentLapWaypointTimes
@@ -271,7 +288,7 @@ namespace RaceFeed {
             }
             //trace('start time');
             if (StartTime != api.StartTime) {
-                raceReset = StartTime < api.StartTime;
+                raceReset = StartTime < api.StartTime && api.StartTime > 0;
                 StartTime = api.StartTime;
                 FieldsUpdated = MLFeed::PlayerUpdateFlags(FieldsUpdated | MLFeed::PlayerUpdateFlags::StartTime);
             }
@@ -287,10 +304,11 @@ namespace RaceFeed {
                 timeLostToRespawnsByCp.Resize(cpTimes.Length);
                 nbRespawnsByCp.Resize(cpTimes.Length);
                 respawnTimes.Resize(0);
+                NbRespawnsRequested = 0;
             } else {
-                timeLostToRespawnsByCp.Resize(cpCount + 1);
-                nbRespawnsByCp.Resize(cpCount + 1);
                 if (cpsChanged) {
+                    timeLostToRespawnsByCp.Resize(cpCount + 1);
+                    nbRespawnsByCp.Resize(cpCount + 1);
                     timeLostToRespawnsByCp[cpCount] = 0;
                     nbRespawnsByCp[cpCount] = 0;
                     if (cpCount > 0) {
@@ -302,6 +320,7 @@ namespace RaceFeed {
                     }
                 }
                 if (didRespawn) {
+                    // trace('updating respawn details: ' + name);
                     // if we respawn at the start of the race (and it isn't a restart) then the car moves instantly
                     int respawnOverhead = cpCount == 0 ? 0 : 1000;
                     // lag is accounted for in CurrentRaceTime
@@ -325,8 +344,9 @@ namespace RaceFeed {
             //     }
             //     player.bestTime = Math::Min(bt, player.lastCpTime);
             // }
+        }
 
-            //trace('fields updated check');
+        void UpdateFromPlayer_AfterAll() {
             if (FieldsUpdated > 0) {
                 UpdateNonce++;
                 theHook.UpdatePlayerPosition(this);
@@ -354,8 +374,8 @@ namespace RaceFeed {
             }
         }
 
-
         CSmPlayer@ FindCSmPlayer() override {
+            if (Player !is null) return Player;
             auto cp = GetApp().CurrentPlayground;
             if (cp is null) return null;
             for (uint i = 0; i < cp.Players.Length; i++) {
@@ -471,11 +491,13 @@ namespace RaceFeed {
             MLHook::Queue_MessageManialinkPlayground("RaceStats", {"SendAllPlayerStates"});
             while (true) {
                 yield();
-                if (incoming_msgs.Length > 0) UpdateNonce++;
-                for (uint i = 0; i < incoming_msgs.Length; i++) {
-                    ProcessMsg(incoming_msgs[i]);
+                if (incoming_msgs.Length > 0) {
+                    UpdateNonce++;
+                    for (uint i = 0; i < incoming_msgs.Length; i++) {
+                        ProcessMsg(incoming_msgs[i]);
+                    }
+                    incoming_msgs.RemoveRange(0, incoming_msgs.Length);
                 }
-                incoming_msgs.RemoveRange(0, incoming_msgs.Length);
                 if (lastMap != CurrentMap) {
                     lastMap = CurrentMap;
                     OnMapChange();
@@ -604,13 +626,17 @@ namespace RaceFeed {
 
         void UpdatePlayerPosition(MLFeed::PlayerCpInfo_V2@ player) {
             // when a player is updated, they usually only go up or down by a few places at most.
-            UpdatePlayerInSortedPlayersWithMethod(player, _SortedPlayers_TimeAttack, LessPlayers(lessTimeAttack), MLFeed::RankType::TimeAttack);
-            UpdatePlayerInSortedPlayersWithMethod(player, _SortedPlayers_Race, LessPlayers(lessRace), MLFeed::RankType::Race);
-            UpdatePlayerInSortedPlayersWithMethod(player, _SortedPlayers_Race_Respawns, LessPlayers(lessRaceRespawn), MLFeed::RankType::RaceRespawns);
+            UpdatePlayerInSortedPlayersWithMethod(player, player.taRank, _SortedPlayers_TimeAttack, LessPlayers(lessTimeAttack), MLFeed::RankType::TimeAttack);
+            UpdatePlayerInSortedPlayersWithMethod(player, player.raceRank, _SortedPlayers_Race, LessPlayers(lessRace), MLFeed::RankType::Race);
+            UpdatePlayerInSortedPlayersWithMethod(player, player.raceRespawnRank, _SortedPlayers_Race_Respawns, LessPlayers(lessRaceRespawn), MLFeed::RankType::RaceRespawns);
         }
 
-        void UpdatePlayerInSortedPlayersWithMethod(MLFeed::PlayerCpInfo_V2@ player, array<MLFeed::PlayerCpInfo_V2@>@ sorted, LessPlayers@ lessFunc, MLFeed::RankType rt) {
-            uint ix = sorted.FindByRef(player);
+        void UpdatePlayerInSortedPlayersWithMethod(MLFeed::PlayerCpInfo_V2@ player, uint ix, array<MLFeed::PlayerCpInfo_V2@>@ sorted, LessPlayers@ lessFunc, MLFeed::RankType rt) {
+            ix -= 1;
+            // uint ix = sorted.FindByRef(player);
+            // if (ix != ix2) {
+            //     print('ix/2: ' + ix + " / " + ix2);
+            // }
             MLFeed::PlayerCpInfo_V2@ tmp;
             if (ix >= sorted.Length) return;
             // improving in rank

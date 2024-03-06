@@ -36,29 +36,19 @@ namespace RaceFeed {
     }
 
     void PlaygroundMLCallback(ref@ meh) {
+        if (theHook is null) throw("RaceStats PG Callback: main hook obj is null. Safe to ignore this if you just unloaded MLFeed.");
         auto app = GetApp();
         if (app.CurrentPlayground is null) return;
         if (app.CurrentPlayground.GameTerminals.Length < 1) return;
-        // auto term = app.CurrentPlayground.GameTerminals[0];
-        // auto player = cast<CSmPlayer>(term.ControlledPlayer);
-        // if (player is null) return;
-        // auto api = cast<CSmScriptPlayer>(player.ScriptAPI);
-        // //trace('CPs: ' + api.RaceWaypointTimes.Length);
         auto cp = cast<CSmArenaClient>(app.CurrentPlayground);
         if (cp is null) return;
         SortPlayersAndUpdate(cp);
         theHook.DuplicateArraysForVersion1();
-        // auto nbPlayers = cp.Players.Length;
-        // for (uint i = 0; i < nbPlayers; i++) {
-        //     auto p = cast<CSmPlayer>(cp.Players[i]);
-        //     if (p is null) continue;
-        //     auto api = cast<CSmScriptPlayer>(p.ScriptAPI);
-        //     if (api is null || api.Score is null || api.User is null) continue;
-        // }
     }
 
 
     void SortPlayersAndUpdate(CSmArenaClient@ cp) {
+        if (cp is null) return;
         auto nbPlayers = cp.Players.Length;
         bool playersChanged = nbPlayers != g_playerCpInfos.Length;
         // if (playersChanged) g_playerCpInfos.Reserve(nbPlayers);
@@ -72,6 +62,9 @@ namespace RaceFeed {
 
         for (uint i = 0; i < nbPlayers; i++) {
             @gamePlayer = cast<CSmPlayer>(cp.Players[i]);
+            if (gamePlayer is null) {
+                throw("null gamePlayer");
+            }
             if (i >= g_playerCpInfos.Length) {
                 // must be a new player
                 @player = _PlayerCpInfo(gamePlayer);
@@ -140,6 +133,10 @@ namespace RaceFeed {
                 EmitGlobal_PlayerLeft(player);
             }
             g_playerCpInfos.RemoveRange(nbPlayers, g_playerCpInfos.Length - nbPlayers);
+        }
+
+        for (uint i = 0; i < g_playerCpInfos.Length; i++) {
+            cast<_PlayerCpInfo>(g_playerCpInfos[i]).UpdateFromPlayer_AfterAll();
         }
     }
 

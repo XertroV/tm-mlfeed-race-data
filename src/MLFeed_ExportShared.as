@@ -177,7 +177,7 @@ namespace MLFeed {
         // The CP times of that player (including the 0th cp at the 0th index; which will always be 0)
         int[] cpTimes;
         // The player's best time this session
-        int bestTime;
+        int bestTime = -1;
         // The players's spawn status: NotSpawned, Spawning, or Spawned
         SpawnStatus spawnStatus;
         // The spawn index when the player spawned
@@ -212,6 +212,7 @@ namespace MLFeed {
         }
         PlayerCpInfo(CSmPlayer@ player) {
             // compatibility constructor
+            cpTimes.InsertLast(0); // zeroth cpTime always 0
         }
 
         void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex) {
@@ -257,10 +258,11 @@ namespace MLFeed {
 
     /* Each's players status in the race, with a focus on CP related info. */
     shared class PlayerCpInfo_V2 : PlayerCpInfo {
+        // unused
         protected int lastCpTimeRaw;
         // protected int LastCpOrRespawnTime;
-        protected array<int> cpTimesRaw;
-        protected array<int> timeLostToRespawnsByCp;
+        // protected array<int> cpTimesRaw = {0};
+        protected array<int> timeLostToRespawnsByCp = {0};
         protected array<int> nbRespawnsByCp;
         protected array<int> respawnTimes;
         int raceRespawnRank;
@@ -300,11 +302,7 @@ namespace MLFeed {
         const int[]@ get_RespawnTimes() const { return respawnTimes; }
         // get the last CP time of the player minus time lost to respawns
         int get_LastTheoreticalCpTime() const {
-            uint tl = 0;
-            for (uint i = 0; i < TimeLostToRespawnByCp.Length - 1; i++) {
-                tl += TimeLostToRespawnByCp[i];
-            }
-            return LastCpTime - tl;
+            return LastCpTime - TimeLostToRespawns;
         }
         // get the current race time of this player minus time lost to respawns
         int get_TheoreticalRaceTime() const {
