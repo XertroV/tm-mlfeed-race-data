@@ -26,20 +26,14 @@ namespace RaceFeed {
                 @g_playerCpInfos[i].Player = null;
                 g_playerCpInfos[i].FieldsUpdated = MLFeed::PlayerUpdateFlags::None;
             }
-            if (playersJoined.Length > 0) {
-                playersJoined.RemoveRange(0, playersJoined.Length);
-            }
-            if (playersLeft.Length > 0) {
-                playersLeft.RemoveRange(0, playersLeft.Length);
-            }
+            playersJoined.RemoveRange(0, playersJoined.Length);
+            playersLeft.RemoveRange(0, playersLeft.Length);
         }
     }
 
     void PlaygroundMLCallback(ref@ meh) {
         if (theHook is null) throw("RaceStats PG Callback: main hook obj is null. Safe to ignore this if you just unloaded MLFeed.");
         auto app = GetApp();
-        if (app.CurrentPlayground is null) return;
-        if (app.CurrentPlayground.GameTerminals.Length < 1) return;
         auto cp = cast<CSmArenaClient>(app.CurrentPlayground);
         if (cp is null) return;
         SortPlayersAndUpdate(cp);
@@ -76,10 +70,12 @@ namespace RaceFeed {
             }
 
             if (player is null) {
-                // ~~end of the known list of players,~~
                 throw("null player");
             }
 
+            if (gamePlayer.Score is null) {
+                throw("null gamePlayer.Score");
+            }
             playerMwId = gamePlayer.Score.Id.Value;
             if (player.playerScoreMwId != playerMwId) {
                 //trace('need to reorder @ ' + i);
