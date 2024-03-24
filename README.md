@@ -63,7 +63,7 @@ Full docs are below.
 
 ##### Upgrading to v0.4
 
-See the upgrade guide: (https://github.com/XertroV/tm-mlfeed-race-data/blob/master/UPGRADE_v0.4.md)[https://github.com/XertroV/tm-mlfeed-race-data/blob/master/UPGRADE_v0.4.md]
+See the upgrade guide: [https://github.com/XertroV/tm-mlfeed-race-data/blob/master/UPGRADE_v0.4.md](https://github.com/XertroV/tm-mlfeed-race-data/blob/master/UPGRADE_v0.4.md)
 
 ##### Race Data Example
 
