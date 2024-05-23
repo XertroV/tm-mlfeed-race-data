@@ -34,6 +34,7 @@ void InitCoro() {
     MLHook::RegisterMLHook(theHook, "RaceStats_MatchKeyPair");
     MLHook::RegisterMLHook(theHook, "RaceStats_COTDQualiInfo");
     MLHook::RegisterMLHook(theHook, "RaceStats_LapsNb");
+    MLHook::RegisterMLHook(theHook, "RaceStats_Warmup");
     // ko feed hook
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_PlayerStatus");
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_MatchKeyPair");

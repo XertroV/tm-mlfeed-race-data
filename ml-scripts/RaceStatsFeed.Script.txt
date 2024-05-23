@@ -276,9 +276,11 @@ Integer CurrentWarmupEndTime(CTeam _Team) {
 }
 
 
-void CheckWarmup() {
+Void CheckWarmup() {
     // Net_Race_WarmupHelpers_IsWarmupActive
-    if (Teams.count == 0) return;
+    if (Teams.count == 0) {
+        return;
+    }
     declare Integer CWET = CurrentWarmupEndTime(Teams[0]);
     declare Boolean WarmupActive = IsWarmupActive(Teams[0]);
     if (G_LastWarmupActive != WarmupActive || CWET != G_CWET) {
@@ -321,6 +323,7 @@ Void CheckIncoming() {
 
 main() {
     G_LastWarmupActive = False;
+    G_CWET = -1;
     declare Integer LoopCounter = 0;
     MLHookLog("Starting RaceStatsFeed");
     while (Players.count == 0) {
