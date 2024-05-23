@@ -58,6 +58,8 @@ namespace RaceFeedUI {
             UI::Text("LapsNb: " + theHook.LapsNb);
             UI::Text("LapCount_Accurate: " + theHook.LapCount_Accurate);
             UI::Text("UpdateNonce: " + theHook.UpdateNonce);
+            UI::Text("WarmupActive: " + theHook.WarmupActive);
+            UI::Text("WarmupEndTime: " + theHook.WarmupEndTime);
 
             UI::Dummy(vec2(0, 20));
             int lrt = recordHook is null ? -1 : recordHook.LastRecordTime;

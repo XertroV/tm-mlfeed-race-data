@@ -193,6 +193,9 @@ namespace MLFeed {
         // Incremented every time the player is updated
         uint UpdateNonce = 0;
 
+        // Whether the player requests to be a spectator
+        bool RequestsSpectate = false;
+
         PlayerCpInfo(MLHook::PendingEvent@ event, uint _spawnIndex) {
             name = event.data[0]; // set once only
             cpTimes.InsertLast(0); // zeroth cpTime always 0
@@ -463,6 +466,9 @@ namespace MLFeed {
         int Rules_StartTime = -1;
         // When the game mode ends (if applicable)
         int Rules_EndTime = -1;
+
+        bool WarmupActive = false;
+        int WarmupEndTime = 0;
 
         // Incremented every time an event is recieved (so something was probably updated)
         uint UpdateNonce = 0;

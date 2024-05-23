@@ -4,7 +4,9 @@ const string RACESTATSFEED_SCRIPT_TXT = """
  #Include "TextLib" as TL
  #Include "Libs/Nadeo/TMNext/TrackMania/Modes/COTDQualifications/NetShare.Script.txt" as COTDNetShare
 
-declare Text G_PreviousMapUid;
+declare Ident G_PreviousMapId;
+declare Boolean G_LastWarmupActive;
+declare Integer G_CWET;
 
 // logging function, should be "MLHook_LogMe_" + PageUID
 Void MLHookLog(Text _Msg) {
@@ -264,9 +266,32 @@ Void CheckPlayers() {
     }
 }
 
+Boolean IsWarmupActive(CTeam _Team) {
+	declare netread Boolean Net_Race_WarmupHelpers_IsWarmupActive for _Team = False;
+	return Net_Race_WarmupHelpers_IsWarmupActive;
+}
+
+Integer CurrentWarmupEndTime(CTeam _Team) {
+	declare netread Integer Net_Race_WarmupHelpers_CurrentWarmUpEndTime for _Team = 0;
+	return Net_Race_WarmupHelpers_CurrentWarmUpEndTime;
+}
+
+
+void CheckWarmup() {
+    // Net_Race_WarmupHelpers_IsWarmupActive
+    if (Teams.count == 0) return;
+    declare Integer CWET = CurrentWarmupEndTime(Teams[0]);
+    declare Boolean WarmupActive = IsWarmupActive(Teams[0]);
+    if (G_LastWarmupActive != WarmupActive || CWET != G_CWET) {
+        G_LastWarmupActive = !G_LastWarmupActive;
+        G_CWET = CWET;
+        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_Warmup", [""^G_LastWarmupActive, ""^CWET]);
+    }
+}
+
 Void CheckMapChange() {
-    if (Map != Null && Map.MapInfo.MapUid != G_PreviousMapUid) {
-        G_PreviousMapUid = Map.MapInfo.MapUid;
+    if (Map != Null && Map.Id != G_PreviousMapId) {
+        G_PreviousMapId = Map.Id;
         LastBestTimes = [];
         LastBestLapTimes = [];
         LastCPCounts = [];
@@ -296,6 +321,7 @@ Void CheckIncoming() {
 }
 
 main() {
+    G_LastWarmupActive = False;
     declare Integer LoopCounter = 0;
     MLHookLog("Starting RaceStatsFeed");
     while (Players.count == 0) {
@@ -308,6 +334,7 @@ main() {
     yield;
     InitialSend();
     MLHookLog("RaceStatsFeed did init send");
+    CheckWarmup();
     declare Integer StartTime = 0;
     declare Integer Delta = 0;
     while (True) {
@@ -315,11 +342,12 @@ main() {
         CheckMapChange();
         CheckPlayers();
         CheckPlayerPoints();
+        CheckWarmup();
         LoopCounter += 1;
         if (LoopCounter % 60 == 0) {
             SendDepartedPlayers();
         }
-        if (LoopCounter % 60 == 20) {
+        if (LoopCounter % 30 == 20) {
             CheckIncoming();
             _SendCOTDQuali();
             _CheckLapsNb();

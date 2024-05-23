@@ -276,6 +276,14 @@ namespace RaceFeed {
                     respawnTimes.InsertLast(CurrentRaceTime);
                 }
             }
+
+            auto player = FindCSmPlayer();
+            if (player !is null) {
+                auto script = cast<CSmScriptPlayer>(player.ScriptAPI);
+                if (script !is null) {
+                    RequestsSpectate = script.RequestsSpectate;
+                }
+            }
         }
 
         // Does the player's CP count indicate they are finished? This should work with a forced number of laps
@@ -346,6 +354,8 @@ namespace RaceFeed {
                     UpdateQualiInfo(event);
                 } else if (event.type.EndsWith("_LapsNb")) {
                     UpdateLapsNb(event);
+                } else if (event.type.EndsWith("_Warmup")) {
+                    UpdateWarmup(event);
                 } else {
                     warn("race stats: unknown event type: " + event.type);
                 }
@@ -576,6 +586,7 @@ namespace RaceFeed {
             LapsNb = Text::ParseInt(event.data[0]);
             if (LapsNb == 0) LapsNb = 1;
         }
+
         void UpdateQualiInfo(MLHook::PendingEvent@ event) {
             if (event.data.Length != 6) {
                 warn("UpdateQualiInfo got bad event data length: " + event.data.Length);
@@ -588,6 +599,15 @@ namespace RaceFeed {
             COTDQ_QualificationsProgress = MLFeed::QualificationStage(Text::ParseInt(event.data[4]));
             COTDQ_IsSynchronizingRecord = event.data[5] == "True";
             COTDQ_UpdateNonce++;
+        }
+
+        void UpdateWarmup(MLHook::PendingEvent@ event) {
+            if (event.data.Length < 2) {
+                warn("UpdateWarmup event too short");
+                return;
+            }
+            WarmupActive = event.data[0] == "True";
+            WarmupEndTime = WarmupActive ? Text::ParseInt(event.data[1]) : 0;
         }
 
         void OnMapChange() {
