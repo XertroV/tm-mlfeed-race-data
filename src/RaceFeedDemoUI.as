@@ -484,7 +484,7 @@ namespace RaceFeedUI {
 
         void DrawInner() override {
             UI::Text("Player Stats: " + name);
-            auto player = theHook.GetPlayer_V2(name);
+            auto player = theHook.GetPlayer_V4(name);
 
             if (player is null) {
                 UI::Text("Player not found :(");
@@ -492,7 +492,8 @@ namespace RaceFeedUI {
             }
             if (UI::BeginTable("player-stats##"+name, 2, UI::TableFlags::SizingFixedSame)) {
                 DrawPair("Latency Est. (ms): ", tostring(player.latencyEstimate));
-
+                DrawPair("Spawn Status: ", tostring(player.SpawnStatus));
+                DrawPair("Spawn Count: ", tostring(player.SpawnCount));
                 DrawPair("IsFinished: ", tostring(player.IsFinished));
                 DrawPair("CpCount: ", tostring(player.CpCount));
                 DrawPair("LastRespawnCheckpoint: ", tostring(player.LastRespawnCheckpoint));
@@ -508,6 +509,10 @@ namespace RaceFeedUI {
                 DrawPair("CurrentRaceTime: ", tostring(player.CurrentRaceTime));
                 DrawPair("CurrentRaceTimeRaw: ", tostring(player.CurrentRaceTimeRaw));
                 DrawPair("TheoreticalRaceTime: ", tostring(player.TheoreticalRaceTime));
+
+                DrawPair("RequestsSpectate: ", tostring(player.RequestsSpectate));
+
+                DrawPair("RaceProgression: ", player.RaceProgression.ToString());
 
                 UI::EndTable();
             }

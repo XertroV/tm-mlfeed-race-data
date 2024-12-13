@@ -35,6 +35,7 @@ void InitCoro() {
     MLHook::RegisterMLHook(theHook, "RaceStats_COTDQualiInfo");
     MLHook::RegisterMLHook(theHook, "RaceStats_LapsNb");
     MLHook::RegisterMLHook(theHook, "RaceStats_Warmup");
+    MLHook::RegisterMLHook(theHook, "RaceStats_PlayerRaceProgression");
     // ko feed hook
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_PlayerStatus");
     MLHook::RegisterMLHook(koFeedHook, KOsEvent + "_MatchKeyPair");
@@ -291,6 +292,10 @@ namespace RaceFeed {
         bool get_IsFinished() const override {
             return this.CpCount == int(theHook.CPsToFinish);
         }
+
+        bool get_RoyalTA_HasFinished() const override {
+            return this.RaceProgression.x >= 5;
+        }
     }
 
     class HookRaceStatsEvents : MLFeed::HookRaceStatsEventsBase_V4 {
@@ -339,24 +344,27 @@ namespace RaceFeed {
 
         void ProcessMsg(MLHook::PendingEvent@ event) {
             if (event is null) return;
+            string ty = event.type.SubStr(22); // MLHook_Event_RaceStats
             try {
-                if (event.type.EndsWith("_PlayerLeft")) {
+                if (ty == ("_PlayerLeft")) {
                     // update active player list
                     UpdatePlayerLeft(event);
-                } else if (event.type.EndsWith("_PlayerCP")) {
+                } else if (ty == ("_PlayerCP")) {
                     UpdatePlayer(event);
-                } else if (event.type.EndsWith("_MatchKeyPair")) {
+                } else if (ty == ("_MatchKeyPair")) {
                     ProcessMatchKP(event);
-                } else if (event.type.EndsWith("_PlayerRaceTimes")) {
+                } else if (ty == ("_PlayerRaceTimes")) {
                     UpdatePlayerRaceTimes(event);
-                } else if (event.type.EndsWith("_PlayerInfo")) {
+                } else if (ty == ("_PlayerInfo")) {
                     // skip, could update tho.
-                } else if (event.type.EndsWith("_COTDQualiInfo")) {
+                } else if (ty == ("_COTDQualiInfo")) {
                     UpdateQualiInfo(event);
-                } else if (event.type.EndsWith("_LapsNb")) {
+                } else if (ty == ("_LapsNb")) {
                     UpdateLapsNb(event);
-                } else if (event.type.EndsWith("_Warmup")) {
+                } else if (ty == ("_Warmup")) {
                     UpdateWarmup(event);
+                } else if (ty == ("_PlayerRaceProgression")) {
+                    UpdateRaceProgression(event);
                 } else {
                     warn("race stats: unknown event type: " + event.type);
                 }
@@ -609,6 +617,22 @@ namespace RaceFeed {
             }
             WarmupActive = event.data[0] == "True";
             WarmupEndTime = WarmupActive ? Text::ParseInt(event.data[1]) : 0;
+        }
+
+        void UpdateRaceProgression(MLHook::PendingEvent@ event) {
+            // [name, points, time]
+            if (event.data.Length < 3) {
+                warn("UpdateRaceProgression event too short");
+                return;
+            }
+            auto name = event.data[0];
+            auto player = _GetPlayer(name);
+            if (player is null) {
+                warn("UpdateRaceProgression got player that doesn't exist: " + name);
+                return;
+            }
+            player.RaceProgression.x = Text::ParseInt(event.data[1]);
+            player.RaceProgression.y = Text::ParseInt(event.data[2]);
         }
 
         void OnMapChange() {

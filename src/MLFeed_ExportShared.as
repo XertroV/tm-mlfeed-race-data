@@ -196,6 +196,12 @@ namespace MLFeed {
         // Whether the player requests to be a spectator
         bool RequestsSpectate = false;
 
+        // Used as <Points, Time> in Royal Time Attack; sourced from `netread Int2 Net_TMGame_ScoresTable_RaceProgression for Score`
+        int2 RaceProgression;
+
+        // Track the number of times the player goes from not spawned to Spawned.
+        uint SpawnCount = 0;
+
         PlayerCpInfo(MLHook::PendingEvent@ event, uint _spawnIndex) {
             name = event.data[0]; // set once only
             cpTimes.InsertLast(0); // zeroth cpTime always 0
@@ -212,6 +218,8 @@ namespace MLFeed {
             lastCpTime = cpTimes[cpCount];
             bestTime = _from.bestTime;
             spawnStatus = _from.spawnStatus;
+            SpawnCount = _from.SpawnCount;
+            RaceProgression = _from.RaceProgression;
         }
 
         void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex) {
@@ -228,7 +236,11 @@ namespace MLFeed {
                 cpTimes[cpCount] = lastCpTime;
             }
             bestTime = Text::ParseInt(event.data[3]);
+            auto lastSpawnStatus = spawnStatus;
             spawnStatus = SpawnStatus(Text::ParseInt(event.data[4]));
+            if (lastSpawnStatus != SpawnStatus::Spawned && spawnStatus == SpawnStatus::Spawned) {
+                SpawnCount++;
+            }
         }
 
         // Whether the player is spawned
@@ -244,6 +256,12 @@ namespace MLFeed {
 
         // Does the player's CP count indicate they are finished? This should work with a forced number of laps
         bool get_IsFinished() const {
+            throw("implemented elsewhere");
+            return false;
+        }
+
+        // Has the player completed 5 segments (or more) in royal TA?
+        bool get_RoyalTA_HasFinished() const {
             throw("implemented elsewhere");
             return false;
         }

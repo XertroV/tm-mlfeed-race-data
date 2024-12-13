@@ -126,7 +126,7 @@ Void CheckPlayerPoints() {
                 LastPlayerRoundPoints[Score.Id] = Score.RoundPoints;
                 LastPlayerPoints[Score.Id] = Score.Points;
                 LastPlayerTeams[Score.Id] = Score.TeamNum;
-                MLHookUpdateKP("PlayerScore", TL::Join(",", [Player.Name, ""^Score.TeamNum, ""^Score.RoundPoints, ""^Score.Points]));
+                MLHookUpdateKP("PlayerScore", TL::Join(",", [Player.User.Name, ""^Score.TeamNum, ""^Score.RoundPoints, ""^Score.Points]));
             }
         }
     }
@@ -184,6 +184,21 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
     LastBestLapTimes[Name] = BestLapTime;
     return WillSendEvent;
     // tuningend();
+}
+
+declare Int2[Ident] LastRaceProgression;
+declare Text G_RaceProgEvent;
+
+Void _SendPlayerRaceProg(CScore Score) {
+    if (TL::Length(G_RaceProgEvent) == 0) {
+        G_RaceProgEvent = "MLHook_Event_" ^ C_PageUID ^ "_PlayerRaceProgression";
+    }
+    declare netread Int2 Net_TMGame_ScoresTable_RaceProgression for Score = <0, 0>;
+    declare Boolean Changed = !LastRaceProgression.existskey(Score.Id) || Net_TMGame_ScoresTable_RaceProgression != LastRaceProgression[Score.Id];
+    if (Changed) {
+        LastRaceProgression[Score.Id] = Net_TMGame_ScoresTable_RaceProgression;
+        SendCustomEvent(G_RaceProgEvent, [Score.User.Name, ""^Net_TMGame_ScoresTable_RaceProgression.X, ""^Net_TMGame_ScoresTable_RaceProgression.Y]);
+    }
 }
 
 
@@ -291,6 +306,20 @@ Void CheckWarmup() {
     }
 }
 
+declare Integer G_LastRaceProgressionNonce;
+
+Void CheckRaceProgression() {
+    declare netread Integer Net_TMGame_ScoresTable_RaceProgressionUpdate for Teams[0] = -1;
+    if (Net_TMGame_ScoresTable_RaceProgressionUpdate == G_LastRaceProgressionNonce) {
+        return;
+    }
+    G_LastRaceProgressionNonce = Net_TMGame_ScoresTable_RaceProgressionUpdate;
+    foreach (Score in Scores) {
+        _SendPlayerRaceProg(Score);
+    }
+}
+
+
 Void CheckMapChange() {
     if (Map != Null && Map.Id != G_PreviousMapId) {
         G_PreviousMapId = Map.Id;
@@ -338,14 +367,21 @@ main() {
     InitialSend();
     MLHookLog("RaceStatsFeed did init send");
     CheckWarmup();
-    declare Integer StartTime = 0;
-    declare Integer Delta = 0;
+    // declare Integer StartTime = 0;
+    // declare Integer Delta = 0;
+    // declare Boolean ShouldUpdateRaceProg = False;
     while (True) {
+        // if (LoopCounter % 51 == 0) {
+        //     ShouldUpdateRaceProg = CurrentServerModeName == "TM_RoyalTimeAttack_Online";
+        // }
         yield;
         CheckMapChange();
         CheckPlayers();
         CheckPlayerPoints();
         CheckWarmup();
+        // if (ShouldUpdateRaceProg) CheckRaceProgression();
+        CheckRaceProgression();
+
         LoopCounter += 1;
         if (LoopCounter % 60 == 0) {
             SendDepartedPlayers();
