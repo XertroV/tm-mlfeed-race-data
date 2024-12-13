@@ -60,7 +60,13 @@ namespace RaceFeedUI {
             UI::Text("UpdateNonce: " + theHook.UpdateNonce);
             UI::Text("WarmupActive: " + theHook.WarmupActive);
             UI::Text("WarmupEndTime: " + theHook.WarmupEndTime);
+            UI::Separator();
+            UI::Dummy(vec2(0, 20));
+            UI::Text("Rules_StartTime: " + theHook.Rules_StartTime);
+            UI::Text("Rules_GameTime:  " + theHook.Rules_GameTime);
+            UI::Text("Rules_EndTime:   " + theHook.Rules_EndTime);
 
+            UI::Separator();
             UI::Dummy(vec2(0, 20));
             int lrt = recordHook is null ? -1 : recordHook.LastRecordTime;
             UI::Text("LastRecordTime: " + lrt); // + NOTE_OPTIONAL);
@@ -513,6 +519,7 @@ namespace RaceFeedUI {
                 DrawPair("RequestsSpectate: ", tostring(player.RequestsSpectate));
 
                 DrawPair("RaceProgression: ", player.RaceProgression.ToString());
+                DrawPair("RaceProgressionHistory: ", Json::Write(player.RaceProgressionHistory.ToJson()));
 
                 UI::EndTable();
             }

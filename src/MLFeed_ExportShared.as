@@ -199,6 +199,9 @@ namespace MLFeed {
         // Used as <Points, Time> in Royal Time Attack; sourced from `netread Int2 Net_TMGame_ScoresTable_RaceProgression for Score`
         int2 RaceProgression;
 
+        // History of RaceProgression, treating the first element as the index in history
+        array<int> RaceProgressionHistory;
+
         // Track the number of times the player goes from not spawned to Spawned.
         uint SpawnCount = 0;
 

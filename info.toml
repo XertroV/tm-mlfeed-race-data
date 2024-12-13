@@ -6,8 +6,12 @@ version  = "0.5.17"
 
 [script]
 #__DEFINES__
+
 dependencies = ["MLHook"]
+export_dependencies = ["MLHook"]
+
 exports = ["MLFeed_Export.as"]
 shared_exports = ["MLFeed_ExportShared.as"]
 module = "MLFeed"
+
 # export_dependencies = ["MLHook"]
