@@ -634,8 +634,8 @@ namespace RaceFeed {
             player.RaceProgression.x = Text::ParseInt(event.data[1]);
             player.RaceProgression.y = Text::ParseInt(event.data[2]);
             auto histLen = player.RaceProgression.x + 1;
-            if (histLen < 20) {
-                auto minCap = 1 << int(Math::Log2(histLen));
+            if (histLen < 32) {
+                auto minCap = 2 << int(Math::Log2(histLen));
                 player.RaceProgressionHistory.Reserve(minCap);
                 player.RaceProgressionHistory.Resize(Math::Max(histLen, 0));
                 player.RaceProgressionHistory[player.RaceProgression.x] = player.RaceProgression.y;
