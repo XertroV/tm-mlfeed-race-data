@@ -316,6 +316,7 @@ namespace RaceFeed {
             MLHook::Queue_MessageManialinkPlayground("RaceStats", {"SendAllPlayerStates"});
             while (true) {
                 yield();
+                UpdateServerTime();
                 if (incoming_msgs.Length > 0) UpdateNonce++;
                 for (uint i = 0; i < incoming_msgs.Length; i++) {
                     ProcessMsg(incoming_msgs[i]);
@@ -325,7 +326,6 @@ namespace RaceFeed {
                     lastMap = CurrentMap;
                     OnMapChange();
                 }
-                UpdateServerTime();
             }
         }
 
@@ -708,6 +708,12 @@ string get_CurrentMap() {
     if (map is null) return "";
     // return map.EdChallengeId;
     return map.MapInfo.MapUid;
+}
+
+uint get_CurrentMapId() {
+    auto map = GetApp().RootMap;
+    if (map is null) return -1;
+    return map.Id.Value;
 }
 
 void ZeroIntArray(int[]@ arr) {
