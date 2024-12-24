@@ -268,6 +268,17 @@ namespace MLFeed {
             throw("implemented elsewhere");
             return false;
         }
+
+        // How many segments has the player finished in royal TA? 1 per finish. See also: `::RaceProgression`.
+        int get_RoyalTA_SegmentsFinished() const {
+            return this.RaceProgression.x;
+        }
+
+        // When did the player finish the segment at segmentIx in royal TA? See also: `::RaceProgressionHistory`.
+        int get_RoyalTA_SegmentFinishedAt(int segmentIx) const {
+            if (segmentIx < 0 || segmentIx >= this.RaceProgressionHistory.Length) return -1;
+            return this.RaceProgressionHistory[segmentIx];
+        }
     }
 
     /* Each's players status in the race, with a focus on CP related info. */
@@ -418,6 +429,11 @@ namespace MLFeed {
         // The player's Login (note: if you can, use WebServicesUserId instead)
         string Login;
 
+        // The player Login's MwId
+        MwId LoginMwId;
+        // The player Name's MwId
+        MwId NameMwId;
+
         // The points the player earned this round. Reset on Playing UI sequence.
         int RoundPoints = 0;
         // The points total of this player. Updated with +RoundPoints on EndRound UI sequence (before RoundPoints is reset).
@@ -427,25 +443,12 @@ namespace MLFeed {
         // Whether the player is currently the MVP (for MM / Ranked)
         bool IsMVP = false;
 
+        // Time::Now when the player object was created
+        uint FirstSeen;
+
         // Return's the players CSmPlayer object if it is available, otherwise null. The full list of players is searched each time.
         CSmPlayer@ FindCSmPlayer() { throw("overloaded elsewhere"); return null; }
     }
-
-    //shared
-    // class PlayerCpInfo_V5 : PlayerCpInfo_V4 {
-    //     PlayerCpInfo_V5(MLHook::PendingEvent@ event, uint _spawnIndex) {
-    //         super(event, _spawnIndex);
-    //     }
-
-    //     PlayerCpInfo_V5(PlayerCpInfo_V5@ _from, int cpOffset) {
-    //         super(_from, cpOffset);
-    //     }
-
-    //     // Whether the player is spawned
-    //     bool get_IsSpawned() const {
-    //         return spawnStatus == SpawnStatus::Spawned;
-    //     }
-    // }
 
     // direction to move; down=-1, up=1
     shared enum Dir {

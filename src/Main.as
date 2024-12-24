@@ -200,13 +200,30 @@ namespace RaceFeed {
             return null;
         }
 
+        // also sets FirstSeen and maybe other things
         void SetPlayerLoginWsid() {
+#if DEV
+            if (Login.Length > 0) throw("Login already set");
+#endif
+            FirstSeen = Time::Now;
             auto net = GetApp().Network;
             for (uint i = 0; i < net.PlayerInfos.Length; i++) {
                 auto item = cast<CGamePlayerInfo>(net.PlayerInfos[i]);
                 if (string(item.Name) == this.Name) {
                     Login = item.Login;
                     WebServicesUserId = item.WebServicesUserId;
+#if DEV
+                    string loKey = "SetPlayerLoginWsid_" + Name + "_";
+                    log_once(loKey + "1", Name + " -> " + Login + " / " + WebServicesUserId);
+                    log_once(loKey + "2", "loginMwId.SetName");
+                    LoginMwId.SetName(item.Login);
+                    log_once(loKey + "3", "nameMwId.SetName");
+                    NameMwId.SetName(item.Name);
+                    log_once(loKey + "4", "Done: " + LoginMwId.Value + " / " + NameMwId.Value);
+#else
+                    LoginMwId.SetName(item.Login);
+                    NameMwId.SetName(item.Name);
+#endif
                 }
             }
         }
@@ -295,6 +312,15 @@ namespace RaceFeed {
 
         bool get_RoyalTA_HasFinished() const override {
             return this.RaceProgression.x >= 5;
+        }
+
+        int get_RoyalTA_SegmentsFinished() const override {
+            return this.RaceProgression.x;
+        }
+
+        int get_RoyalTA_SegmentFinishedAt(int segmentIx) const override {
+            if (segmentIx < 0 || segmentIx >= this.RaceProgressionHistory.Length) return -1;
+            return this.RaceProgressionHistory[segmentIx];
         }
     }
 
@@ -720,4 +746,21 @@ void ZeroIntArray(int[]@ arr) {
     for (uint i = 0; i < arr.Length; i++) {
         arr[i] = 0;
     }
+}
+
+uint GetMwIdValue(const string &in str) {
+    MwId id();
+    id.SetName(str);
+    return id.Value;
+}
+
+
+
+
+dictionary _log_once;
+
+void log_once(const string &in key, const string &in msg) {
+    if (_log_once.Exists(key)) return;
+    _log_once[key] = true;
+    warn(msg);
 }
