@@ -442,8 +442,10 @@ namespace RaceFeed {
             if (hadPlayer) {
                 player.UpdateFrom(event, spawnIx);
             } else {
-                @player = _PlayerCpInfo(event, spawnIx);
+                auto @_player = _PlayerCpInfo(event, spawnIx);
+                @player = _player;
                 @latestPlayerStats[name] = player;
+                @loginToPlayers[_player.Login] = _player;
                 _SortedPlayers_Race.InsertLast(player);
                 _SortedPlayers_TimeAttack.InsertLast(player);
                 _SortedPlayers_Race_Respawns.InsertLast(player);
@@ -521,8 +523,18 @@ namespace RaceFeed {
         // a player left the server
         void UpdatePlayerLeft(MLHook::PendingEvent@ event) {
             string name = event.data[0];
-            if (!latestPlayerStats.Exists(name)) return;
-            auto player = GetPlayer_V2(name);
+
+            auto player = GetPlayer_V4(name);
+            if (player is null) {
+                // name could also be a login
+                @player = GetPlayer_V4_ByLogin(name);
+                if (player is null) {
+                    warn("Player left that wasn't in the player list: " + name);
+                    return;
+                }
+                name = player.Name;
+            }
+
             if (player !is null) {
                 uint ix = _SortedPlayers_Race.FindByRef(player);
                 if (ix >= 0) _SortedPlayers_Race.RemoveAt(ix);
@@ -534,6 +546,7 @@ namespace RaceFeed {
                 if (ix >= 0) _SortedPlayers_Race_Respawns.RemoveAt(ix);
                 FixRanksRaceRespawns();
                 latestPlayerStats.Delete(name);
+                loginToPlayers.Delete(player.Login);
             }
             DuplicateArraysForVersion1();
         }
@@ -679,6 +692,7 @@ namespace RaceFeed {
             UpdateNonce++;
             bestPlayerTimes.DeleteAll();
             latestPlayerStats.DeleteAll();
+            loginToPlayers.DeleteAll();
             this.CpCount = 0;
             this.LapCount = 0;
             this.LapsNb = 0;
@@ -763,4 +777,10 @@ void log_once(const string &in key, const string &in msg) {
     if (_log_once.Exists(key)) return;
     _log_once[key] = true;
     warn(msg);
+}
+
+void dev_warn(const string &in msg) {
+#if DEV
+    warn(msg);
+#endif
 }
