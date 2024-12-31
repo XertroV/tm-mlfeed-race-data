@@ -469,6 +469,7 @@ namespace MLFeed {
         string lastMap;
         // internal... but it's a map of player name => player object
         dictionary latestPlayerStats;
+        dictionary loginToPlayers;
         // internal, deprecated
         array<PlayerCpInfo@> sortedPlayers_Race;
         // internal, deprecated
@@ -540,6 +541,12 @@ namespace MLFeed {
 
         HookRaceStatsEventsBase_V2(const string &in type) {
             super(type);
+        }
+
+        /* Get a player's info by login */
+        const PlayerCpInfo_V4@ GetPlayer_V4_ByLogin(const string &in login) const {
+            if (not loginToPlayers.Exists(login)) return null;
+            return cast<PlayerCpInfo_V4>(loginToPlayers[login]);
         }
 
         /* Get a player's info */
