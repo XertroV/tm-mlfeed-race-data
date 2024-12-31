@@ -3,6 +3,22 @@
  #Include "TextLib" as TL
  #Include "Libs/Nadeo/TMNext/TrackMania/Modes/COTDQualifications/NetShare.Script.txt" as COTDNetShare
 
+ #Struct K_PlayerLastValues {
+    Integer RoundPoints;
+    Integer Points;
+    Integer TeamNum;
+    Integer CPCount;
+    Integer RespawnsCount;
+    CSmPlayer::ESpawnStatus SpawnStatus;
+    Integer BestTime;
+    Integer BestLapTime;
+
+    // to cache what was updated
+    Boolean UpdatePoints;
+    Boolean UpdateCPs;
+    Boolean UpdateBestTimes;
+ }
+
 declare Ident G_PreviousMapId;
 declare Boolean G_LastWarmupActive;
 declare Integer G_CWET;
@@ -63,21 +79,26 @@ Integer GetBestLapTime(CSmPlayer Player) {
 // }
 
 
-declare Text[] LastKnownPlayers;
+declare Ident[] G_LastKnownPlayers;
 
 // send a players that left every now and then.
 Void SendDepartedPlayers() {
-    declare Boolean[Text] CurrentPlayers;
-    declare Text[] CurrPlayerNames;
+    declare Boolean[Ident] CurrentPlayers;
+    declare Ident[] CurrPlayerIds;
     foreach (Player in Players) {
-        CurrentPlayers[Player.User.Name] = True;
-        CurrPlayerNames.add(Player.User.Name);
+        if (Player.Score == Null) continue;
+        CurrentPlayers[Player.User.Id] = True;
+        CurrPlayerIds.add(Player.User.Id);
     }
-    foreach (PlayerName in LastKnownPlayers) {
-        if (CurrentPlayers.existskey(PlayerName)) continue;
-        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_PlayerLeft", [PlayerName]);
+    foreach (PlayerLoginId in G_LastKnownPlayers) {
+        if (CurrentPlayers.existskey(PlayerLoginId)) continue;
+        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_PlayerLeft", [""^PlayerLoginId]);
     }
-    LastKnownPlayers = CurrPlayerNames;
+    G_LastKnownPlayers = CurrPlayerIds;
+    // G_LastKnownPlayers.clear();
+    // foreach (PlayerId in CurrPlayerIds) {
+    //     G_LastKnownPlayers.add(PlayerId);
+    // }
 }
 
 
@@ -93,10 +114,10 @@ Text[] CPTimesStr(Integer[] Checkpoints) {
 // send all players best times
 Void _SendPlayerTimes(CSmPlayer Player) {
     if (Player.Score == Null) return;
-    declare Name = Player.User.Name;
-    declare RaceTimes = TL::Join(",", CPTimesStr(Player.RaceWaypointTimes));
-    declare BestTimes = TL::Join(",", CPTimesStr(Player.Score.BestRaceTimes));
-    declare BestLapTimes = TL::Join(",", CPTimesStr(Player.Score.BestLapTimes));
+    declare Text Name = Player.User.Name;
+    declare Text RaceTimes = TL::Join(",", CPTimesStr(Player.RaceWaypointTimes));
+    declare Text BestTimes = TL::Join(",", CPTimesStr(Player.Score.BestRaceTimes));
+    declare Text BestLapTimes = TL::Join(",", CPTimesStr(Player.Score.BestLapTimes));
     // declare NbCurrCheckpoints = Player.RaceWaypointTimes.count;
     // if (NbCurrCheckpoints > 0
     //     && NbCurrCheckpoints == Player.Score.BestRaceTimes.count
@@ -110,6 +131,11 @@ Void _SendPlayerTimes(CSmPlayer Player) {
 }
 
 
+
+declare K_PlayerLastValues[Ident] LastPlayerValues;
+
+
+
 declare Integer[Ident] LastPlayerRoundPoints;
 declare Integer[Ident] LastPlayerPoints;
 declare Integer[Ident] LastPlayerTeams;
@@ -117,7 +143,7 @@ declare Integer[Ident] LastPlayerTeams;
 Void CheckPlayerPoints() {
     foreach (Player in Players) {
         if (Player.Score != Null) {
-            declare Score <=> Player.Score;
+            declare CSmScore Score <=> Player.Score;
             declare RPointsChanged = !LastPlayerRoundPoints.existskey(Score.Id) || LastPlayerRoundPoints[Score.Id] != Score.RoundPoints;
             declare PointsChanged = !LastPlayerPoints.existskey(Score.Id) || LastPlayerPoints[Score.Id] != Score.Points;
             declare TeamChanged = !LastPlayerTeams.existskey(Score.Id) || LastPlayerTeams[Score.Id] != Score.TeamNum;
@@ -131,14 +157,20 @@ Void CheckPlayerPoints() {
     }
 }
 
+Void SendUpdate_PlayerPoints(CSmPlayer _Player, K_PlayerLastValues _LastValues) {
+    if (_Player == Null || _Player.Score == Null) return;
+    if (!_LastValues.UpdatePoints) return;
+    declare CSmScore Score <=> _Player.Score;
+    MLHookUpdateKP("PlayerScore", TL::Join(",", [_Player.User.Name, ""^Score.TeamNum, ""^Score.RoundPoints, ""^Score.Points]));
+}
 
 
 // we only want to send info when a player's CP count changes.
-declare Integer[Text] LastCPCounts;
-declare Integer[Text] LastBestTimes;
-declare Integer[Text] LastBestLapTimes;
-declare Integer[Text] LastRespawnsCount;
-declare CSmPlayer::ESpawnStatus[Text] LastSpawn;
+declare Integer[Ident] LastCPCounts;
+declare Integer[Ident] LastBestTimes;
+declare Integer[Ident] LastBestLapTimes;
+declare Integer[Ident] LastRespawnsCount;
+declare CSmPlayer::ESpawnStatus[Ident] LastSpawn;
 declare Integer MostCPsSeen;
 declare Integer LastKnownLapsNb;
 
@@ -146,24 +178,28 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
     if (Player == Null || Player.Score == Null || Player.User == Null) return False;
     // tuningstart();
     declare Text Name = Player.User.Name;
-    declare CPCount = Player.RaceWaypointTimes.count;
-    declare RespawnsCount = Player.Score.NbRespawnsRequested;
-    declare BestTime = GetBestRaceTime(Player);
-    declare BestLapTime = GetBestLapTime(Player);
+    declare Ident PlayerId = Player.Score.Id;
+    declare Integer CPCount = Player.RaceWaypointTimes.count;
+    declare Integer RespawnsCount = Player.Score.NbRespawnsRequested;
+    declare Integer BestTime = GetBestRaceTime(Player);
+    declare Integer BestLapTime = GetBestLapTime(Player);
     if (CPCount > MostCPsSeen) {
         MostCPsSeen = CPCount;
     }
     // check for changes
-    declare Boolean SpawnChanged = LastSpawn.existskey(Name) && Player.SpawnStatus != LastSpawn[Name];
-    declare Boolean CpsChanged = LastCPCounts.existskey(Name) && CPCount != LastCPCounts[Name];
-    declare Boolean RespawnsChanged = LastRespawnsCount.existskey(Name) && RespawnsCount != LastRespawnsCount[Name];
-    declare Boolean BestTimeChanged = !LastBestTimes.existskey(Name) || BestTime != LastBestTimes[Name];
-    declare Boolean BestLapTimeChanged = !LastBestLapTimes.existskey(Name) || BestLapTime != LastBestLapTimes[Name];
+    declare Boolean SpawnChanged = LastSpawn.existskey(PlayerId) && Player.SpawnStatus != LastSpawn[PlayerId];
+    declare Boolean CpsChanged = LastCPCounts.existskey(PlayerId) && CPCount != LastCPCounts[PlayerId];
+    declare Boolean RespawnsChanged = LastRespawnsCount.existskey(PlayerId) && RespawnsCount != LastRespawnsCount[PlayerId];
+    declare Boolean BestTimeChanged = LastBestTimes.existskey(PlayerId) && BestTime != LastBestTimes[PlayerId];
+    declare Boolean BestLapTimeChanged = LastBestLapTimes.existskey(PlayerId) && BestLapTime != LastBestLapTimes[PlayerId];
 
     // update if there are changes or the update is forced.
     declare Boolean WillSendEvent = Force || SpawnChanged || CpsChanged || RespawnsChanged || BestTimeChanged || BestLapTimeChanged;
+    // if there are no changes, return early.
+    if (!WillSendEvent) { return False; }
+
     if (WillSendEvent) {
-        declare LatestCPTime = "";
+        declare Text LatestCPTime = "";
         if (CPCount > 0) {
             LatestCPTime = ""^Player.RaceWaypointTimes[CPCount - 1];
         }
@@ -176,19 +212,48 @@ Boolean _SendPlayerStats(CSmPlayer Player, Boolean Force) {
         _SendPlayerTimes(Player);
     }
     // update last spawn and cp count always
-    LastCPCounts[Name] = CPCount;
-    LastSpawn[Name] = Player.SpawnStatus;
-    LastRespawnsCount[Name] = RespawnsCount;
-    LastBestTimes[Name] = BestTime;
-    LastBestLapTimes[Name] = BestLapTime;
+    LastCPCounts[PlayerId] = CPCount;
+    LastSpawn[PlayerId] = Player.SpawnStatus;
+    LastRespawnsCount[PlayerId] = RespawnsCount;
+    LastBestTimes[PlayerId] = BestTime;
+    LastBestLapTimes[PlayerId] = BestLapTime;
     return WillSendEvent;
     // tuningend();
 }
 
+Text GetLatestCpTimeStr(CSmPlayer _Player) {
+    declare Integer CPCount = _Player.RaceWaypointTimes.count;
+    if (CPCount == 0) return "";
+    return ""^_Player.RaceWaypointTimes[CPCount - 1];
+
+}
+
+Boolean SendPlayerStats2(CSmPlayer _Player, Boolean _Force) {
+    declare K_PlayerLastValues LastValues = LastPlayerValues[_Player.Score.Id];
+    declare Boolean SentEvent = False;
+    if (LastValues.UpdateCPs || _Force) {
+        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_PlayerCP",
+            [_Player.User.Name, ""^LastValues.CPCount, GetLatestCpTimeStr(_Player),
+                ""^LastValues.BestTime, ""^SpawnStatusToUint(LastValues.SpawnStatus),
+                ""^LastValues.RespawnsCount^","^_Player.StartTime]);
+        SentEvent = True;
+    }
+    if (LastValues.UpdateBestTimes || _Force) {
+        _SendPlayerTimes(_Player);
+        SentEvent = True;
+    }
+    if (LastValues.UpdatePoints || _Force) {
+        SendUpdate_PlayerPoints(_Player, LastValues);
+        SentEvent = True;
+    }
+    return SentEvent;
+}
+
+
 declare Int2[Ident] LastRaceProgression;
 declare Text G_RaceProgEvent;
 
-Void _SendPlayerRaceProg(CScore Score) {
+Void _SendPlayerRaceProg(CSmScore Score) {
     if (TL::Length(G_RaceProgEvent) == 0) {
         G_RaceProgEvent = "MLHook_Event_" ^ C_PageUID ^ "_PlayerRaceProgression";
     }
@@ -271,11 +336,89 @@ Void InitialSend() {
     MLHookLog("Completed: InitialSend");
 }
 
+K_PlayerLastValues New_K_PlayerLastValues(CSmPlayer _Player) {
+    // declare K_PlayerLastValues Ret;
+    // Ret.RoundPoints = _Player.Score.RoundPoints;
+    // Ret.Points = _Player.Score.Points;
+    // Ret.TeamNum = _Player.Score.TeamNum;
+    // Ret.CPCount = _Player.RaceWaypointTimes.count;
+    // Ret.RespawnsCount = _Player.Score.NbRespawnsRequested;
+    // Ret.SpawnStatus = _Player.SpawnStatus;
+    // Ret.BestTime = GetBestRaceTime(_Player);
+    // Ret.BestLapTime = GetBestLapTime(_Player);
+    // Ret.UpdatePoints = False;
+    // Ret.UpdateCPs = False;
+    // Ret.UpdateBestTimes = False;
+    return K_PlayerLastValues {
+        RoundPoints = _Player.Score.RoundPoints,
+        Points = _Player.Score.Points,
+        TeamNum = _Player.Score.TeamNum,
+        CPCount = _Player.RaceWaypointTimes.count,
+        RespawnsCount = _Player.Score.NbRespawnsRequested,
+        SpawnStatus = _Player.SpawnStatus,
+        BestTime = GetBestRaceTime(_Player),
+        BestLapTime = GetBestLapTime(_Player),
+        UpdatePoints = True,
+        UpdateCPs = True,
+        UpdateBestTimes = True
+    };
+}
+
+Boolean ShouldUpdatePlayer(CSmPlayer _Player) {
+    // if new, create and return true
+    if (!LastPlayerValues.existskey(_Player.Score.Id)) {
+        LastPlayerValues[_Player.Score.Id] = New_K_PlayerLastValues(_Player);
+        return True;
+    }
+
+    // get last values and compare
+    declare K_PlayerLastValues LastValues = LastPlayerValues[_Player.Score.Id];
+    // if (LastValues == Null) {
+    //     LastPlayerValues[_Player.Score.Id] = New_K_PlayerLastValues(_Player);
+    //     return True;
+    // }
+    // from CheckPlayerPoints
+    LastValues.UpdatePoints = LastValues.Points != _Player.Score.Points || LastValues.RoundPoints != _Player.Score.RoundPoints || LastValues.TeamNum != _Player.Score.TeamNum;
+    // from _SendPlayerStats
+    LastValues.UpdateBestTimes = LastValues.BestTime != GetBestRaceTime(_Player)
+        || LastValues.BestLapTime != GetBestLapTime(_Player);
+    LastValues.UpdateCPs = LastValues.CPCount != _Player.RaceWaypointTimes.count
+        || LastValues.RespawnsCount != _Player.Score.NbRespawnsRequested
+        || LastValues.SpawnStatus != _Player.SpawnStatus
+        || LastValues.UpdateBestTimes;
+
+    // update values
+    if (LastValues.UpdatePoints) {
+        LastValues.RoundPoints = _Player.Score.RoundPoints;
+        LastValues.Points = _Player.Score.Points;
+        LastValues.TeamNum = _Player.Score.TeamNum;
+    }
+    if (LastValues.UpdateBestTimes) {
+        LastValues.BestTime = GetBestRaceTime(_Player);
+        LastValues.BestLapTime = GetBestLapTime(_Player);
+    }
+    if (LastValues.UpdateCPs) {
+        LastValues.CPCount = _Player.RaceWaypointTimes.count;
+        LastValues.RespawnsCount = _Player.Score.NbRespawnsRequested;
+        LastValues.SpawnStatus = _Player.SpawnStatus;
+    }
+
+    if (LastValues.UpdatePoints || LastValues.UpdateCPs || LastValues.UpdateBestTimes) {
+        LastPlayerValues[_Player.Score.Id] = LastValues;
+        return True;
+    }
+    return False;
+}
+
+
 Void CheckPlayers() {
     declare Integer c = 0;
     foreach (Player in Players) {
-        if (_SendPlayerStats(Player, False)) {
-            c += 1;
+        // handles points and other stats
+        if (ShouldUpdatePlayer(Player)) {
+            if (SendPlayerStats2(Player, False)) {
+                c += 1;
+            }
         }
     }
 }
@@ -325,7 +468,7 @@ Void CheckMapChange() {
         LastBestTimes = [];
         LastBestLapTimes = [];
         LastCPCounts = [];
-        LastKnownPlayers = [];
+        G_LastKnownPlayers = [];
         LastRespawnsCount = [];
         LastSpawn = [];
         MostCPsSeen = 0;
@@ -333,6 +476,7 @@ Void CheckMapChange() {
         LastPlayerRoundPoints = [];
         LastPlayerTeams = [];
         LastKnownLapsNb = -2;
+        LastPlayerValues = [];
     }
 }
 
@@ -369,6 +513,10 @@ main() {
     // declare Integer StartTime = 0;
     // declare Integer Delta = 0;
     // declare Boolean ShouldUpdateRaceProg = False;
+    declare Integer SendDepartedEvery_Frames = 60;
+// #if DEV
+//     SendDepartedEvery_Frames = 60;
+// #endif
     while (True) {
         // if (LoopCounter % 51 == 0) {
         //     ShouldUpdateRaceProg = CurrentServerModeName == "TM_RoyalTimeAttack_Online";
@@ -376,13 +524,15 @@ main() {
         yield;
         CheckMapChange();
         CheckPlayers();
-        CheckPlayerPoints();
+        // points sent through new last values system
+        // CheckPlayerPoints();
         CheckWarmup();
         // if (ShouldUpdateRaceProg) CheckRaceProgression();
         CheckRaceProgression();
 
         LoopCounter += 1;
-        if (LoopCounter % 60 == 0) {
+        if (LoopCounter % SendDepartedEvery_Frames == 0) {
+            // costs about 0.1ms / 40 players
             SendDepartedPlayers();
         }
         if (LoopCounter % 30 == 20) {
