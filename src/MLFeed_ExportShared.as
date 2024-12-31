@@ -310,6 +310,8 @@ namespace MLFeed {
         int get_CpCount() const { return cpCount; }
         // Player's last CP time as on their chronometer
         int get_LastCpTime() const { return lastCpTime; }
+        // Player's *current* Finish time as on their chronometer (2^31 - 1 if not finished)
+        int get_FinishTime() const { return IsFinished ? lastCpTime : 2147483647; }
         // Player's last CP time _OR_ their last respawn time if it is greater
         int get_LastCpOrRespawnTime() const { return Math::Max(lastCpTime, LastRespawnRaceTime); }
         // The CP times of that player (including the 0th cp at the 0th index; which will always be 0)
@@ -332,7 +334,7 @@ namespace MLFeed {
         int get_TheoreticalRaceTime() const {
             return CurrentRaceTime - TimeLostToRespawns;
         }
-        // The player's best time this session
+        // The player's best time this session (WARNING: will reflect incomplete runs!)
         int get_BestTime() const { return bestTime; }
         // The players's spawn status: NotSpawned, Spawning, or Spawned
         SpawnStatus get_SpawnStatus() const { return spawnStatus; }
@@ -350,7 +352,9 @@ namespace MLFeed {
         // Whether the player has DNF'd. This is called `Eliminated` in LiveRanking_Client.Script.txt.
         bool get_Eliminated() const { return !PlayerIsRacing && !IsFinished; }
 
-        // this player's CP times for their best performance this session (since the map loaded). Can be null. Can be partial before a player has finished a complete run.
+        /* this player's CP times for their best performance this session
+            (since the map loaded). Can be null.
+            WARNING: Can be partial before a player has finished a complete run. */
         const array<uint>@ BestRaceTimes = {};
         // whether this player corresponds to the physical player playing the game
         bool IsLocalPlayer;
@@ -490,6 +494,11 @@ namespace MLFeed {
         int Rules_StartTime = -1;
         // When the game mode ends (if applicable)
         int Rules_EndTime = -1;
+
+        // Mostly returns: GameTime - StartTime; the time (in ms) since the game mode started, or -1 if the game mode hasn't started yet or is an invalid (map loading?) state.
+        int get_Rules_MillisSinceStart() const {
+            return Rules_StartTime < 0 ? -1 : Rules_GameTime - Rules_StartTime;
+        }
 
         bool WarmupActive = false;
         int WarmupEndTime = 0;
