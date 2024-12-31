@@ -515,9 +515,9 @@ main() {
     // declare Integer Delta = 0;
     // declare Boolean ShouldUpdateRaceProg = False;
     declare Integer SendDepartedEvery_Frames = 60;
-#if DEV
-    SendDepartedEvery_Frames = 60;
-#endif
+// #if DEV
+//     SendDepartedEvery_Frames = 60;
+// #endif
     while (True) {
         // if (LoopCounter % 51 == 0) {
         //     ShouldUpdateRaceProg = CurrentServerModeName == "TM_RoyalTimeAttack_Online";
