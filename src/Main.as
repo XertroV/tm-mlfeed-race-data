@@ -108,6 +108,8 @@ namespace RaceFeed {
 
     Cmp cmpRace(const MLFeed::PlayerCpInfo_V2@ p1, const MLFeed::PlayerCpInfo_V2@ p2) {
         // if we're in race mode, then we want to count the player as spawned if their spawnIndex == SpawnCounter
+        // [2025-01-03] ... do we? what case does this cover? Maybe people who have finished the race? But maybe it doesn't matter.
+
         MLFeed::SpawnStatus p1SS = p1.spawnStatus;
         MLFeed::SpawnStatus p2SS = p2.spawnStatus;
         if (theHook !is null) {
@@ -122,8 +124,13 @@ namespace RaceFeed {
             return cmpInt(int(p2SS), int(p1SS));
         }
         // if we have the same CPs, lowest time is better
-        if (p1.cpCount == p2.cpCount)
-            return cmpInt(p1.lastCpTime, p2.lastCpTime);
+        if (p1.cpCount == p2.cpCount) {
+            if (p1.lastCpTime != p2.lastCpTime) {
+                return cmpInt(p1.lastCpTime, p2.lastCpTime);
+            }
+            // if we have the same last CP time, lower start time is better
+            return cmpInt(p1.StartTime, p2.StartTime);
+        }
         // Lt => better ranking, so more CPs is better
         if (p1.cpCount > p2.cpCount) return Cmp::Lt;
         return Cmp::Gt;
@@ -145,12 +152,18 @@ namespace RaceFeed {
         }
         // spawned status dominates
         if (p1SS != p2SS) {
-            // not spawned is smallest, so we want the opposite of cmpInt, so flip the args
+            // not spawned is smallest, so we want the opposite of cmpInt, so flip the args (spawned < spawning in sorting)
             return cmpInt(int(p2SS), int(p1SS));
         }
         // if we have the same CPs, lowest time is better
-        if (p1.CpCount == p2.CpCount)
-            return cmpInt(p1.LastCpOrRespawnTime, p2.LastCpOrRespawnTime);
+        if (p1.CpCount == p2.CpCount) {
+            if (p1.LastCpOrRespawnTime != p2.LastCpOrRespawnTime) {
+                return cmpInt(p1.LastCpOrRespawnTime, p2.LastCpOrRespawnTime);
+            }
+            // if we have the same last CP time, lower start time is better
+            return cmpInt(p1.StartTime, p2.StartTime);
+        }
+
         // Lt => better ranking, so more CPs is better
         if (p1.CpCount > p2.CpCount) return Cmp::Lt;
         return Cmp::Gt;
@@ -188,14 +201,17 @@ namespace RaceFeed {
             SetPlayerLoginWsid();
         }
 
-        CSmPlayer@ FindCSmPlayer() override {
+        CSmPlayer@ FindCSmPlayer() const override {
             auto cp = GetApp().CurrentPlayground;
             if (cp is null) return null;
             for (uint i = 0; i < cp.Players.Length; i++) {
-                auto player = cast<CSmPlayer>(cp.Players[i]);
-                if (player !is null && player.User.Name == Name) {
-                    return player;
+                if (cp.Players[i].User.Id.Value == LoginMwId.Value) {
+                    return cast<CSmPlayer>(cp.Players[i]);
                 }
+                // auto player = cast<CSmPlayer>(cp.Players[i]);
+                // if (player !is null && player.User.Name == Name) {
+                //     return player;
+                // }
             }
             return null;
         }

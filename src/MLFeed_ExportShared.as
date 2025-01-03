@@ -452,7 +452,7 @@ namespace MLFeed {
         uint FirstSeen;
 
         // Return's the players CSmPlayer object if it is available, otherwise null. The full list of players is searched each time.
-        CSmPlayer@ FindCSmPlayer() { throw("overloaded elsewhere"); return null; }
+        CSmPlayer@ FindCSmPlayer() const { throw("overloaded elsewhere"); return null; }
     }
 
     // direction to move; down=-1, up=1
