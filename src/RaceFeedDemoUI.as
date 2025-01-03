@@ -68,6 +68,22 @@ namespace RaceFeedUI {
 
             UI::Separator();
             UI::Dummy(vec2(0, 20));
+
+            if (theHook.LocalPlayer !is null) {
+                UI::Text("Local Player: " + theHook.LocalPlayer.Name);
+                UI::Indent(12.0);
+                UI::Text("First Seen: " + theHook.LocalPlayer.FirstSeen);
+                if (UI::Button("View Local Player")) {
+                    tabs.InsertLast(PlayerTab(theHook.LocalPlayer.Name));
+                    tabs[tabs.Length - 1].windowOpen = true;
+                }
+                UI::Unindent(12.0);
+            } else {
+                UI::Text("Local Player: null");
+            }
+
+            UI::Separator();
+            UI::Dummy(vec2(0, 20));
             int lrt = recordHook is null ? -1 : recordHook.LastRecordTime;
             UI::Text("LastRecordTime: " + lrt); // + NOTE_OPTIONAL);
             UI::Dummy(vec2(0, 20));

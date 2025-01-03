@@ -223,7 +223,8 @@ namespace RaceFeed {
 #endif
             FirstSeen = Time::Now;
             auto net = GetApp().Network;
-            for (uint i = 0; i < net.PlayerInfos.Length; i++) {
+            // go backwards because the normal case will be a player joining, so we'll find them faster
+            for (int i = int(net.PlayerInfos.Length) - 1; i >= 0; i--) {
                 auto item = cast<CGamePlayerInfo>(net.PlayerInfos[i]);
                 if (string(item.Name) == this.Name) {
                     Login = item.Login;
@@ -240,6 +241,13 @@ namespace RaceFeed {
                     LoginMwId.SetName(item.Login);
                     NameMwId.SetName(item.Name);
 #endif
+                    if (item.Name != MLFeed::LocalPlayersName) continue;
+                    dev_warn("Setting _LocalPlayer");
+                    if (LoginMwId.Value == MLFeed::LocalPlayersLoginIdValue && theHook !is null) {
+                        @theHook._LocalPlayer = this;
+                        dev_warn("Set _LocalPlayer to " + Name);
+                    }
+                    break;
                 }
             }
         }
@@ -346,11 +354,15 @@ namespace RaceFeed {
         // expanded props
         dictionary bestPlayerTimes;
 
-        //
+        // to keep track of incoming messages
         MLHook::PendingEvent@[] incoming_msgs;
+
+        // private reference to local player
+        _PlayerCpInfo@ _LocalPlayer;
 
         HookRaceStatsEvents() {
             super("RaceStats");
+            incoming_msgs.Reserve(128);
         }
 
         void MainCoro() {
@@ -715,6 +727,7 @@ namespace RaceFeed {
             this.Rules_EndTime = 0;
             this.Rules_StartTime = 0;
             this.Rules_GameTime = 0;
+            @_LocalPlayer = null;
             // sorted players
             _SortedPlayers_Race.Resize(0);
             _SortedPlayers_TimeAttack.Resize(0);
@@ -755,6 +768,10 @@ namespace RaceFeed {
         int get_LastRecordTime() const override {
             if (recordHook is null) return -1;
             return recordHook.LastRecordTime;
+        }
+
+        const MLFeed::PlayerCpInfo_V4@ get_LocalPlayer() const override {
+            return _LocalPlayer;
         }
     }
 }

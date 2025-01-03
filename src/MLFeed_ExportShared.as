@@ -683,6 +683,12 @@ namespace MLFeed {
             if (not latestPlayerStats.Exists(name)) return null;
             return cast<PlayerCpInfo_V4>(latestPlayerStats[name]);
         }
+
+        /* Get the local player's info. This call is free, and this is the preferred way to get the local player. */
+        const PlayerCpInfo_V4@ get_LocalPlayer() const {
+            throw("implemented elsewhere");
+            return null;
+        }
     }
 
     shared class HookRecordEventsBase : MLHook::HookMLEventsByType {
@@ -879,7 +885,15 @@ namespace MLFeed {
         return "";
     }
 
-    // The current server's GameTime, or 0 if not in a server
+    // returns the `Id.Value` of the local player's login, or 0xFFFFFFFF if this is not yet known
+    shared const uint get_LocalPlayersLoginIdValue() {
+        try {
+            return cast<CTrackMania>(GetApp()).MenuManager.ManialinkScriptHandlerMenus.LocalUser.Id.Value;
+        } catch {}
+        return 0xFFFFFFFF;
+    }
+
+    // The current game mode's GameTime, or 0 if not in a map
     shared uint get_GameTime() {
         if (GetApp().Network.PlaygroundClientScriptAPI is null) return 0;
         return uint(GetApp().Network.PlaygroundClientScriptAPI.GameTime);
