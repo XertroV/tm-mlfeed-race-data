@@ -18,6 +18,8 @@ Void SyncReqInProgress() {
     SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_IsReqActive", [""^G_RequestActive]);
 }
 
+declare Ident G_LastMapIdent;
+
 Void CheckIfMapListDone() {
     if (!G_RequestActive) {
         MLHookLog("CheckIfMapListDone: Request is not active, skipping.");
@@ -33,7 +35,13 @@ Void CheckIfMapListDone() {
     declare Text[] Uids;
     declare Text[] MapNames;
 
-    declare Integer StartIx = 1 + Playground.MapList_MapUids.keyof(Playground.Map.MapInfo.MapUid);
+    declare Integer MapIx = Playground.MapList_MapUids.keyof(Playground.Map.MapInfo.MapUid);
+    if (G_LastMapIdent != Playground.Map.Id) {
+        G_LastMapIdent = Playground.Map.Id;
+        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_OrigMapIx", [""^MapIx, Playground.Map.MapInfo.MapUid]);
+    }
+
+    declare Integer StartIx = 1 + MapIx;
     declare Integer NbMaps = Playground.MapList_MapUids.count;
     declare Integer EndIx = StartIx + ML::Min(10, NbMaps);
     if (NbMaps == 0) {
@@ -54,6 +62,7 @@ Void CheckIfMapListDone() {
         }
     }
 
+    SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_SliceInfo", [""^StartIx, ""^EndIx, ""^NbMaps]);
     for (I, 0, Uids.count - 1) {
         // MLHookLog("MapUid: " ^ Uids[I] ^ " - MapName: " ^ MapNames[I]);
         SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_Pair", [Uids[I], MapNames[I]]);

@@ -17,6 +17,8 @@ namespace ListUidsDemo {
             UI::Text("MsSinceLastReqStart: " + Time::Format(listUids.MsSinceLastReqStart));
             UI::Text("MsSinceLastReqEnd: " + Time::Format(listUids.MsSinceLastReqEnd));
             UI::Text("UpdateCount: " + listUids.UpdateCount);
+            UI::Text("Slice Start / End / NbMaps: " + listUids.Slice_StartIx + " / " + listUids.Slice_EndIx + " / " + listUids.Slice_NbMaps);
+            UI::Text("MapOrigIxInList: " + listUids.MapOrigIxInList + " (uid: " + listUids.MapOrigIxInListUid + ")");
             UI::Separator();
             UI::Text("UIDs & Names (" + listUids.MapList_MapUids.Length + "):");
 

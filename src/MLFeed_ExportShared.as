@@ -934,6 +934,18 @@ namespace MLFeed {
 
         // Time::Now at the time the request was completed.
         uint64 get_LastRequestEnd() const { /* overridden*/ return 0; }
+
+        // Regarding the slice of maps returned by the ML
+        int get_Slice_StartIx() const { /* overridden*/ return 0; }
+        // Regarding the slice of maps returned by the ML
+        int get_Slice_EndIx() const { /* overridden*/ return 0; }
+        // Regarding the slice of maps returned by the ML
+        int get_Slice_NbMaps() const { /* overridden*/ return 0; }
+
+        // The original index of the current map's uid in the list, the first time the list was updated after loading the map, or -1 if it was not in the list.
+        int get_MapOrigIxInList() const { /* overridden*/ return 0; }
+        // The map UID corresponding to MapOrigIxInList.
+        string get_MapOrigIxInListUid() const { /* overridden*/ return ""; }
     }
 
 

@@ -4,6 +4,8 @@ void ListUids_Init_MLHook() {
     MLHook::RegisterMLHook(H_ReceiveMapUids, "ListUids_Pair");
     MLHook::RegisterMLHook(H_ReceiveMapUids, "ListUids_Clear");
     MLHook::RegisterMLHook(H_ReceiveMapUids, "ListUids_IsReqActive");
+    MLHook::RegisterMLHook(H_ReceiveMapUids, "ListUids_SliceInfo");
+    MLHook::RegisterMLHook(H_ReceiveMapUids, "ListUids_OrigMapIx");
 }
 
 ListUids_MLHook@ H_ReceiveMapUids = ListUids_MLHook();
@@ -23,6 +25,13 @@ class ListUids_MLHook : MLFeed::MapListUids_Receiver {
     string[] _MapList_MapUids;
     string[] _MapList_Names;
     bool _MapList_IsInProgress;
+
+    int _Slice_StartIx = 0;
+    int _Slice_EndIx = 0;
+    int _Slice_NbMaps = 0;
+
+    int _MapOrigIxInList = -1;
+    string _MapOrigIxInListUid;
 
     uint64 lastCheckStart = 0;
     uint64 lastCheckEnd = 0;
@@ -81,6 +90,25 @@ class ListUids_MLHook : MLFeed::MapListUids_Receiver {
             }
             _MapList_IsInProgress = inProg;
             // trace("IsReqActive set _MapList_IsInProgress: " + _MapList_IsInProgress);
+        } else if (ty == "SliceInfo") {
+            if (event.data.Length != 3) {
+                warn("ListUids_SliceInfo: expected 3 data elements, got " + event.data.Length);
+                return;
+            }
+            _Slice_StartIx = Text::ParseInt(event.data[0]);
+            _Slice_EndIx = Text::ParseInt(event.data[1]);
+            _Slice_NbMaps = Text::ParseInt(event.data[2]);
+            _UpdateCount++;
+            // trace("SliceInfo
+        } else if (ty == "OrigMapIx") {
+            if (event.data.Length != 2) {
+                warn("ListUids_OrigMapIx: expected 2 data elements, got " + event.data.Length);
+                return;
+            }
+            _MapOrigIxInList = Text::ParseInt(event.data[0]);
+            _MapOrigIxInListUid = string(event.data[1]);
+            _UpdateCount++;
+            // trace("OrigMapIx
         } else {
             warn("ListUids_MLHook: unknown event type: " + ty + " - " + event.type);
         }
@@ -142,6 +170,26 @@ class ListUids_MLHook : MLFeed::MapListUids_Receiver {
 
     uint64 get_LastRequestEnd() const override {
         return lastCheckEnd;
+    }
+
+    int get_Slice_EndIx() const override {
+        return _Slice_EndIx;
+    }
+
+    int get_Slice_NbMaps() const override {
+        return _Slice_NbMaps;
+    }
+
+    int get_Slice_StartIx() const override {
+        return _Slice_StartIx;
+    }
+
+    int get_MapOrigIxInList() const override {
+        return _MapOrigIxInList;
+    }
+
+    string get_MapOrigIxInListUid() const override {
+        return _MapOrigIxInListUid;
     }
 }
 // MLHook::Queue_MessageManialinkPlayground
