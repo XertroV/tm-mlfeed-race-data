@@ -39,10 +39,10 @@ Void CheckIfMapListDone() {
     if (NbMaps == 0) {
         return;
     }
-    if (NbMaps <= 10) {
-        StartIx = 0;
-        EndIx = NbMaps;
-    }
+    // if (NbMaps <= 10) {
+    //     StartIx = 0;
+    //     EndIx = NbMaps;
+    // }
 
     declare Integer Count = 0;
     for (I, StartIx, EndIx) {
