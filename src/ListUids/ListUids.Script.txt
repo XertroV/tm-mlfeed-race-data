@@ -11,6 +11,11 @@ Void MarkRequestActive(Boolean _Active) {
     SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_IsReqActive", [""^_Active]);
 }
 
+Void SyncReqInProgress() {
+    G_RequestActive = Playground.MapList_IsInProgress;
+    SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_IsReqActive", [""^G_RequestActive]);
+}
+
 Void CheckIfMapListDone() {
     if (!G_RequestActive) {
         MLHookLog("CheckIfMapListDone: Request is not active, skipping.");
@@ -77,9 +82,14 @@ Boolean CheckIncomingMsgs() {
 
 main() {
     yield;
+    declare Integer Count = 0;
     while (True) {
+        Count += 1;
         if (G_RequestActive) {
             CheckIfMapListDone();
+        }
+        if (Count % 120 == 0) {
+            SyncReqInProgress();
         }
         if (CheckIncomingMsgs()) {
             // do stuff? idk don't really need to.

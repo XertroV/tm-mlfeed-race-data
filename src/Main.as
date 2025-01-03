@@ -11,6 +11,7 @@ void Main() {
 #endif
 
     startnew(InitCoro);
+    startnew(ProcessListUidsUpdates_Loop).WithRunContext(Meta::RunContext::AfterScripts);
 
 #if SIG_DEVELOPER
     S_ShowDebugMenu = true;

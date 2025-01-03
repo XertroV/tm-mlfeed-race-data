@@ -9,6 +9,13 @@ void ListUids_Init_MLHook() {
 ListUids_MLHook@ H_ReceiveMapUids = ListUids_MLHook();
 bool g_ListUid_RegisteredMl = false;
 
+void ProcessListUidsUpdates_Loop() {
+    while (true) {
+        H_ReceiveMapUids.ProcessMsgs();
+        yield();
+    }
+}
+
 class ListUids_MLHook : MLFeed::MapListUids_Receiver {
     MLHook::PendingEvent@[] incoming_msgs;
 
@@ -32,21 +39,21 @@ class ListUids_MLHook : MLFeed::MapListUids_Receiver {
     }
 
     void OnEvent(MLHook::PendingEvent@ event) override {
-        // incoming_msgs.InsertLast(event);
-        ProcessMsg(event);
+        incoming_msgs.InsertLast(event);
+        // ProcessMsg(event);
     }
 
     protected void SendListRequestToML() {
         MLHook::Queue_MessageManialinkPlayground("ListUids", {});
     }
 
-    // void ProcessMsgs() {
-    //     if (incoming_msgs.Length == 0) return;
-    //     for (uint i = 0; i < incoming_msgs.Length; i++) {
-    //         ProcessMsg(incoming_msgs[i]);
-    //     }
-    //     incoming_msgs.RemoveRange(0, incoming_msgs.Length);
-    // }
+    void ProcessMsgs() {
+        if (incoming_msgs.Length == 0) return;
+        for (uint i = 0; i < incoming_msgs.Length; i++) {
+            ProcessMsg(incoming_msgs[i]);
+        }
+        incoming_msgs.RemoveRange(0, incoming_msgs.Length);
+    }
 
     protected void ProcessMsg(MLHook::PendingEvent@ event) {
         string ty = event.type.SubStr(22); // remove MLHook_Event_ListUids_
