@@ -118,19 +118,19 @@ class ListUids_MLHook : MLFeed::MapListUids_Receiver {
         return _UpdateCount;
     }
 
-    uint64 get_MsSinceLastReqStart() override {
+    uint64 get_MsSinceLastReqStart() const override {
         return Time::Now - lastCheckStart;
     }
 
-    uint64 get_MsSinceLastReqEnd() override {
+    uint64 get_MsSinceLastReqEnd() const override {
         return Time::Now - lastCheckEnd;
     }
 
-    uint64 get_LastRequestStart() override {
+    uint64 get_LastRequestStart() const override {
         return lastCheckStart;
     }
 
-    uint64 get_LastRequestEnd() override {
+    uint64 get_LastRequestEnd() const override {
         return lastCheckEnd;
     }
 }

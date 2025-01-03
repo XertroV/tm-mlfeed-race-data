@@ -916,16 +916,16 @@ namespace MLFeed {
         uint get_UpdateCount() const { /* overridden*/ return 0; }
 
         // Milliseconds since the last request was started.
-        uint64 get_MsSinceLastReqStart() { /* overridden*/ return 0; }
+        uint64 get_MsSinceLastReqStart() const { /* overridden*/ return 0; }
 
         // Milliseconds since the last request was completed.
-        uint64 get_MsSinceLastReqEnd() { /* overridden*/ return 0; }
+        uint64 get_MsSinceLastReqEnd() const { /* overridden*/ return 0; }
 
         // Time::Now at the time the request was sent to the ML.
-        uint64 get_LastRequestStart() { /* overridden*/ return 0; }
+        uint64 get_LastRequestStart() const { /* overridden*/ return 0; }
 
         // Time::Now at the time the request was completed.
-        uint64 get_LastRequestEnd() { /* overridden*/ return 0; }
+        uint64 get_LastRequestEnd() const { /* overridden*/ return 0; }
     }
 
 
