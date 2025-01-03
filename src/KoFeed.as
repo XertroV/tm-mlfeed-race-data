@@ -45,10 +45,10 @@ namespace KoFeed {
             AskForAllMatchKeyPairs();
             while (true) {
                 yield();
-                if (lastMap != CurrentMap) {
+                if (lastMapIdV != CurrentMapIdV) {
+                    lastMapIdV = CurrentMapIdV;
                     lastMap = CurrentMap;
-                    if (lastMap == "")
-                        OnMapChange(); // only reset status when the map gets set to null, not when it gets set to a map
+                    OnMapChange(lastMapIdV == 0); // only reset state if map goes null. otherwise carry state over.
                 }
                 CheckGMChange();
                 // todo: reset flags
@@ -60,8 +60,8 @@ namespace KoFeed {
             }
         }
 
-        void OnMapChange() {
-            ResetState();
+        void OnMapChange(bool resetState) {
+            if (resetState) ResetState();
             AskForAllMatchKeyPairs();
         }
 
@@ -69,7 +69,14 @@ namespace KoFeed {
             auto map = GetApp().RootMap;
             if (map is null) return "";
             // return map.EdChallengeId;
-            return map.MapInfo.MapUid;
+            return map.IdName;
+        }
+
+        uint get_CurrentMapIdV() const {
+            auto map = GetApp().RootMap;
+            if (map is null) return 0;
+            // return map.EdChallengeId;
+            return map.Id.Value;
         }
 
         void CheckGMChange() {

@@ -80,6 +80,7 @@ namespace MLFeed {
 
         string lastGM;
         string lastMap;
+        uint lastMapIdV;
         string[] players;
 
         // ServerNumber
