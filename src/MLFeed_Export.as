@@ -47,4 +47,9 @@ namespace MLFeed {
      * Includes warm up, team points, when new rounds begin, current MVP, players finished, and points prediction.
      */
     import const HookTeamsMMEventsBase_V1@ GetTeamsMMData_V1() from "MLFeed";
+
+    /**
+     * Object exposing the UIDs of maps on a server. (And lets you request them, too.)
+     */
+    import MapListUids_Receiver@ Get_MapListUids_Receiver() from "MLFeed";
 }

@@ -252,6 +252,7 @@ namespace TeamsFeed {
         }
     }
 
+    [Setting hidden]
     bool DemoUIOpen = false;
 
     void RenderMenu() {

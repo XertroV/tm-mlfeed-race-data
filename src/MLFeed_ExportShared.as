@@ -877,6 +877,40 @@ namespace MLFeed {
         }
     }
 
+
+    /** API for getting the MapList from the server. */
+    shared abstract class MapListUids_Receiver : MLHook::HookMLEventsByType {
+        MapListUids_Receiver() { super("ListUids"); }
+
+        // Request the map list from the server. Does nothing if a request is in progress.
+        void MapList_Request() { /* overridden*/ }
+
+        // Whether the map list is currently being requested.
+        bool get_MapList_IsInProgress() const { /* overridden*/ return false; }
+
+        // The names of the maps in the list.
+        const array<string>@ get_MapList_Names() const { /* overridden*/ return null; }
+
+        // The UIDs of the maps in the list.
+        const array<string>@ get_MapList_MapUids() const { /* overridden*/ return null; }
+
+        // Incremented when anything is updated based on new info. (Does not update on calling `MapList_Request()`)
+        uint get_UpdateCount() const { /* overridden*/ return 0; }
+
+        // Milliseconds since the last request was started.
+        uint64 get_MsSinceLastReqStart() { /* overridden*/ return 0; }
+
+        // Milliseconds since the last request was completed.
+        uint64 get_MsSinceLastReqEnd() { /* overridden*/ return 0; }
+
+        // Time::Now at the time the request was sent to the ML.
+        uint64 get_LastRequestStart() { /* overridden*/ return 0; }
+
+        // Time::Now at the time the request was completed.
+        uint64 get_LastRequestEnd() { /* overridden*/ return 0; }
+    }
+
+
     // returns the name of the local player, or an empty string if this is not yet known
     shared const string get_LocalPlayersName() {
         try {

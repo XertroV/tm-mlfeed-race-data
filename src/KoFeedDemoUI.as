@@ -1,4 +1,5 @@
 namespace KoFeedUI {
+    [Setting hidden]
     bool g_windowVisible = false;
 
     void Render() {

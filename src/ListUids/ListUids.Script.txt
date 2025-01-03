@@ -1,0 +1,91 @@
+#Const C_PageUID "ListUids"
+
+Void MLHookLog(Text _Msg) {
+    SendCustomEvent("MLHook_LogMe_"^C_PageUID, [_Msg]);
+}
+
+declare Boolean G_RequestActive;
+
+Void MarkRequestActive(Boolean _Active) {
+    G_RequestActive = _Active;
+    SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_IsReqActive", [""^_Active]);
+}
+
+Void CheckIfMapListDone() {
+    if (!G_RequestActive) {
+        MLHookLog("CheckIfMapListDone: Request is not active, skipping.");
+        return;
+    }
+    if (Playground.MapList_IsInProgress) {
+        // we expect this to be true while waiting.
+        // MLHookLog("CheckIfMapListDone: MapList_IsInProgress, returning...");
+        return;
+    }
+    MarkRequestActive(False);
+    SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_Clear", []);
+    declare Text[] Uids;
+    declare Text[] MapNames;
+    foreach (MapUid in Playground.MapList_MapUids) {
+        Uids.add(MapUid);
+    }
+    foreach (MapName in Playground.MapList_Names) {
+        MapNames.add(MapName);
+    }
+    for (I, 0, Uids.count - 1) {
+        // MLHookLog("MapUid: " ^ Uids[I] ^ " - MapName: " ^ MapNames[I]);
+        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_Pair", [Uids[I], MapNames[I]]);
+    }
+}
+
+Void StartUpdateUids() {
+    declare Boolean WasMapListInProg = Playground.MapList_IsInProgress;
+    if (WasMapListInProg) {
+        MLHookLog("MapList_IsInProgress is true, waiting...");
+    }
+    while (Playground.MapList_IsInProgress) {
+        yield;
+    }
+    if (WasMapListInProg) {
+        MLHookLog("MapList_IsInProgress is now false, starting request.");
+    }
+    // else {
+    //     MLHookLog("Calling MapList_Request().");
+    // }
+    // foreach (MapUid in Playground.MapList_MapUids) {
+    //     MLHookLog("Prior MapUid: "^MapUid);
+    // }
+    Playground.MapList_Request();
+    MarkRequestActive(True);
+}
+
+Boolean CheckIncomingMsgs() {
+    declare Text[][] MLHook_Inbound_ListUids for ClientUI = [];
+    declare Text[][] InboundEvents = MLHook_Inbound_ListUids;
+    MLHook_Inbound_ListUids = [];
+
+    foreach (Event in InboundEvents) {
+        if (Event.count == 0) {
+            StartUpdateUids();
+        } else {
+            MLHookLog("Skipped unknown incoming event: " ^ Event);
+            continue;
+        }
+        // MLHookLog("Processed Incoming Event: "^Event);
+    }
+    return InboundEvents.count > 0;
+}
+
+main() {
+    yield;
+    while (True) {
+        if (G_RequestActive) {
+            CheckIfMapListDone();
+        }
+        if (CheckIncomingMsgs()) {
+            // do stuff? idk don't really need to.
+            yield;
+            continue;
+        }
+        yield;
+    }
+}

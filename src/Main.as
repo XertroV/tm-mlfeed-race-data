@@ -80,6 +80,7 @@ void RenderInterface() {
     RaceFeedUI::Render();
     GhostDataUI::Render();
     TeamsFeed::RenderDemoUI();
+    ListUidsDemo::Render();
 }
 
 void RenderMenu() {
@@ -89,6 +90,7 @@ void RenderMenu() {
         RaceFeedUI::RenderMenu();
         GhostDataUI::RenderMenu();
         TeamsFeed::RenderMenu();
+        ListUidsDemo::RenderMenu();
         UI::EndMenu();
     }
 }

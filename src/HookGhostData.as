@@ -166,6 +166,7 @@ bool g_ShowOnlyLoaded = false;
 bool g_SortedGhosts = false;
 
 namespace GhostDataUI {
+    [Setting hidden]
     bool g_windowVisible = false;
 
     void Render() {

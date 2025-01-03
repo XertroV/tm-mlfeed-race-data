@@ -1,6 +1,7 @@
 const string NOTE_OPTIONAL = "\\$bbb (Optional component)\\$z";
 
 namespace RaceFeedUI {
+    [Setting hidden]
     bool g_windowVisible = false;
 
     array<Tab@> tabs;

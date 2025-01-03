@@ -80,4 +80,8 @@ namespace MLFeed {
     const HookTeamsMMEventsBase_V1@ GetTeamsMMData_V1() {
         return teamsFeed;
     }
+
+    MapListUids_Receiver@ Get_MapListUids_Receiver() {
+        return H_ReceiveMapUids;
+    }
 }
