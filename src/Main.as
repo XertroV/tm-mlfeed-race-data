@@ -715,6 +715,8 @@ namespace RaceFeed {
             ResetState();
             if (CurrentMap != "") {
                 startnew(CoroutineFunc(SetCheckpointCount));
+                // help prevent soft-lock states with a request not returning or something.
+                H_ReceiveMapUids._MapList_IsInProgress = false;
             }
         }
 

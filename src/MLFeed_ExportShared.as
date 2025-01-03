@@ -502,6 +502,24 @@ namespace MLFeed {
             return Rules_StartTime < 0 ? -1 : Rules_GameTime - Rules_StartTime;
         }
 
+        // Milliseconds since the game mode started, or -1 if the game mode hasn't started yet or is an invalid (map loading?) state.
+        int get_Rules_TimeElapsed() const {
+            if (Rules_GameTime < 0 || Rules_StartTime < 0) return -1;
+            return Rules_GameTime - Rules_StartTime;
+        }
+
+        // Milliseconds left in the game mode, or -1 if the game mode hasn't started yet or is infinite (or maybe if we're in an invalid state).
+        int get_Rules_TimeRemaining() const {
+            if (Rules_EndTime < 0 || Rules_GameTime < 0) return -1;
+            return Rules_EndTime - Rules_GameTime;
+        }
+
+        // Convenience function to check there is a valid time remaining and that it is less than the given duration.
+        bool IsRemainingRulesTimeLessThan(int durationMs) const {
+            int remaining = Rules_TimeRemaining;
+            return remaining >= 0 && remaining < durationMs;
+        }
+
         bool WarmupActive = false;
         int WarmupEndTime = 0;
 
