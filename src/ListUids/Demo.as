@@ -25,7 +25,7 @@ namespace ListUidsDemo {
             }
             UI::NextColumn();
             for (uint i = 0; i < listUids.MapList_MapUids.Length; i++) {
-                UI::Text(listUids.MapList_Names[i]);
+                UI::Text(Text::OpenplanetFormatCodes(listUids.MapList_Names[i]));
             }
             UI::Columns(1);
         }
