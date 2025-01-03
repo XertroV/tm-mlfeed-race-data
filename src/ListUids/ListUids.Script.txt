@@ -1,4 +1,6 @@
 #Const C_PageUID "ListUids"
+#Include "MathLib" as ML
+
 
 Void MLHookLog(Text _Msg) {
     SendCustomEvent("MLHook_LogMe_"^C_PageUID, [_Msg]);
@@ -30,12 +32,28 @@ Void CheckIfMapListDone() {
     SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_Clear", []);
     declare Text[] Uids;
     declare Text[] MapNames;
-    foreach (MapUid in Playground.MapList_MapUids) {
-        Uids.add(MapUid);
+
+    declare Integer StartIx = 1 + Playground.MapList_MapUids.keyof(Playground.Map.MapInfo.MapUid);
+    declare Integer NbMaps = Playground.MapList_MapUids.count;
+    declare Integer EndIx = StartIx + ML::Min(10, NbMaps);
+    if (NbMaps == 0) {
+        return;
     }
-    foreach (MapName in Playground.MapList_Names) {
-        MapNames.add(MapName);
+    if (NbMaps <= 10) {
+        StartIx = 0;
+        EndIx = NbMaps;
     }
+
+    declare Integer Count = 0;
+    for (I, StartIx, EndIx) {
+        Uids.add(Playground.MapList_MapUids[I % NbMaps]);
+        MapNames.add(Playground.MapList_Names[I % NbMaps]);
+        Count += 1;
+        if (Count >= NbMaps) {
+            break;
+        }
+    }
+
     for (I, 0, Uids.count - 1) {
         // MLHookLog("MapUid: " ^ Uids[I] ^ " - MapName: " ^ MapNames[I]);
         SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_Pair", [Uids[I], MapNames[I]]);

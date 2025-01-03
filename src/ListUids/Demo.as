@@ -5,7 +5,7 @@ namespace ListUidsDemo {
     void Render() {
         if (!windowOpen) return;
 
-        UI::SetNextWindowSize(500, 250, UI::Cond::Appearing);
+        UI::SetNextWindowSize(550, 250, UI::Cond::FirstUseEver);
         if (UI::Begin("ListUids Demo", windowOpen)) {
             auto listUids = MLFeed::Get_MapListUids_Receiver();
             UI::BeginDisabled(listUids.MapList_IsInProgress);
@@ -19,15 +19,23 @@ namespace ListUidsDemo {
             UI::Text("UpdateCount: " + listUids.UpdateCount);
             UI::Separator();
             UI::Text("UIDs & Names (" + listUids.MapList_MapUids.Length + "):");
-            UI::Columns(2);
-            for (uint i = 0; i < listUids.MapList_MapUids.Length; i++) {
-                UI::Text(listUids.MapList_MapUids[i]);
+
+            if (UI::BeginTable("##uids", 2, UI::TableFlags::SizingStretchSame)) {
+                UI::TableSetupColumn("UIDs");
+                UI::TableSetupColumn("Names");
+                UI::TableHeadersRow();
+                UI::ListClipper c(listUids.MapList_MapUids.Length);
+                while (c.Step()) {
+                    for (int i = c.DisplayStart; i < c.DisplayEnd; i++) {
+                        UI::TableNextRow();
+                        UI::TableNextColumn();
+                        UI::Text(listUids.MapList_MapUids[i]);
+                        UI::TableNextColumn();
+                        UI::Text(Text::OpenplanetFormatCodes(listUids.MapList_Names[i]));
+                    }
+                }
+                UI::EndTable();
             }
-            UI::NextColumn();
-            for (uint i = 0; i < listUids.MapList_MapUids.Length; i++) {
-                UI::Text(Text::OpenplanetFormatCodes(listUids.MapList_Names[i]));
-            }
-            UI::Columns(1);
         }
         UI::End();
 

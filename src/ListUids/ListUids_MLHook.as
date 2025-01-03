@@ -72,11 +72,14 @@ class ListUids_MLHook : MLFeed::MapListUids_Receiver {
             _UpdateCount++;
             // trace("ClearKnownUids");
         } else if (ty == "IsReqActive") {
-            _MapList_IsInProgress = event.data.Length > 0 && string(event.data[0]).ToLower() == "true";
-            _UpdateCount++;
-            if (!_MapList_IsInProgress) {
-                lastCheckEnd = Time::Now;
+            bool inProg = event.data.Length > 0 && string(event.data[0]).ToLower() == "true";
+            if (_MapList_IsInProgress != inProg) {
+                if (!inProg) {
+                    lastCheckEnd = Time::Now;
+                }
+                _UpdateCount++;
             }
+            _MapList_IsInProgress = inProg;
             // trace("IsReqActive set _MapList_IsInProgress: " + _MapList_IsInProgress);
         } else {
             warn("ListUids_MLHook: unknown event type: " + ty + " - " + event.type);
