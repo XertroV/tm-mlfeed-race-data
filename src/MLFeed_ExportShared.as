@@ -918,8 +918,11 @@ namespace MLFeed {
     shared abstract class MapListUids_Receiver : MLHook::HookMLEventsByType {
         MapListUids_Receiver() { super("ListUids"); }
 
-        // Request the map list from the server. Does nothing if a request is in progress.
-        void MapList_Request() { /* overridden*/ }
+        // Request the map list from the server. Does nothing and returns false if a request is in progress.
+        bool MapList_Request() { /* overridden*/ return false; }
+
+        // Request the map list from the server, and returns up to max(nbMaxUids, 25) uids. Returns false if a request is in progress. The size change only applies to the next request.
+        bool MapList_Request_Larger(int nbMaxUids) { /* overridden*/ return false; }
 
         // Whether the map list is currently being requested.
         bool get_MapList_IsInProgress() const { /* overridden*/ return false; }

@@ -483,13 +483,17 @@ Void CheckMapChange() {
 Void CheckIncoming() {
     declare Text[][] MLHook_Inbound_RaceStats for ClientUI = [];
     foreach (Event in MLHook_Inbound_RaceStats) {
-        if (Event[0] == "SendAllPlayerStates") {
-            InitialSend();
+        if (Event.count > 0) {
+            if (Event[0] == "SendAllPlayerStates") {
+                InitialSend();
+            } else {
+                MLHookLog("Skipped unknown incoming event: " ^ Event);
+                continue;
+            }
+            // MLHookLog("DEBUG Processed Incoming Event: "^Event[0]);
         } else {
-            MLHookLog("Skipped unknown incoming event: " ^ Event);
-            continue;
+            MLHookLog("WARN Skipped empty incoming event");
         }
-        MLHookLog("Processed Incoming Event: "^Event[0]);
     }
     MLHook_Inbound_RaceStats = [];
 }

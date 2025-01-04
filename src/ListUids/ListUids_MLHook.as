@@ -56,6 +56,10 @@ class ListUids_MLHook : MLFeed::MapListUids_Receiver {
         MLHook::Queue_MessageManialinkPlayground("ListUids", {});
     }
 
+    protected void SendListRequestToMLWithMaxUids(int nbMaxUids) {
+        MLHook::Queue_MessageManialinkPlayground("ListUids", {tostring(nbMaxUids)});
+    }
+
     void ProcessMsgs() {
         if (incoming_msgs.Length == 0) return;
         for (uint i = 0; i < incoming_msgs.Length; i++) {
@@ -130,14 +134,20 @@ class ListUids_MLHook : MLFeed::MapListUids_Receiver {
 
     // MLFeed::MapListUids_Receiver methods
 
-    void MapList_Request() override {
-        if (_MapList_IsInProgress) {
-            warn("MapList_Request: already in progress");
-            return;
-        }
+    bool MapList_Request() override {
+        if (_MapList_IsInProgress) return false;
         SendListRequestToML();
         _MapList_IsInProgress = true;
         lastCheckStart = Time::Now;
+        return true;
+    }
+
+    bool MapList_Request_Larger(int nbMaxUids) override {
+        if (_MapList_IsInProgress) return false;
+        SendListRequestToMLWithMaxUids(nbMaxUids);
+        _MapList_IsInProgress = true;
+        lastCheckStart = Time::Now;
+        return true;
     }
 
     bool get_MapList_IsInProgress() const override {

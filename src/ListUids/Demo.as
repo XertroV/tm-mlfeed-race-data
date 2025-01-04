@@ -2,6 +2,8 @@ namespace ListUidsDemo {
     [Setting hidden]
     bool windowOpen = false;
 
+    string m_NbMapUidsToRequest = "25";
+
     void Render() {
         if (!windowOpen) return;
 
@@ -9,9 +11,22 @@ namespace ListUidsDemo {
         if (UI::Begin("ListUids Demo", windowOpen)) {
             auto listUids = MLFeed::Get_MapListUids_Receiver();
             UI::BeginDisabled(listUids.MapList_IsInProgress);
-            if (UI::Button("Request UIDs")) {
-                listUids.MapList_Request();
+            bool btnPress = UI::Button("Request UIDs");
+            UI::SameLine();
+            UI::SetNextItemWidth(60);
+            bool changed = false;
+            m_NbMapUidsToRequest = UI::InputText("Max Uids (Min 25)##NbMapUidsToRequest", m_NbMapUidsToRequest, changed, UI::InputTextFlags::EnterReturnsTrue);
+            if (changed || btnPress) {
+                m_NbMapUidsToRequest = m_NbMapUidsToRequest.Trim();
+                int nbMaxUids = 25;
+                // if this returns false we just use 25.
+                if (m_NbMapUidsToRequest.Length > 0 && Text::TryParseInt(m_NbMapUidsToRequest, nbMaxUids, 10)) {
+                    listUids.MapList_Request_Larger(nbMaxUids);
+                } else {
+                    listUids.MapList_Request();
+                }
             }
+
             UI::EndDisabled();
             UI::Text("MapList_IsInProgress: " + listUids.MapList_IsInProgress);
             UI::Text("MsSinceLastReqStart: " + Time::Format(listUids.MsSinceLastReqStart));
