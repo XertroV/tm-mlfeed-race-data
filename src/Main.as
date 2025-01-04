@@ -12,6 +12,7 @@ void Main() {
 
     startnew(InitCoro);
     startnew(ProcessListUidsUpdates_Loop).WithRunContext(Meta::RunContext::AfterScripts);
+    startnew(FrameCounter_Loop).WithRunContext(Meta::RunContext::BeforeScripts);
 
 #if SIG_DEVELOPER
     S_ShowDebugMenu = true;
@@ -70,6 +71,15 @@ void InitCoro() {
     // MLHook::RegisterMLHook(devHook, "RaceStats"); // bc its the debug hook
     // MLHook::RegisterMLHook(devHook, "RaceStats_ActivePlayers"); // bc its the debug hook
 #endif
+}
+
+uint64 FrameCounter = 0;
+
+void FrameCounter_Loop() {
+    while (true) {
+        FrameCounter += 1;
+        yield();
+    }
 }
 
 [Setting category="Demo UIs" name="Show Demos Menu under Plugins"]
@@ -363,9 +373,16 @@ namespace RaceFeed {
         // private reference to local player
         _PlayerCpInfo@ _LocalPlayer;
 
+        uint _playersLeft_Batch_FrameNumber = 0;
+        uint _playersLeft_BatchNumber = 0;
+        string[] _playersLeftThisBatch;
+        uint[] _playersLeftThisBatch_LoginIdValues;
+
         HookRaceStatsEvents() {
             super("RaceStats");
             incoming_msgs.Reserve(128);
+            _playersLeftThisBatch.Reserve(128);
+            _playersLeftThisBatch_LoginIdValues.Reserve(128);
         }
 
         void MainCoro() {
@@ -553,6 +570,13 @@ namespace RaceFeed {
 
         // a player left the server
         void UpdatePlayerLeft(MLHook::PendingEvent@ event) {
+            if (_playersLeft_Batch_FrameNumber != FrameCounter) {
+                _playersLeft_Batch_FrameNumber = FrameCounter;
+                _playersLeft_BatchNumber++;
+                _playersLeftThisBatch.RemoveRange(0, _playersLeftThisBatch.Length);
+                _playersLeftThisBatch_LoginIdValues.RemoveRange(0, _playersLeftThisBatch_LoginIdValues.Length);
+            }
+
             string name = event.data[0];
 
             auto player = GetPlayer_V4(name);
@@ -580,6 +604,9 @@ namespace RaceFeed {
                 loginToPlayers.Delete(player.Login);
             }
             DuplicateArraysForVersion1();
+
+            _playersLeftThisBatch.InsertLast(name);
+            _playersLeftThisBatch_LoginIdValues.InsertLast(player.LoginMwId.Value);
         }
 
         // got best times for a player
@@ -777,6 +804,18 @@ namespace RaceFeed {
 
         const MLFeed::PlayerCpInfo_V4@ get_LocalPlayer() const override {
             return _LocalPlayer;
+        }
+
+        array<string>@ get_PlayersLeftThisBatch() override {
+            return _playersLeftThisBatch;
+        }
+
+        array<uint>@ get_PlayersLeftThisBatch_LoginIdValues() override {
+            return _playersLeftThisBatch_LoginIdValues;
+        }
+
+        uint get_PlayersLeft_BatchNumber() const override {
+            return _playersLeft_BatchNumber;
         }
     }
 }

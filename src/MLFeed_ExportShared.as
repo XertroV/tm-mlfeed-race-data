@@ -547,6 +547,24 @@ namespace MLFeed {
             if (LapsNb > 0) return LapsNb;
             return LapCount;
         }
+
+        /* The batch number of players that left. (At most 1 batch per frame) */
+        uint get_PlayersLeft_BatchNumber() const {
+            throw("implemented elsewhere");
+            return 0;
+        }
+
+        /* The latest batch of player names of players that left the server. */
+        string[]@ get_PlayersLeftThisBatch() {
+            throw("implemented elsewhere");
+            return null;
+        }
+
+        /* A list of player login `ID.Value`s of players that left the server this frame. */
+        uint[]@ get_PlayersLeftThisBatch_LoginIdValues() {
+            throw("implemented elsewhere");
+            return null;
+        }
     }
 
     /**

@@ -53,9 +53,6 @@ namespace RaceFeedUI {
             UI::Text("Map CpCount: " + theHook.CpCount);
             UI::Text("Map LapCount: " + theHook.LapCount);
             UI::Text("Map CPsToFinish: " + theHook.CPsToFinish);
-            UI::Text("Rules GameTime: " + theHook.Rules_GameTime);
-            UI::Text("Rules StartTime: " + theHook.Rules_StartTime);
-            UI::Text("Rules EndTime: " + theHook.Rules_EndTime);
             UI::Text("LapsNb: " + theHook.LapsNb);
             UI::Text("LapCount_Accurate: " + theHook.LapCount_Accurate);
             UI::Text("UpdateNonce: " + theHook.UpdateNonce);
@@ -63,9 +60,17 @@ namespace RaceFeedUI {
             UI::Text("WarmupEndTime: " + theHook.WarmupEndTime);
             UI::Separator();
             UI::Dummy(vec2(0, 20));
-            UI::Text("Rules_StartTime: " + theHook.Rules_StartTime);
-            UI::Text("Rules_GameTime:  " + theHook.Rules_GameTime);
-            UI::Text("Rules_EndTime:   " + theHook.Rules_EndTime);
+            UI::Text("Rules_StartTime:   " + Time::Format(theHook.Rules_StartTime));
+            UI::Text("Rules_GameTime:    " + Time::Format(theHook.Rules_GameTime));
+            UI::Text("Rules_EndTime:     " + Time::Format(theHook.Rules_EndTime));
+            UI::Text("Rules_TimeElapsed:  " + Time::Format(theHook.Rules_TimeElapsed));
+            UI::Text("Rules_TimeRemaining: " + Time::Format(theHook.Rules_TimeRemaining));
+
+            UI::Separator();
+            UI::Dummy(vec2(0, 20));
+            UI::Text("PlayersLeft_BatchNumber: " + theHook.PlayersLeft_BatchNumber);
+            UI::Text("PlayersLeft: " + Json::Write(theHook.PlayersLeftThisBatch.ToJson()));
+            UI::Text("PlayersLeftLoginIdValues: " + Json::Write(theHook.PlayersLeftThisBatch_LoginIdValues.ToJson()));
 
             UI::Separator();
             UI::Dummy(vec2(0, 20));

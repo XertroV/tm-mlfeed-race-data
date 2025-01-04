@@ -116,6 +116,9 @@ main() {
             CheckIfMapListDone();
         }
         if (Count % 120 == 0) {
+            if (G_LastMapIdent != Playground.Map.Id && !Playground.MapList_IsInProgress) {
+                StartUpdateUids();
+            }
             SyncReqInProgress();
         }
         if (CheckIncomingMsgs()) {
