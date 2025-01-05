@@ -4,11 +4,21 @@
 #Include "TextLib" as TL
 
 #Const C_PageUID "ListUids"
+// default to send back to angelscript
 #Const C_DefaultNbMapsMax 25
 
+// GetUidSlice stuff
+#Const C_UidChunksPerEvent 5
+#Const C_MaxEventStringSize 1000
+#Const C_UidInStrSize 28
+#Const C_UidsPerChunk 7
+#Const C_MaxUidsPerEvent 35
+
+// Globals
 declare Integer G_NextNbMapsMax;
 declare Boolean G_RequestActive;
 declare Ident G_LastMapIdent;
+declare Integer G_MapIxAtLoad;
 
 Void MLHookLog(Text _Msg) {
     SendCustomEvent("MLHook_LogMe_"^C_PageUID, [_Msg]);
@@ -44,16 +54,14 @@ Void CheckIfMapListDone() {
     declare Text[] MapNames;
 
     declare Integer MapIx;
-    declare Text CurrUid = Playground.Map.MapInfo.MapUid;
-    if (Playground.MapList_MapUids.exists(CurrUid)) {
-        MapIx = Playground.MapList_MapUids.keyof(CurrUid);
-    } else {
-        MapIx = -1;
-    }
-    if (G_LastMapIdent != Playground.Map.Id) {
-        G_LastMapIdent = Playground.Map.Id;
-        SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_OrigMapIx", [""^MapIx, Playground.Map.MapInfo.MapUid]);
-    }
+    // always return this slice; the user can get more if they want. Also avoids a possibly expensive .exists / .keyof
+    MapIx = G_MapIxAtLoad;
+    // declare Text CurrUid = Playground.Map.MapInfo.MapUid;
+    // if (Playground.MapList_MapUids.exists(CurrUid)) {
+    //     MapIx = Playground.MapList_MapUids.keyof(CurrUid);
+    // } else {
+    //     MapIx = -1;
+    // }
 
     declare Integer StartIx = 1 + MapIx;
     declare Integer NbMaps = Playground.MapList_MapUids.count;
@@ -107,6 +115,58 @@ Void StartUpdateUids() {
     MarkRequestActive(True);
 }
 
+Void OnMapChange() {
+    yield;
+    G_LastMapIdent = Playground.Map.Id;
+    MLHookLog("Map change detected: " ^ G_LastMapIdent);
+    G_MapIxAtLoad = -1;
+    MarkRequestActive(Playground.MapList_IsInProgress);
+    if (!Playground.MapList_IsInProgress) {
+        Playground.MapList_Request();
+    }
+    while (Playground.MapList_IsInProgress) {
+        yield;
+    }
+    if (Playground.MapList_MapUids.exists(Playground.Map.MapInfo.MapUid)) {
+        G_MapIxAtLoad = Playground.MapList_MapUids.keyof(Playground.Map.MapInfo.MapUid);
+    }
+    SendCustomEvent("MLHook_Event_" ^ C_PageUID ^ "_OrigMapIx", [""^G_MapIxAtLoad, Playground.Map.MapInfo.MapUid]);
+}
+
+
+Void SendUids(Text _Id, Integer _Start, Integer _AskCount) {
+    declare Text EvtType = "MLHook_Event_" ^ C_PageUID ^ "_UidsResp";
+    declare Integer NbMaps = Playground.MapList_MapUids.count;
+    declare Integer ResponseCount = ML::Min(_AskCount, NbMaps);
+    declare Integer NbEvents = 1 + ((ResponseCount - 1) / C_MaxUidsPerEvent);
+
+    declare Integer CountDone = 0;
+    declare Integer UidsLeft = ResponseCount;
+    declare Text[] EventData = [_Id];
+    declare Text[] UidSlice = [];
+    while (CountDone < ResponseCount) {
+        declare Integer StartIx = (_Start + CountDone) % NbMaps;
+        // declare Text[] UidSlice = Playground.MapList_MapUids.slice(StartIx, C_UidsPerChunk);
+        UidSlice.clear();
+        declare Integer UidsThisRound = ML::Min(C_UidsPerChunk, UidsLeft);
+        for (I, StartIx, StartIx + UidsThisRound - 1) {
+            UidSlice.add(Playground.MapList_MapUids[I % NbMaps]);
+        }
+        EventData.add(TL::Join(",", UidSlice));
+        if (EventData.count >= 6) {
+            SendCustomEvent(EvtType, EventData);
+            EventData.clear();
+            EventData.add(_Id);
+        }
+        CountDone += UidsThisRound;
+        UidsLeft -= UidsThisRound;
+    }
+
+    if (EventData.count > 1) {
+        SendCustomEvent(EvtType, EventData);
+    }
+}
+
 // MARK: Incoming events
 
 Boolean CheckIncomingMsgs() {
@@ -117,12 +177,19 @@ Boolean CheckIncomingMsgs() {
     foreach (Event in InboundEvents) {
         switch (Event.count) {
             case 0: {
+                // Request
                 StartUpdateUids();
                 break;
             }
             case 1: {
+                // Request with larger max
                 G_NextNbMapsMax = ML::Max(TL::ToInteger(Event[0]), C_DefaultNbMapsMax);
                 StartUpdateUids();
+                break;
+            }
+            case 3: {
+                // Get uids slice (id, start, end)
+                SendUids(Event[0], TL::ToInteger(Event[1]), TL::ToInteger(Event[2]));
                 break;
             }
             default: {
@@ -137,24 +204,21 @@ Boolean CheckIncomingMsgs() {
 
 main() {
     G_NextNbMapsMax = C_DefaultNbMapsMax;
+    G_MapIxAtLoad = -1;
     yield;
     declare Integer Count = 0;
     while (True) {
         Count += 1;
+        if (G_LastMapIdent != Playground.Map.Id) {
+            OnMapChange();
+        }
         if (G_RequestActive) {
             CheckIfMapListDone();
         }
         if (Count % 120 == 0) {
-            if (G_LastMapIdent != Playground.Map.Id && !Playground.MapList_IsInProgress) {
-                StartUpdateUids();
-            }
             SyncReqInProgress();
         }
-        if (CheckIncomingMsgs()) {
-            // do stuff? idk don't really need to.
-            yield;
-            continue;
-        }
+        CheckIncomingMsgs();
         yield;
     }
 }

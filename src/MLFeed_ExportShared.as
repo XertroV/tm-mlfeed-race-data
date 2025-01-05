@@ -927,17 +927,17 @@ namespace MLFeed {
         // Whether the map list is currently being requested.
         bool get_MapList_IsInProgress() const { /* overridden*/ return false; }
 
-        /* The names of the maps in the list. Limited to 10 entries for performance reasons.
-        If the current map is found in the map list, the 10 following maps will be returned.
-        Otherwise, the first 10 maps will be. Maps are ordered so that the 1st entry is after
-        the current map (so if there is less than 10 maps on the server, the last map is the current map.)
+        /* The names of the maps in the list. Limited to 25 entries for performance reasons.
+        If the current map is found in the map list, the 25 following maps will be returned.
+        Otherwise, the first 25 maps will be. Maps are ordered so that the 1st entry is after
+        the current map (so if there is less than 25 maps on the server, the last map is the current map.)
         */
         const array<string>@ get_MapList_Names() const { /* overridden*/ return null; }
 
-        /* The UIDs of the maps in the list. Limited to 10 entries for performance reasons.
-        If the current map is found in the map list, the 10 following maps will be returned.
-        Otherwise, the first 10 maps will be. Maps are ordered so that the 1st entry is after
-        the current map (so if there is less than 10 maps on the server, the last map is the current map.)
+        /* The UIDs of the maps in the list. Limited to 25 entries for performance reasons.
+        If the current map is found in the map list, the 25 following maps will be returned.
+        Otherwise, the first 25 maps will be. Maps are ordered so that the 1st entry is after
+        the current map (so if there is less than 25 maps on the server, the last map is the current map.)
         */
         const array<string>@ get_MapList_MapUids() const { /* overridden*/ return null; }
 
@@ -967,6 +967,9 @@ namespace MLFeed {
         int get_MapOrigIxInList() const { /* overridden*/ return 0; }
         // The map UID corresponding to MapOrigIxInList.
         string get_MapOrigIxInListUid() const { /* overridden*/ return ""; }
+
+        /* Read a slice from MapList_MapUids. Will yield for 1-3 frames in total */
+        string[]@ GetUidSlice_Async(int startIx, int endIx) { /* overridden*/ return null; }
     }
 
 

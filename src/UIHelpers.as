@@ -24,3 +24,14 @@ bool MDisabledButton(bool disabled, const string &in text, const vec2 &in size =
         return UI::Button(text, size);
     }
 }
+
+void CopyableText(const string &in text, const string &in toCopy = "") {
+    UI::Text(text);
+    if (UI::IsItemHovered()) {
+        UI::SetMouseCursor(UI::MouseCursor::Hand);
+    }
+    if (UI::IsItemClicked(UI::MouseButton::Left)) {
+        IO::SetClipboard(toCopy.Length > 0 ? text : toCopy);
+        UI::ShowNotification("copied to clipboard", (toCopy.Length > 0 ? text : toCopy));
+    }
+}

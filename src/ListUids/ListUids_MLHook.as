@@ -6,6 +6,7 @@ void ListUids_Init_MLHook() {
     MLHook::RegisterMLHook(H_ReceiveMapUids, "ListUids_IsReqActive");
     MLHook::RegisterMLHook(H_ReceiveMapUids, "ListUids_SliceInfo");
     MLHook::RegisterMLHook(H_ReceiveMapUids, "ListUids_OrigMapIx");
+    MLHook::RegisterMLHook(H_ReceiveMapUids, "ListUids_UidsResp");
 }
 
 ListUids_MLHook@ H_ReceiveMapUids = ListUids_MLHook();
@@ -35,6 +36,8 @@ class ListUids_MLHook : MLFeed::MapListUids_Receiver {
 
     uint64 lastCheckStart = 0;
     uint64 lastCheckEnd = 0;
+
+    dictionary uidRequests;
 
     ListUids_MLHook() {
         super();
@@ -113,9 +116,40 @@ class ListUids_MLHook : MLFeed::MapListUids_Receiver {
             _MapOrigIxInListUid = string(event.data[1]);
             _UpdateCount++;
             // trace("OrigMapIx
+        } else if (ty == "UidsResp") {
+            if (event.data.Length < 1) {
+                warn("ListUids_UidsResp: expected at least 1 data element, got " + event.data.Length);
+                return;
+            }
+            string id = string(event.data[0]);
+            if (!uidRequests.Exists(id)) {
+                warn("ListUids_UidsResp: unknown id: " + id);
+                return;
+            }
+            // for each Id, uids are returned in order over multiple events
+            auto @arr = cast<string[]@>(uidRequests[id]);
+            for (uint i = 1; i < event.data.Length; i++) {
+                auto @parts = string(event.data[i]).Split(",");
+                for (uint j = 0; j < parts.Length; j++) {
+                    arr.InsertLast(parts[j]);
+                }
+            }
         } else {
             warn("ListUids_MLHook: unknown event type: " + ty + " - " + event.type);
         }
+    }
+
+    string[]@ GetUidSlice_Async(int startIx, int count) override {
+        string id = tostring(Math::Rand(-90000000, 900000000));
+        auto @arr = array<string>();
+        arr.Reserve(count);
+        @uidRequests[id] = arr;
+        MLHook::Queue_MessageManialinkPlayground("ListUids", {id, tostring(startIx), tostring(count)});
+        while (arr.Length == 0) {
+            yield();
+        }
+        uidRequests.Delete(id);
+        return arr;
     }
 
     protected void RegisterUid(const string &in uid, const string &in name) {
