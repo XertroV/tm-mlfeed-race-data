@@ -209,6 +209,10 @@ main() {
     declare Integer Count = 0;
     while (True) {
         Count += 1;
+        if (Playground.Map == Null) {
+            yield;
+            continue;
+        }
         if (G_LastMapIdent != Playground.Map.Id) {
             OnMapChange();
         }
