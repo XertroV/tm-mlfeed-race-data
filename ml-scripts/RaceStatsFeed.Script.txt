@@ -365,6 +365,7 @@ K_PlayerLastValues New_K_PlayerLastValues(CSmPlayer _Player) {
 }
 
 Boolean ShouldUpdatePlayer(CSmPlayer _Player) {
+    if (_Player == Null || _Player.Score == Null) return False;
     // if new, create and return true
     if (!LastPlayerValues.existskey(_Player.Score.Id)) {
         LastPlayerValues[_Player.Score.Id] = New_K_PlayerLastValues(_Player);
