@@ -555,13 +555,13 @@ namespace MLFeed {
         }
 
         /* The latest batch of player names of players that left the server. */
-        string[]@ get_PlayersLeftThisBatch() {
+        const string[]@ get_PlayersLeftThisBatch() const {
             throw("implemented elsewhere");
             return null;
         }
 
         /* A list of player login `ID.Value`s of players that left the server this frame. */
-        uint[]@ get_PlayersLeftThisBatch_LoginIdValues() {
+        const uint[]@ get_PlayersLeftThisBatch_LoginIdValues() const {
             throw("implemented elsewhere");
             return null;
         }

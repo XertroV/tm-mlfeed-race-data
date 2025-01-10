@@ -806,11 +806,11 @@ namespace RaceFeed {
             return _LocalPlayer;
         }
 
-        array<string>@ get_PlayersLeftThisBatch() override {
+        const array<string>@ get_PlayersLeftThisBatch() const override {
             return _playersLeftThisBatch;
         }
 
-        array<uint>@ get_PlayersLeftThisBatch_LoginIdValues() override {
+        const array<uint>@ get_PlayersLeftThisBatch_LoginIdValues() const override {
             return _playersLeftThisBatch_LoginIdValues;
         }
 
@@ -829,7 +829,7 @@ string get_CurrentMap() {
 
 uint get_CurrentMapId() {
     auto map = GetApp().RootMap;
-    if (map is null) return -1;
+    if (map is null) return uint(-1);
     return map.Id.Value;
 }
 
