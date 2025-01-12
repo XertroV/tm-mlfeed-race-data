@@ -121,16 +121,16 @@ namespace RaceFeed {
 
     Cmp cmpRace(const MLFeed::PlayerCpInfo_V2@ p1, const MLFeed::PlayerCpInfo_V2@ p2) {
         // if we're in race mode, then we want to count the player as spawned if their spawnIndex == SpawnCounter
-        // [2025-01-03] ... do we? what case does this cover? Maybe people who have finished the race? But maybe it doesn't matter.
+        // this is because players become unspawned after they've won the race, but they should still be ranked 1st or w/e
+        // but spawning players are always last.
 
         MLFeed::SpawnStatus p1SS = p1.spawnStatus;
         MLFeed::SpawnStatus p2SS = p2.spawnStatus;
-        if (theHook !is null) {
-            if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p1.spawnIndex == theHook.SpawnCounter)
-                p1SS = MLFeed::SpawnStatus::Spawned;
-            if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p2.spawnIndex == theHook.SpawnCounter)
-                p2SS = MLFeed::SpawnStatus::Spawned;
-        }
+        if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p1.spawnIndex == theHook.SpawnCounter)
+            p1SS = MLFeed::SpawnStatus::Spawned;
+        if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p2.spawnIndex == theHook.SpawnCounter)
+            p2SS = MLFeed::SpawnStatus::Spawned;
+
         // spawned status dominates
         if (p1SS != p2SS) {
             // not spawned is smallest, so we want the opposite of cmpInt, so flip the args
@@ -155,14 +155,16 @@ namespace RaceFeed {
 
     Cmp cmpRaceRespawn(const MLFeed::PlayerCpInfo_V2@ p1, const MLFeed::PlayerCpInfo_V2@ p2) {
         // if we're in race mode, then we want to count the player as spawned if their spawnIndex == SpawnCounter
+        // this is because players become unspawned after they've won the race, but they should still be ranked 1st or w/e
+        // but spawning players are always last.
         MLFeed::SpawnStatus p1SS = p1.spawnStatus;
         MLFeed::SpawnStatus p2SS = p2.spawnStatus;
-        if (theHook !is null) {
-            if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p1.spawnIndex == theHook.SpawnCounter)
-                p1SS = MLFeed::SpawnStatus::Spawned;
-            if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p2.spawnIndex == theHook.SpawnCounter)
-                p2SS = MLFeed::SpawnStatus::Spawned;
-        }
+        if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p1.spawnIndex == theHook.SpawnCounter)
+            p1SS = MLFeed::SpawnStatus::Spawned;
+        if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p2.spawnIndex == theHook.SpawnCounter)
+            p2SS = MLFeed::SpawnStatus::Spawned;
+
+
         // spawned status dominates
         if (p1SS != p2SS) {
             // not spawned is smallest, so we want the opposite of cmpInt, so flip the args (spawned < spawning in sorting)
@@ -383,6 +385,9 @@ namespace RaceFeed {
             incoming_msgs.Reserve(128);
             _playersLeftThisBatch.Reserve(128);
             _playersLeftThisBatch_LoginIdValues.Reserve(128);
+            v2_sortedPlayers_Race.Reserve(100);
+            v2_sortedPlayers_TimeAttack.Reserve(100);
+            v2_sortedPlayers_Race_Respawns.Reserve(100);
         }
 
         void MainCoro() {
