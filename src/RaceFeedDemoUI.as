@@ -129,7 +129,7 @@ namespace RaceFeedUI {
                 return;
             }
             UI::Text("Players ("+players.Length+") sorted for: " + mode + ". " + theHook.CPsToFinish + " total CPs incl finish.");
-            uint nCols = 13;
+            uint nCols = 14;
             if (UI::BeginTable("players debug " + mode, nCols, UI::TableFlags::SizingStretchProp)) {
                 UI::TableSetupColumn("Rank");
                 UI::TableSetupColumn("Name");
@@ -142,7 +142,8 @@ namespace RaceFeedUI {
                 UI::TableSetupColumn("Local?");
                 UI::TableSetupColumn("Lag Est");
                 UI::TableSetupColumn("UpdtN");
-                UI::TableSetupColumn("SpawnIx");
+                UI::TableSetupColumn("SpwnIx");
+                UI::TableSetupColumn("SpwnCount");
 
                 UI::TableSetupColumn(""); // view player's tab
 
@@ -188,6 +189,9 @@ namespace RaceFeedUI {
 
                         UI::TableNextColumn();
                         UI::Text('' + ps.UpdateNonce);
+
+                        UI::TableNextColumn();
+                        UI::Text('' + ps.SpawnCount);
 
                         UI::TableNextColumn();
                         UI::Text('' + ps.SpawnIndex);
