@@ -247,7 +247,7 @@ namespace RaceFeed {
                 if (string(item.Name) == this.Name) {
                     Login = item.Login;
                     WebServicesUserId = item.WebServicesUserId;
-#if DEV
+#if DEV_FALSE
                     string loKey = "SetPlayerLoginWsid_" + Name + "_";
                     log_once(loKey + "1", Name + " -> " + Login + " / " + WebServicesUserId);
                     log_once(loKey + "2", "loginMwId.SetName");
