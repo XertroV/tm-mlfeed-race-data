@@ -228,7 +228,6 @@ namespace MLFeed {
 
         void UpdateFrom(MLHook::PendingEvent@ event, uint _spawnIndex) {
             UpdateNonce++;
-            spawnIndex = _spawnIndex;
             if (event.data.Length < 5) {
                 warn('PlayerCpInfo event.data had insufficient length');
                 return;
@@ -244,6 +243,7 @@ namespace MLFeed {
             spawnStatus = SpawnStatus(Text::ParseInt(event.data[4]));
             if (lastSpawnStatus != SpawnStatus::Spawned && spawnStatus == SpawnStatus::Spawned) {
                 SpawnCount++;
+                spawnIndex = _spawnIndex;
             }
         }
 
@@ -488,7 +488,7 @@ namespace MLFeed {
          * This is useful for some sorting methods.
          * This value is set to 0 on plugin load and never reset.
         */
-        uint SpawnCounter = 0;
+        uint SpawnCounter = 1;
 
         // The server's `Now` time
         int Rules_GameTime = -1;

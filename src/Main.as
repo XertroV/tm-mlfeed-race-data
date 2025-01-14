@@ -126,10 +126,12 @@ namespace RaceFeed {
 
         MLFeed::SpawnStatus p1SS = p1.spawnStatus;
         MLFeed::SpawnStatus p2SS = p2.spawnStatus;
-        if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p1.spawnIndex == theHook.SpawnCounter)
-            p1SS = MLFeed::SpawnStatus::Spawned;
-        if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p2.spawnIndex == theHook.SpawnCounter)
-            p2SS = MLFeed::SpawnStatus::Spawned;
+        if (p1.spawnIndex == p2.spawnIndex) {
+            if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned)
+                p1SS = MLFeed::SpawnStatus::Spawned;
+            if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned)
+                p2SS = MLFeed::SpawnStatus::Spawned;
+        }
 
         // spawned status dominates
         if (p1SS != p2SS) {
@@ -159,11 +161,12 @@ namespace RaceFeed {
         // but spawning players are always last.
         MLFeed::SpawnStatus p1SS = p1.spawnStatus;
         MLFeed::SpawnStatus p2SS = p2.spawnStatus;
-        if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p1.spawnIndex == theHook.SpawnCounter)
-            p1SS = MLFeed::SpawnStatus::Spawned;
-        if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned && p2.spawnIndex == theHook.SpawnCounter)
-            p2SS = MLFeed::SpawnStatus::Spawned;
-
+        if (p1.spawnIndex == p2.spawnIndex) {
+            if (p1.spawnStatus == MLFeed::SpawnStatus::NotSpawned)
+                p1SS = MLFeed::SpawnStatus::Spawned;
+            if (p2.spawnStatus == MLFeed::SpawnStatus::NotSpawned)
+                p2SS = MLFeed::SpawnStatus::Spawned;
+        }
 
         // spawned status dominates
         if (p1SS != p2SS) {
@@ -380,6 +383,10 @@ namespace RaceFeed {
         string[] _playersLeftThisBatch;
         uint[] _playersLeftThisBatch_LoginIdValues;
 
+        uint FrameNumber;
+        uint LastSpawnFrame;
+        bool updateSpawnCounter;
+
         HookRaceStatsEvents() {
             super("RaceStats");
             incoming_msgs.Reserve(128);
@@ -405,6 +412,12 @@ namespace RaceFeed {
                     lastMap = CurrentMap;
                     OnMapChange();
                 }
+                if (updateSpawnCounter) {
+                    SpawnCounter += 1;
+                    LastSpawnFrame = FrameNumber;
+                    updateSpawnCounter = false;
+                }
+                FrameNumber++;
             }
         }
 
@@ -508,8 +521,9 @@ namespace RaceFeed {
             }
 
             if (player.spawnStatus == MLFeed::SpawnStatus::Spawned && player.cpCount == 0) {
-                SpawnCounter += 1;
+                updateSpawnCounter = true;
             }
+
             // race events don't update the local players best time until they've respawned for some reason (other ppl are immediate)
             if (player.cpCount == int(this.CPsToFinish) && player.name == LocalUserName && player.IsSpawned) {
                 int bt = int(player.bestTime);
