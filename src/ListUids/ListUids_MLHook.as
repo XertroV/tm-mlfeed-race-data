@@ -1,4 +1,4 @@
-Meta::PluginCoroutine@ listUidsAutoStarter = startnew(ListUids_Init_MLHook).WithRunContext(Meta::RunContext::AfterScripts);
+awaitable@ listUidsAutoStarter = Meta::StartWithRunContext(Meta::RunContext::AfterScripts, ListUids_Init_MLHook);
 
 void ListUids_Init_MLHook() {
     MLHook::RegisterMLHook(H_ReceiveMapUids, "ListUids_Pair");
