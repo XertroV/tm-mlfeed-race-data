@@ -538,9 +538,9 @@ namespace RaceFeed {
 
         void UpdatePlayerPosition(MLFeed::PlayerCpInfo_V2@ player) {
             // when a player is updated, they usually only go up or down by a few places at most.
-            UpdatePlayerInSortedPlayersWithMethod(player, _SortedPlayers_TimeAttack, LessPlayers(lessTimeAttack), MLFeed::RankType::TimeAttack);
-            UpdatePlayerInSortedPlayersWithMethod(player, _SortedPlayers_Race, LessPlayers(lessRace), MLFeed::RankType::Race);
-            UpdatePlayerInSortedPlayersWithMethod(player, _SortedPlayers_Race_Respawns, LessPlayers(lessRaceRespawn), MLFeed::RankType::RaceRespawns);
+            UpdatePlayerInSortedPlayersWithMethod(player, _SortedPlayers_TimeAttack, lessTimeAttack, MLFeed::RankType::TimeAttack);
+            UpdatePlayerInSortedPlayersWithMethod(player, _SortedPlayers_Race, lessRace, MLFeed::RankType::Race);
+            UpdatePlayerInSortedPlayersWithMethod(player, _SortedPlayers_Race_Respawns, lessRaceRespawn, MLFeed::RankType::RaceRespawns);
         }
 
         void UpdatePlayerInSortedPlayersWithMethod(MLFeed::PlayerCpInfo_V2@ player, array<MLFeed::PlayerCpInfo_V2@>@ sorted, LessPlayers@ lessFunc, MLFeed::RankType rt) {
