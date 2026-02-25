@@ -277,7 +277,7 @@ namespace MLFeed {
 
         // When did the player finish the segment at segmentIx in royal TA? See also: `::RaceProgressionHistory`.
         int get_RoyalTA_SegmentFinishedAt(int segmentIx) const {
-            if (segmentIx < 0 || segmentIx >= this.RaceProgressionHistory.Length) return -1;
+            if (segmentIx < 0 || segmentIx >= int(this.RaceProgressionHistory.Length)) return -1;
             return this.RaceProgressionHistory[segmentIx];
         }
     }

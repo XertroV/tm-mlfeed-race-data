@@ -361,7 +361,7 @@ namespace RaceFeed {
         }
 
         int get_RoyalTA_SegmentFinishedAt(int segmentIx) const override {
-            if (segmentIx < 0 || segmentIx >= this.RaceProgressionHistory.Length) return -1;
+            if (segmentIx < 0 || segmentIx >= int(this.RaceProgressionHistory.Length)) return -1;
             return this.RaceProgressionHistory[segmentIx];
         }
     }
