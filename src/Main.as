@@ -11,8 +11,8 @@ void Main() {
 #endif
 
     startnew(InitCoro);
-    startnew(ProcessListUidsUpdates_Loop).WithRunContext(Meta::RunContext::AfterScripts);
-    startnew(FrameCounter_Loop).WithRunContext(Meta::RunContext::BeforeScripts);
+    Meta::StartWithRunContext(Meta::RunContext::AfterScripts, ProcessListUidsUpdates_Loop);
+    Meta::StartWithRunContext(Meta::RunContext::BeforeScripts, FrameCounter_Loop);
 
 #if SIG_DEVELOPER
     S_ShowDebugMenu = true;
@@ -361,7 +361,7 @@ namespace RaceFeed {
         }
 
         int get_RoyalTA_SegmentFinishedAt(int segmentIx) const override {
-            if (segmentIx < 0 || segmentIx >= this.RaceProgressionHistory.Length) return -1;
+            if (segmentIx < 0 || segmentIx >= int(this.RaceProgressionHistory.Length)) return -1;
             return this.RaceProgressionHistory[segmentIx];
         }
     }

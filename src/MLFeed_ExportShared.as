@@ -255,7 +255,7 @@ namespace MLFeed {
         // Formatted as: "PlayerCpInfo(name, cpCount, lastCpTime, spawnStatus, raceRank, taRank, bestTime)"
         string ToString() const {
             string[] inner = {name, ''+cpCount, ''+lastCpTime, ''+spawnStatus, ''+raceRank, ''+taRank, ''+bestTime};
-            return "PlayerCpInfo(" + string::Join(inner, ", ") + ")";
+            return "PlayerCpInfo(" + Text::Join(inner, ", ") + ")";
         }
 
         // Does the player's CP count indicate they are finished? This should work with a forced number of laps
@@ -277,7 +277,7 @@ namespace MLFeed {
 
         // When did the player finish the segment at segmentIx in royal TA? See also: `::RaceProgressionHistory`.
         int get_RoyalTA_SegmentFinishedAt(int segmentIx) const {
-            if (segmentIx < 0 || segmentIx >= this.RaceProgressionHistory.Length) return -1;
+            if (segmentIx < 0 || segmentIx >= int(this.RaceProgressionHistory.Length)) return -1;
             return this.RaceProgressionHistory[segmentIx];
         }
     }
@@ -402,7 +402,7 @@ namespace MLFeed {
         // Formatted as: "PlayerCpInfo(name, rr: 17, tr: 3, cp: 5 (0:43.231), Spawned, bt: 0:55.992)"
         string ToString() const override {
             string[] inner = {Name, 'rr: ' + RaceRank, 'tr: ' + TaRank, 'cp: ' + CpCount + ' (' + Time::Format(uint(LastCpTime)) + ")", tostring(SpawnStatus), 'bt: ' + Time::Format(BestTime), 'lrs: ' + Time::Format(LastRespawnRaceTime)};
-            return "PlayerCpInfo(" + string::Join(inner, ", ") + ")";
+            return "PlayerCpInfo(" + Text::Join(inner, ", ") + ")";
         }
     }
 
