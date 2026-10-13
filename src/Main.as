@@ -469,7 +469,7 @@ namespace RaceFeed {
             incoming_msgs.InsertLast(event);
         }
 
-        _PlayerCpInfo@ _GetPlayer(const string &in name) const {
+        _PlayerCpInfo@ _GetPlayer(const string &in name) {
             return cast<_PlayerCpInfo>(_GetPlayer_V4(name));
         }
 
