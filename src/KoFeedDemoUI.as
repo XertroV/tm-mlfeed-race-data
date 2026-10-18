@@ -1,12 +1,12 @@
 namespace KoFeedUI {
     [Setting hidden]
-    bool g_windowVisible = false;
+    bool g_koFeedWindowVisible = false;
 
     void Render() {
-        if (!g_windowVisible) return;
+        if (!g_koFeedWindowVisible) return;
         if (koFeedHook is null) return;
 
-        if (UI::Begin("KO Feed Demo UI", g_windowVisible)) {
+        if (UI::Begin("KO Feed Demo UI", g_koFeedWindowVisible)) {
             if (UI::Button("Update Player States")) {
                 koFeedHook.AskForAllPlayerStates();
             }
@@ -35,8 +35,8 @@ namespace KoFeedUI {
     }
 
     void RenderMenu() {
-        if (UI::MenuItem(Icons::Rss + " KO Feed Demo", "", g_windowVisible)) {
-            g_windowVisible = !g_windowVisible;
+        if (UI::MenuItem(Icons::Rss + " KO Feed Demo", "", g_koFeedWindowVisible)) {
+            g_koFeedWindowVisible = !g_koFeedWindowVisible;
         }
     }
 }

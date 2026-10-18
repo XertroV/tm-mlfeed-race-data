@@ -280,7 +280,7 @@ namespace TeamsFeed {
             UI::Text("StartNewRace: " + teamsFeed.StartNewRace);
             UI::Text("RoundNumber: " + teamsFeed.RoundNumber);
             UI::Text("PlayerFinishedRaceUpdate: " + teamsFeed.PlayerFinishedRaceUpdate);
-            UI::Text("PlayersFinished: " + string::Join(teamsFeed.PlayersFinishedNames, ", "));
+            UI::Text("PlayersFinished: " + Text::Join(teamsFeed.PlayersFinishedNames, ", "));
             UI::Text("MvpAccountId: " + teamsFeed.MvpAccountId);
             UI::Text("MvpName: " + teamsFeed.MvpName);
             UI::Text("RoundWinningClan: " + teamsFeed.RoundWinningClan);

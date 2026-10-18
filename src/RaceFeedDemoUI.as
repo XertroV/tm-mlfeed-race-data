@@ -2,12 +2,12 @@ const string NOTE_OPTIONAL = "\\$bbb (Optional component)\\$z";
 
 namespace RaceFeedUI {
     [Setting hidden]
-    bool g_windowVisible = false;
+    bool g_raceFeedWindowVisible = false;
 
     array<Tab@> tabs;
 
     void Render() {
-        if (!g_windowVisible) return;
+        if (!g_raceFeedWindowVisible) return;
         if (theHook is null) return;
 
         if (tabs.Length == 0) {
@@ -22,7 +22,7 @@ namespace RaceFeedUI {
             tabs.InsertLast(RespawnsTimesTab());
         }
 
-        if (UI::Begin("Race Feed Demo UI", g_windowVisible)) {
+        if (UI::Begin("Race Feed Demo UI", g_raceFeedWindowVisible)) {
             UI::BeginTabBar("race data tab bar");
             for (uint i = 0; i < tabs.Length; i++) {
                 tabs[i].DrawTab();
@@ -35,8 +35,8 @@ namespace RaceFeedUI {
     }
 
     void RenderMenu() {
-        if (UI::MenuItem(Icons::Rss + " Race Feed Demo", "", g_windowVisible)) {
-            g_windowVisible = !g_windowVisible;
+        if (UI::MenuItem(Icons::Rss + " Race Feed Demo", "", g_raceFeedWindowVisible)) {
+            g_raceFeedWindowVisible = !g_raceFeedWindowVisible;
         }
     }
 
