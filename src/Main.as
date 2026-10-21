@@ -703,9 +703,6 @@ namespace RaceFeed {
             this.LapCount = GetMapLapCount(cp.Map.MapInfo);
         }
 
-        // The number of laps a map is raced over (CPsToFinish falls back to this when the game mode doesn't report one).
-        // A lap race can set 0 laps to hide the lap counter; it is still raced as 1 lap.
-        // A map that isn't a lap race is 1 lap, whatever its NbLaps says.
         uint GetMapLapCount(CGameCtnChallengeInfo@ mapInfo) {
             if (mapInfo is null || !mapInfo.TMObjective_IsLapRace) return 1;
             if (mapInfo.TMObjective_NbLaps == 0) return 1;
