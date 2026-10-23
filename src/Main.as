@@ -700,7 +700,13 @@ namespace RaceFeed {
                 }
             }
             this.CpCount = cpCount + lcps.GetSize();
-            this.LapCount = cp.Map.MapInfo.TMObjective_NbLaps;
+            this.LapCount = GetMapLapCount(cp.Map.MapInfo);
+        }
+
+        uint GetMapLapCount(CGameCtnChallengeInfo@ mapInfo) {
+            if (mapInfo is null || !mapInfo.TMObjective_IsLapRace) return 1;
+            if (mapInfo.TMObjective_NbLaps == 0) return 1;
+            return mapInfo.TMObjective_NbLaps;
         }
 
         void UpdateLapsNb(MLHook::PendingEvent@ event) {
